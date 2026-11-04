@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>教育遊戲工作坊</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<style>
+  :root { --bg:#f6f4ef; --card:#fff; --ink:#222; --muted:#666; --line:#ddd; --accent:#2f6f5e; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16181a; --card:#212427; --ink:#e8e6e1; --muted:#9a9a9a; --line:#383b3f; --accent:#6fc2a8; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family: system-ui, "Noto Sans TC", "Microsoft JhengHei", sans-serif; line-height:1.6; }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { text-align:center; margin: 0 0 24px; }
+  nav { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom: 32px; }
+  nav button { font-size:1.1rem; padding:12px 28px; border-radius:10px; border:2px solid var(--accent); background:var(--card); color:var(--accent); cursor:pointer; }
+  nav button[aria-pressed="true"] { background:var(--accent); color:var(--bg); }
+  section[hidden] { display:none; }
+  details { background:var(--card); border:1px solid var(--line); border-radius:10px; margin-bottom:16px; }
+  summary { padding:16px; cursor:pointer; font-weight:600; }
+  summary small { display:block; font-weight:400; color:var(--muted); margin-top:4px; }
+  .md { padding: 0 20px 20px; overflow-x:auto; }
+  h2.cat { border-bottom:2px solid var(--accent); padding-bottom:4px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
+  .grid a { display:block; text-decoration:none; }
+  .grid button, .grid a { text-align:left; padding:12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; font-size:.95rem; }
+  .grid button:hover, .grid a:hover { border-color: var(--accent); }
+  .grid button b, .grid a b { display:block; color:var(--accent); }
+  dialog { width:min(900px, 100% - 32px); max-height:90vh; padding:0; border:none; border-radius:12px; background:var(--card); color:var(--ink); }
+  dialog::backdrop { background: rgb(0 0 0 / .5); }
+  dialog header { position:sticky; top:0; display:flex; justify-content:flex-end; padding:8px; background:var(--card); border-bottom:1px solid var(--line); }
+  dialog header button { font-size:1rem; padding:4px 14px; cursor:pointer; }
+  .dl { display:flex; gap:8px; flex-wrap:wrap; margin:0; padding:0 20px 12px; }
+  dialog header.dl { padding:8px; }
+  .dl a { padding:4px 14px; border-radius:6px; background:var(--accent); color:var(--bg); text-decoration:none; font-size:.95rem; }
+  .md table { border-collapse: collapse; } .md th, .md td { border:1px solid var(--line); padding:4px 8px; }
+  .md pre { background: var(--bg); padding: 12px; overflow-x:auto; border-radius:6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>教育遊戲工作坊</h1>
+  <nav>
+    <button data-tab="skills" aria-pressed="true">Skills</button>
+    <button data-tab="designs">參考設計書</button>
+    <button data-tab="demos">網頁 Demo</button>
+  </nav>
+
+  <section id="skills"></section>
+  <section id="designs" hidden></section>
+  <section id="demos" hidden>
+    <h2 class="cat">闖關 / 密室逃脫</h2>
+    <div class="grid">
+      <a href="demos/驗證2-分數烘焙坊.html" target="_blank"><b>分數烘焙坊</b>數學・分數</a>
+      <a href="demos/驗證3-經緯密室.html" target="_blank"><b>經緯密室</b>地理・經緯度</a>
+      <a href="demos/驗證2-紅樹林研究站.html" target="_blank"><b>紅樹林研究站</b>自然・生態系</a>
+    </div>
+    <h2 class="cat">卡牌對戰</h2>
+    <div class="grid">
+      <a href="demos/驗證-分數.html" target="_blank"><b>分數甜點店</b>數學・分數</a>
+      <a href="demos/驗證-晚清.html" target="_blank"><b>變法圖強：晚清改革接力</b>歷史・晚清</a>
+    </div>
+    <h2 class="cat">像素地圖探索</h2>
+    <div class="grid">
+      <a href="demos/驗證-一元一次方程式.html" target="_blank"><b>一元一次方程式</b>數學・方程式</a>
+      <a href="demos/驗證-水的三態.html" target="_blank"><b>水的三態</b>自然・物質變化</a>
+    </div>
+  </section>
+</main>
+
+<dialog id="viewer"><header class="dl"><a id="viewerDl" download>下載設計書</a><button onclick="viewer.close()">關閉 ✕</button></header><div class="md" id="viewerBody"></div></dialog>
+
+<script>
+const SKILLS = [
+  ['card-battle-edu-game', '卡牌對戰'],
+  ['level-based-edu-game', '闖關 / 密室逃脫'],
+  ['pixel-explore-edu-game', '像素地圖探索'],
+];
+const DESIGNS = {
+  '闖關': ['01-國小二年級-數學-時間與時鐘','02-國小三年級-自然-植物的身體','03-國小四年級-國語-成語','04-國小五年級-社會-台灣的地形','05-國小六年級-英語-規則動詞過去式','06-國中七年級-數學-正負數的四則運算','07-國中七年級-國文-修辭法','08-國中八年級-理化-密度','09-國中八年級-歷史-台灣的日治時期','10-國中九年級-地球科學-板塊運動'],
+  '卡牌': ['01-國小二年級-數學-二位數的加減','02-國小三年級-社會-家鄉的節慶與習俗','03-國小四年級-自然-動物的分類','04-國小五年級-英語-食物與飲料單字','05-國小六年級-數學-比與比值','06-國中七年級-生物-細胞的構造','07-國中七年級-英語-現在簡單式與第三人稱單數','08-國中八年級-理化-元素與化合物','09-國中八年級-地理-中國的地形與氣候','10-國中九年級-公民-民主政治與權力分立'],
+  '像素': ['01-國小二年級-生活-校園安全','02-國小三年級-數學-乘法','03-國小四年級-自然-月亮的變化','04-國小五年級-數學-長方體與正方體的體積','05-國小六年級-自然-槓桿與滑輪','06-國小六年級-社會-世界的宗教與文化','07-國中七年級-地理-台灣的氣候','08-國中七年級-生物-消化系統','09-國中八年級-數學-畢氏定理','10-國中九年級-歷史-工業革命'],
+};
+const CAT_NAME = { '闖關': '闖關 / 密室逃脫', '卡牌': '卡牌對戰', '像素': '像素地圖探索' };
+
+const load = path => fetch(encodeURI(path)).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// tabs
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  document.querySelectorAll('section').forEach(s => s.hidden = s.id !== b.dataset.tab);
+});
+
+// skills: frontmatter -> summary line, body -> markdown
+const skillsEl = document.getElementById('skills');
+SKILLS.forEach(async ([id, label]) => {
+  const d = document.createElement('details');
+  skillsEl.append(d);
+  try {
+    const raw = await load(`skills/${id}.md`);
+    const m = raw.match(/^---\n([\s\S]*?)\n---\n?/);
+    const desc = m ? (m[1].match(/description:\s*(.*)/) || [,''])[1] : '';
+    d.innerHTML = `<summary>${esc(label)}（${id}）<small>${esc(desc)}</small></summary>
+      <p class="dl"><a href="skills/${id}.skill" download>下載 .skill（完整套件）</a><a href="skills/${id}.md" download="SKILL.md">下載 SKILL.md</a></p>
+      <div class="md">${marked.parse(m ? raw.slice(m[0].length) : raw)}</div>`;
+  } catch (e) { d.innerHTML = `<summary>${esc(label)}：載入失敗（${esc(e.message)}）</summary>`; }
+});
+
+// designs: buttons grouped by type, open in dialog
+const designsEl = document.getElementById('designs');
+for (const [cat, files] of Object.entries(DESIGNS)) {
+  designsEl.insertAdjacentHTML('beforeend', `<h2 class="cat">${CAT_NAME[cat]}</h2>`);
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  for (const f of files) {
+    const [, grade, subject, unit] = f.split('-');
+    const b = document.createElement('button');
+    b.innerHTML = `<b>${esc(unit)}</b>${esc(grade)}・${esc(subject)}`;
+    b.onclick = async () => {
+      viewerDl.href = encodeURI(`designs/${cat}/${f}.md`);
+      viewerDl.download = `${f}.md`;
+      viewerBody.innerHTML = '載入中…';
+      viewer.showModal();
+      viewer.scrollTop = 0;
+      try { viewerBody.innerHTML = marked.parse(await load(`designs/${cat}/${f}.md`)); }
+      catch (e) { viewerBody.textContent = '載入失敗：' + e.message; }
+    };
+    grid.append(b);
+  }
+  designsEl.append(grid);
+}
+</script>
+</body>
+</html>

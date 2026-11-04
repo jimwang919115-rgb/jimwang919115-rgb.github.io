@@ -1,0 +1,2575 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>闖關教育遊戲範本</title>
+<style>
+  /* =========================================================
+     外觀設定
+     預設是可愛風。GAME.theme 可以換成另外四套主題(warm / parchment / scifi / terminal),
+     每套主題只是把下面這組變數換掉,不影響遊戲邏輯。
+     想微調配色:改 :root(可愛風)或對應主題區塊裡的變數,不要把顏色散寫到各個元件裡。
+     ========================================================= */
+  :root {
+    --bg: #eee8ff;          /* 背景 */
+    --dot: #dcd2ff;         /* 背景花紋 */
+    --paper: #fffdf7;       /* 卡片 */
+    --surface: #fff;        /* 按鈕、輸入框的底色 */
+    --soft: #fff3c4;        /* 已填入、已選取的底色 */
+    --ink: #3b3355;         /* 文字 */
+    --edge: #3b3355;        /* 描邊 */
+    --muted: #8a82a6;       /* 次要文字 */
+    --pink: #ff8fb1;        /* 主色(主要按鈕) */
+    --on-primary: #3b3355;  /* 主色上的文字 */
+    --mint: #7ed8b5;        /* 答對 */
+    --on-good: #3b3355;
+    --good-text: #2f9c73;
+    --butter: #ffd86b;      /* 強調 */
+    --on-accent: #3b3355;
+    --lav: #c9bbff;         /* * # 按鍵 */
+    --peach: #ffc2a8;       /* 刪除鍵 */
+    --bad: #ff6f7d;         /* 答錯 */
+    --clue-bg: #fff8e1;     /* 線索卡 */
+    --clue-ink: #3b3355;
+    --clue-paper: #fff;     /* 線索卡裡小圖卡、插圖的底色 */
+    --bw: 3px;
+    --radius: 18px;
+    --card-radius: 32px;
+    --line: var(--bw) solid var(--edge);
+    --pop: 0 5px 0 var(--edge);      /* 貼紙感的實心陰影 */
+    --pop-press: 0 1px 0 var(--edge);
+    --card-shadow: 0 8px 0 var(--edge);
+    --bg-image: radial-gradient(var(--dot) 3px, transparent 3.5px);
+    --bg-size: 28px 28px;
+    --font: "jf-openhuninn-2.0", "jf open 粉圓 2.0", "Zen Maru Gothic", "M PLUS Rounded 1c",
+            "Arial Rounded MT Bold", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  }
+  /* 溫暖 / 烘焙坊 / 農場 / 童話小鎮:奶油色底、木頭色描邊、橘色主色 */
+  :root[data-theme="warm"] {
+    --bg: #fbf1e3; --dot: #f1dcc0; --paper: #fffaf2; --surface: #fff; --soft: #ffe8c7;
+    --ink: #5a3a22; --edge: #8a5a35; --muted: #a07a5a;
+    --pink: #f29f58; --on-primary: #3a2312; --mint: #9cc77a; --on-good: #2f3d1e; --good-text: #4f8a2b;
+    --butter: #f6c95f; --on-accent: #3a2312; --lav: #e8cfa8; --peach: #f5b7a0; --bad: #d9534f;
+    --clue-bg: #fff4dc; --clue-ink: #5a3a22; --clue-paper: #fff;
+    --bw: 2px; --radius: 14px; --card-radius: 24px;
+    --pop: 0 4px 0 var(--edge); --pop-press: 0 1px 0 var(--edge);
+    --card-shadow: 0 6px 0 var(--edge), 0 18px 40px rgba(90,58,34,.18);
+    --bg-image: radial-gradient(var(--dot) 2px, transparent 2.5px); --bg-size: 22px 22px;
+  }
+  /* 古典 / 鍊金 / 古宅:深色木質、黃銅描邊、羊皮紙線索卡 */
+  :root[data-theme="parchment"] {
+    --bg: #0f0c0a; --dot: #2a211a; --paper: #1c1815; --surface: #0c0a09; --soft: #4a3a14;
+    --ink: #f4ebd0; --edge: #b8973d; --muted: #a89f8c;
+    --pink: #d4af37; --on-primary: #1a160d; --mint: #3f9d6b; --on-good: #fff; --good-text: #6ee7a8;
+    --butter: #d4af37; --on-accent: #1a160d; --lav: #4a3f6b; --peach: #7c4a2d; --bad: #ef5350;
+    --clue-bg: radial-gradient(ellipse at center, #fbf7ea 0%, #e8dcbf 75%, #cfba91 100%); --clue-ink: #382818; --clue-paper: #fbf7ea;
+    --bw: 2px; --radius: 10px; --card-radius: 16px;
+    --pop: 0 3px 8px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.12);
+    --pop-press: 0 1px 2px rgba(0,0,0,.6);
+    --card-shadow: 0 20px 50px rgba(0,0,0,.8), inset 0 0 30px rgba(212,175,55,.08);
+    --bg-image: radial-gradient(circle at 50% 10%, var(--dot) 0%, transparent 65%); --bg-size: auto;
+    --font: "Noto Serif TC", "Source Han Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
+  }
+  /* 科幻 / 太空 / 深海基地:深藍底、青色螢光 HUD */
+  :root[data-theme="scifi"] {
+    --bg: #050b14; --dot: rgba(34,211,238,.07); --paper: #0a1522; --surface: #06101b; --soft: #0e3a4a;
+    --ink: #d7f3ff; --edge: #22d3ee; --muted: #6b8ba4;
+    --pink: #22d3ee; --on-primary: #03121a; --mint: #10b981; --on-good: #03121a; --good-text: #34d399;
+    --butter: #fbbf24; --on-accent: #1a1200; --lav: #1e3a5f; --peach: #5b2333; --bad: #ff4d5e;
+    --clue-bg: #071a29; --clue-ink: #a5f3fc; --clue-paper: #06101b;
+    --bw: 1px; --radius: 6px; --card-radius: 10px;
+    --pop: 0 0 0 1px rgba(34,211,238,.2), 0 0 12px rgba(34,211,238,.25);
+    --pop-press: 0 0 4px rgba(34,211,238,.5);
+    --card-shadow: 0 0 40px rgba(34,211,238,.18), inset 0 0 60px rgba(34,211,238,.04);
+    --bg-image: linear-gradient(var(--dot) 1px, transparent 1px), linear-gradient(90deg, var(--dot) 1px, transparent 1px);
+    --bg-size: 32px 32px;
+    --font: "Share Tech Mono", Consolas, "SF Mono", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", monospace;
+  }
+  /* 復古終端機 / 駕駛艙 / 懸疑:CRT 綠字、琥珀色強調、掃描線 */
+  :root[data-theme="terminal"] {
+    --bg: #0a0e14; --dot: rgba(51,255,119,.05); --paper: #111a24; --surface: #090d14; --soft: #1d3323;
+    --ink: #d6ffe4; --edge: #2f6b47; --muted: #78909c;
+    --pink: #33ff77; --on-primary: #04140a; --mint: #33ff77; --on-good: #04140a; --good-text: #33ff77;
+    --butter: #ffaa33; --on-accent: #1a0f00; --lav: #1f2f45; --peach: #4a2a1a; --bad: #ff3344;
+    --clue-bg: #0c1410; --clue-ink: #33ff77; --clue-paper: #090d14;
+    --bw: 1px; --radius: 4px; --card-radius: 6px;
+    --pop: 0 2px 0 rgba(0,0,0,.7); --pop-press: 0 0 0 rgba(0,0,0,.7);
+    --card-shadow: 0 0 0 1px #000, 0 0 30px rgba(51,255,119,.12);
+    --bg-image: linear-gradient(var(--dot) 50%, transparent 50%); --bg-size: 100% 4px;
+    --font: Consolas, "SF Mono", "Courier New", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg);
+    background-image: var(--bg-image);
+    background-size: var(--bg-size);
+    color: var(--ink);
+    font-family: var(--font);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    background: var(--paper);
+    border: var(--line);
+    border-radius: var(--card-radius);
+    padding: 30px 26px 28px;
+    box-shadow: var(--card-shadow);
+  }
+  h1 { font-size: 1.7rem; margin: 6px 0 8px; text-align: center; letter-spacing: .03em; }
+  p.desc { color: var(--muted); margin: 0 0 22px; line-height: 1.7; text-align: center; }
+
+  /* ----- 吉祥物(純 SVG,只在可愛風顯示)與主題圖示(其他主題顯示 GAME.icon) ----- */
+  .mascot { display: block; margin: 0 auto; width: 110px; height: 96px; }
+  .mascot.small { width: 64px; height: 56px; }
+  .mascot .mouth-happy, .mascot .mouth-sad { display: none; }
+  .mascot.happy .mouth-idle, .mascot.sad .mouth-idle { display: none; }
+  .mascot.happy .mouth-happy { display: inline; }
+  .mascot.sad .mouth-sad { display: inline; }
+  .mascot.happy, .icon-badge.happy { animation: hop .5s ease; }
+  .mascot.sad, .icon-badge.sad { animation: wobble .4s ease; }
+  .icon-badge {
+    display: none; margin: 0 auto 6px; width: 84px; height: 84px; border-radius: 50%;
+    border: var(--line); background: var(--surface); box-shadow: var(--pop);
+    align-items: center; justify-content: center; font-size: 2.6rem; line-height: 1;
+  }
+  .icon-badge.small { width: 48px; height: 48px; font-size: 1.5rem; margin: 0; flex: none; }
+  :root[data-theme]:not([data-theme="cute"]) .mascot { display: none; }
+  :root[data-theme]:not([data-theme="cute"]) .icon-badge { display: flex; }
+  @keyframes hop { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-12px); } }
+  @keyframes wobble { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-8deg); } 70% { transform: rotate(8deg); } }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    border: var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.05rem;
+    margin-bottom: 18px;
+    outline: none;
+  }
+  input[type="text"]:focus { box-shadow: 0 0 0 4px var(--butter); }
+  button { font: inherit; cursor: pointer; color: var(--ink); }
+  button:focus-visible { outline: 4px solid var(--butter); outline-offset: 2px; }
+  button:disabled { cursor: default; }
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    border: var(--line);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    box-shadow: var(--pop);
+    transition: transform .08s, box-shadow .08s, filter .15s;
+  }
+  .btn-primary { background: var(--pink); color: var(--on-primary); }
+  .btn-secondary { background: var(--butter); color: var(--on-accent); margin-top: 18px; }
+  .btn-primary:hover:not(:disabled), .btn-secondary:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn-primary:active, .btn-secondary:active { transform: translateY(4px); box-shadow: var(--pop-press); }
+  .btn-primary:disabled { opacity: .55; }
+
+  /* ----- 故事框(開始畫面的背景故事、結局) ----- */
+  .story {
+    background: var(--clue-bg); color: var(--clue-ink);
+    border: var(--line); border-radius: var(--radius);
+    padding: 14px 18px; margin: 0 0 18px; line-height: 1.8; white-space: pre-line; font-size: .98rem;
+  }
+
+  /* ----- 遊戲畫面上方:圖示、關卡進度、倒數、愛心 ----- */
+  .game-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .progress-area { flex: 1; min-width: 0; }
+  .progress-wrap {
+    background: var(--surface);
+    border: var(--line);
+    border-radius: 999px;
+    height: 22px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: repeating-linear-gradient(-45deg, var(--pink) 0 10px, var(--butter) 10px 20px);
+    border-right: var(--line);
+    transition: width .45s cubic-bezier(.3,1.4,.6,1);
+  }
+  .stepper { display: flex; align-items: center; }
+  .step {
+    flex: none; width: 28px; height: 28px; border-radius: 50%;
+    border: var(--line); background: var(--surface); color: var(--muted);
+    display: flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 700;
+    transition: background .3s, transform .3s;
+  }
+  .step.done { background: var(--mint); color: var(--on-good); }
+  .step.now { background: var(--butter); color: var(--on-accent); transform: scale(1.18); box-shadow: var(--pop-press); }
+  .step-line { flex: 1; height: var(--bw); min-width: 4px; background: var(--muted); opacity: .45; }
+  .step-line.done { background: var(--mint); opacity: 1; }
+  .timer {
+    flex: none; border: var(--line); border-radius: 999px; background: var(--surface);
+    padding: 4px 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .timer.danger { color: var(--bad); border-color: var(--bad); animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .45; } }
+  .hearts { font-size: 1.15rem; letter-spacing: 1px; white-space: nowrap; }
+
+  /* ----- 道具袋與工具列 ----- */
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .inventory {
+    flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    border: var(--bw) dashed var(--muted); border-radius: var(--radius); padding: 6px 10px; min-height: 44px;
+  }
+  .inventory .inv-label { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+  .item-chip {
+    flex: none; border: var(--line); border-radius: 999px; background: var(--surface);
+    padding: 3px 10px; font-size: .88rem; font-weight: 700; white-space: nowrap;
+  }
+  .item-chip.new { animation: pop .4s ease, glow 1.2s ease 2; }
+  @keyframes glow { 50% { box-shadow: 0 0 0 5px var(--butter); } }
+  .tool-btn {
+    flex: none; margin-left: auto; border: var(--line); border-radius: 999px; background: var(--surface);
+    padding: 7px 14px; font-size: .95rem; font-weight: 700; box-shadow: var(--pop-press);
+  }
+  .tool-btn + .tool-btn { margin-left: 0; }
+  .tool-btn:hover { background: var(--soft); }
+
+  /* ----- 關卡內容:標題、場景、插圖、線索卡、題目 ----- */
+  .level-body.enter { animation: fadeUp .35s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .level-title {
+    display: inline-block;
+    background: var(--butter);
+    color: var(--on-accent);
+    border: var(--line);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: .95rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .scene { color: var(--muted); line-height: 1.8; margin: 0 0 12px; font-style: italic; white-space: pre-line; }
+  .art { margin: 0 0 14px; }
+  .art svg, .clue-body svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+  /* 線索卡的底色和內文不同,裡面的插圖、小圖卡改用線索卡的配色(--ink、--surface 在卡片裡會換掉) */
+  .clue, .explain, .hint-tier { --ink: var(--clue-ink); --muted: var(--clue-ink); --surface: var(--clue-paper); }
+  .teacher { margin: 0 0 16px; border: var(--bw) dashed var(--muted); border-radius: var(--radius); padding: 8px 14px; color: var(--muted); font-size: .92rem; line-height: 1.7; white-space: pre-line; }
+  .teacher summary { cursor: pointer; font-weight: 700; }
+  .clue {
+    background: var(--clue-bg); color: var(--clue-ink);
+    border: var(--line); border-radius: var(--radius);
+    padding: 12px 16px; margin: 0 0 12px; line-height: 1.8;
+  }
+  .clue-title { margin: 0 0 4px; font-size: .9rem; letter-spacing: .08em; opacity: .75; }
+  .clue-body { white-space: pre-line; font-weight: 700; }
+  .clue-body.revealed { animation: develop 1s ease; }
+  @keyframes develop { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: none; } }
+  .clue-reveal {
+    border: var(--bw) dashed currentColor; border-radius: var(--radius); background: transparent; color: inherit;
+    padding: 8px 14px; font-weight: 700; width: 100%;
+  }
+  .clue-reveal:hover { background: rgba(127,127,127,.15); }
+  /* 插圖用的小圖卡:art 或線索的 html 裡寫 <div class="props"><div class="prop">…</div>…</div> */
+  .props { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; white-space: normal; }
+  .prop {
+    flex: 1 1 70px; max-width: 150px; min-height: 84px; border: var(--line); border-radius: var(--radius);
+    background: var(--surface); color: var(--ink); padding: 8px 6px; text-align: center; line-height: 1.5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 700;
+  }
+  .prop small { color: var(--muted); font-weight: 400; font-size: .75rem; }
+  .prop .big { font-size: 1.8rem; line-height: 1.2; }
+  .question { font-size: 1.3rem; margin: 6px 0 18px; line-height: 1.6; font-weight: 700; white-space: pre-line; }
+
+  /* ----- 選擇題、複選題按鈕 ----- */
+  .choice {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--surface);
+    border: var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    box-shadow: var(--pop);
+    transition: transform .08s, box-shadow .08s, background .15s;
+  }
+  .choice:hover:not(:disabled) { background: var(--soft); }
+  .choice:active:not(:disabled) { transform: translateY(4px); box-shadow: var(--pop-press); }
+  .choice.picked { background: var(--soft); box-shadow: var(--pop-press); transform: translateY(4px); }
+  .choice.picked::before { content: "✓ "; }
+  .choice.correct { background: var(--mint); color: var(--on-good); }
+  .choice.wrong { background: var(--bad); color: #fff; animation: shake .3s; }
+
+  /* ----- 密碼輸入格 ----- */
+  .passcode-display { display: flex; justify-content: center; gap: 10px; margin: 4px 0 14px; flex-wrap: wrap; }
+  .passcode-slot {
+    width: 58px; height: 68px;
+    border: var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.1rem; font-weight: 700;
+  }
+  .passcode-slot.filled { background: var(--soft); animation: pop .18s ease; }
+  .passcode-shake { animation: shake .3s; }
+  @keyframes pop { 0% { transform: scale(.8); } 100% { transform: scale(1); } }
+
+  /* ----- 大尺寸鍵盤(電話鍵盤排列:1-9、* 0 #,最下排刪除與確認) ----- */
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 6px;
+  }
+  .key {
+    min-height: 76px;
+    border: var(--line);
+    border-radius: calc(var(--radius) + 6px);
+    background: var(--surface);
+    font-size: 2.1rem;
+    font-weight: 700;
+    box-shadow: var(--pop);
+    transition: transform .08s, box-shadow .08s;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  .key:active:not(:disabled), .key.pressed { transform: translateY(4px); box-shadow: var(--pop-press); }
+  .key:disabled { opacity: .6; }
+  .key.symbol { background: var(--lav); }
+  .key.back { background: var(--peach); font-size: 1.5rem; }
+  .key.confirm { background: var(--mint); color: var(--on-good); grid-column: span 2; font-size: 1.5rem; }
+
+  /* ----- 轉輪鎖 dial ----- */
+  .dial { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 4px 0 16px; flex-wrap: wrap; }
+  .wheel { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+  .wheel-label { text-align: center; font-size: .8rem; font-weight: 700; color: var(--muted); max-width: 90px; }
+  .wheel-btn {
+    min-width: 58px; height: 38px; border: var(--line); border-radius: var(--radius); background: var(--surface);
+    font-size: 1rem; box-shadow: var(--pop-press); touch-action: manipulation;
+  }
+  .wheel-btn:active:not(:disabled) { transform: translateY(1px); }
+  .wheel-val {
+    min-width: 58px; height: 68px; padding: 0 8px; border: var(--line); border-radius: var(--radius); background: var(--soft);
+    display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700;
+  }
+  .wheel-val.turn { animation: pop .15s ease; }
+  .wheel-val.long { font-size: 1.25rem; white-space: nowrap; }
+  .dial-sep { font-size: 2rem; font-weight: 700; }
+
+  /* ----- 順序機關 sequence ----- */
+  .seq-trail { min-height: 40px; text-align: center; font-weight: 700; font-size: 1.1rem; margin-bottom: 10px; color: var(--muted); }
+  .seq-grid { display: grid; gap: 12px; margin-bottom: 12px; }
+  .seq-btn {
+    min-height: 72px; border: var(--line); border-radius: var(--radius); background: var(--surface);
+    font-size: 1.15rem; font-weight: 700; box-shadow: var(--pop); white-space: pre-line; line-height: 1.4;
+    transition: transform .08s, box-shadow .08s, background .2s; touch-action: manipulation;
+  }
+  .seq-btn:active:not(:disabled), .seq-btn.lit { transform: translateY(4px); box-shadow: var(--pop-press); background: var(--butter); color: var(--on-accent); }
+  .seq-btn { position: relative; }
+  .seq-btn.on { background: var(--soft); }
+  .seq-btn.on::after {
+    content: attr(data-n); position: absolute; top: 4px; right: 6px; min-width: 22px; height: 22px; padding: 0 5px;
+    border-radius: 999px; background: var(--butter); color: var(--on-accent); font-size: .75rem; line-height: 22px;
+  }
+  .seq-btn.blocked { opacity: .45; border-style: dashed; box-shadow: none; }
+  .cup {
+    position: relative; width: 110px; height: 200px; margin: 0 auto 12px; overflow: hidden;
+    border: var(--line); border-top: none; border-radius: 0 0 18px 18px; background: var(--surface);
+  }
+  .cup .water { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--mint); opacity: .75; transition: height .2s; }
+  .cup::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(to top, transparent 0 calc(var(--tick) - 1px), var(--muted) calc(var(--tick) - 1px) var(--tick));
+    -webkit-mask: linear-gradient(90deg, #000 30%, transparent 30%); mask: linear-gradient(90deg, #000 30%, transparent 30%);
+  }
+  .link-btn { border: 0; background: none; color: var(--muted); text-decoration: underline; padding: 6px; display: block; margin: 0 auto; }
+
+  /* ----- 計數 counter(可以加上天平)、滑桿 slider(可以加上羅盤) ----- */
+  .stepper-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 6px 0 16px; }
+  .round-btn {
+    width: 60px; height: 60px; border-radius: 50%; border: var(--line); background: var(--surface);
+    font-size: 1.8rem; font-weight: 700; box-shadow: var(--pop); line-height: 1; touch-action: manipulation;
+  }
+  .round-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: var(--pop-press); }
+  .readout { min-width: 110px; text-align: center; font-size: 2.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .readout small { font-size: 1.1rem; margin-left: 4px; color: var(--muted); }
+  .balance { position: relative; height: 150px; margin: 0 auto 8px; max-width: 320px; }
+  .balance .pillar { position: absolute; left: 50%; top: 14px; width: 10px; height: 118px; margin-left: -5px; background: var(--edge); border-radius: 4px; }
+  .balance .base { position: absolute; left: 50%; bottom: 8px; width: 110px; height: 12px; margin-left: -55px; background: var(--edge); border-radius: 6px; }
+  .balance .beam {
+    --tilt: 0deg; position: absolute; left: 10%; right: 10%; top: 18px; height: 8px; border-radius: 4px;
+    background: var(--butter); border: 1px solid var(--edge); transform: rotate(var(--tilt)); transition: transform .6s cubic-bezier(.3,1.5,.6,1);
+  }
+  .balance .pan {
+    position: absolute; top: 6px; width: 96px; margin-left: -48px; padding-top: 44px; text-align: center;
+    transform-origin: 50% 0; transform: rotate(calc(var(--tilt) * -1)); transition: transform .6s cubic-bezier(.3,1.5,.6,1);
+    background: linear-gradient(var(--edge), var(--edge)) 50% 0 / 2px 44px no-repeat;
+  }
+  .balance .pan.left { left: 0; } .balance .pan.right { left: 100%; }
+  .balance .pan span {
+    display: block; border: var(--line); border-top-width: 1px; border-radius: 4px 4px 40px 40px; background: var(--surface);
+    padding: 4px 6px 8px; font-weight: 700; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  input[type="range"].slider { width: 100%; margin: 4px 0 16px; accent-color: var(--pink); height: 32px; }
+  .compass {
+    position: relative; width: 150px; height: 150px; margin: 0 auto 10px; border-radius: 50%;
+    border: var(--line); background: var(--surface); box-shadow: var(--pop);
+  }
+  .compass::before { content: "N"; position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: .8rem; font-weight: 700; color: var(--muted); }
+  .compass .needle {
+    position: absolute; left: 50%; bottom: 50%; width: 6px; height: 56px; margin-left: -3px; border-radius: 3px;
+    background: var(--bad); transform-origin: 50% 100%; transition: transform .15s;
+  }
+  .compass-mark { position: absolute; font-size: .8rem; font-weight: 700; color: var(--muted); font-style: normal; }
+  .compass-mark.e { right: 7px; top: 50%; transform: translateY(-50%); }
+  .compass-mark.s { bottom: 4px; left: 0; right: 0; text-align: center; }
+  .compass-mark.w { left: 7px; top: 50%; transform: translateY(-50%); }
+  .compass::after { content: ""; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: var(--edge); }
+
+  /* ----- 放置 assign:把物件放進格子 ----- */
+  .slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .slot {
+    min-height: 86px; border: var(--bw) dashed var(--edge); border-radius: var(--radius); background: transparent;
+    padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  }
+  .slot .slot-label { font-size: .85rem; color: var(--muted); }
+  .slot .slot-item { font-weight: 700; font-size: 1.1rem; min-height: 1.4em; }
+  .slot.filled { border-style: solid; background: var(--soft); }
+  .chip.selected { background: var(--butter); color: var(--on-accent); transform: translateY(-4px); }
+  /* 拖曳 */
+  .chip.draggable { cursor: grab; }
+  .chip.dragging { opacity: .35; }
+  .drag-ghost {
+    position: fixed; z-index: 70; pointer-events: none; margin: 0;
+    transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 10px 24px rgba(0,0,0,.3);
+  }
+  .slot.drop-hover { background: var(--soft); outline: 3px solid var(--butter); outline-offset: 2px; }
+  /* 格子疊在插圖上(assign 的 board) */
+  .board { position: relative; max-width: 440px; margin: 0 auto 14px; }
+  .board > svg, .board > img { display: block; width: 100%; height: auto; }
+  .board-slots { position: absolute; inset: 0; }
+  .board-slots .slot {
+    position: absolute; transform: translate(-50%, -50%); min-height: 0; min-width: 64px; padding: 4px 8px;
+    background: var(--paper); opacity: .92; border-radius: 10px;
+  }
+  .board-slots .slot .slot-label { font-size: .75rem; }
+  .board-slots .slot .slot-item { font-size: .95rem; min-height: 1.2em; }
+  /* 疊圖對齊 / 定位 */
+  .align-box { position: relative; max-width: 440px; margin: 4px auto 8px; user-select: none; -webkit-user-select: none; }
+  .align-box > svg, .align-box > img { display: block; width: 100%; height: auto; }
+  .align-overlay {
+    position: absolute; transform: translate(-50%, -50%); cursor: grab; touch-action: none;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,.35)); transition: filter .2s;
+  }
+  .align-overlay > svg, .align-overlay > img { display: block; width: 100%; height: auto; }
+  .align-overlay.dragging { cursor: grabbing; filter: drop-shadow(0 8px 14px rgba(0,0,0,.45)); }
+  .align-overlay.locked { cursor: default; filter: none; }
+  .align-overlay:focus-visible { outline: 3px solid var(--butter); outline-offset: 2px; }
+  .align-pin { font-size: 2rem; line-height: 1; text-align: center; transform: translateY(-45%); }   /* 圖釘的尖端對準位置 */
+  .aligned .align-overlay { animation: pop .3s ease; }
+  .align-tip { text-align: center; font-size: .8rem; color: var(--muted); margin: 0 0 10px; font-weight: 400; }
+  .align-after { margin-top: 8px; }
+  .aligned .align-tip { display: none; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .feedback { min-height: 28px; font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px; text-align: center; line-height: 1.6; white-space: pre-line; }
+  .feedback.good { color: var(--good-text); }
+  .feedback.bad { color: var(--bad); }
+  .hidden { display: none !important; }
+  .summary { background: var(--surface); border: var(--line); border-radius: var(--radius); padding: 6px 18px; margin-top: 12px; }
+  .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 2px dashed var(--lav); font-size: 1.05rem; }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row span:last-child { font-weight: 700; }
+  .level-errors { background: #fff0f1; border: 3px solid var(--bad); border-radius: 18px; color: #c62836; font-size: .9rem; line-height: 1.6; margin: 0 0 16px; padding: 12px 16px; }
+  .level-errors ul { margin: 6px 0 0; padding-left: 20px; }
+  .level-warnings { background: #fff8e1; border: 3px solid #ffd86b; border-radius: 18px; color: #8a6d00; font-size: .9rem; line-height: 1.6; margin: 0 0 16px; padding: 12px 16px; }
+  .level-warnings ul { margin: 6px 0 0; padding-left: 20px; }
+  input.text-answer { font-size: 1.4rem; text-align: center; margin-bottom: 14px; }
+  .explain { background: var(--clue-bg); color: var(--clue-ink); border: var(--line); border-radius: var(--radius); padding: 12px 16px; margin: 8px 0 14px; line-height: 1.7; white-space: pre-line; }
+  .next-wrap { margin-top: 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 6px 0 14px; min-height: 58px; }
+  .chip { border: var(--line); border-radius: var(--radius); background: var(--surface); padding: 10px 14px; font-size: 1.15rem; font-weight: 700; box-shadow: var(--pop); transition: transform .1s; }
+  .chip:disabled { opacity: .6; }
+  .chip-slot { background: var(--soft); }
+  .submit-status { color: var(--muted); font-size: .9rem; margin-top: 14px; text-align: center; }
+
+  /* ----- 提示視窗、浮動訊息 ----- */
+  .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal {
+    width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; background: var(--paper); color: var(--ink);
+    border: var(--line); border-radius: var(--card-radius); padding: 22px 22px 24px; box-shadow: var(--card-shadow);
+    animation: fadeUp .25s ease;
+  }
+  .modal h2 { margin: 0 0 12px; font-size: 1.3rem; text-align: center; }
+  .hint-tier { background: var(--clue-bg); color: var(--clue-ink); border: var(--line); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 10px; line-height: 1.7; }
+  .hint-tier b { display: block; font-size: .85rem; opacity: .75; }
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 60; max-width: 90vw;
+    background: var(--ink); color: var(--paper); border-radius: 999px; padding: 10px 20px; font-weight: 700; font-size: .95rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,.35); animation: fadeToast 2.6s ease forwards; pointer-events: none;
+  }
+  @keyframes fadeToast { 0% { opacity: 0; } 10%, 85% { opacity: 1; } 100% { opacity: 0; } }
+  /* terminal 主題的掃描線 */
+  :root[data-theme="terminal"] body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: .5;
+    background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,.25) 50%); background-size: 100% 3px;
+  }
+
+  @media (max-width: 420px) {
+    .card { padding: 24px 16px 22px; }
+    .key { min-height: 66px; font-size: 1.8rem; }
+    .passcode-slot { width: 48px; height: 58px; font-size: 1.7rem; }
+    .wheel-btn, .wheel-val { min-width: 48px; }
+    .step { width: 22px; height: 22px; font-size: .7rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 吉祥物圖形:定義一次,三個畫面共用 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="mascot-shape">
+      <path d="M20 70 C10 40 30 12 60 12 C90 12 110 40 100 70 C96 86 80 92 60 92 C40 92 24 86 20 70 Z" fill="#ffe3ec" stroke="#3b3355" stroke-width="4"/>
+      <path d="M40 16 L34 2 L48 12 Z M80 16 L86 2 L72 12 Z" fill="#ffe3ec" stroke="#3b3355" stroke-width="4" stroke-linejoin="round"/>
+      <circle cx="44" cy="52" r="5" fill="#3b3355"/>
+      <circle cx="76" cy="52" r="5" fill="#3b3355"/>
+      <ellipse cx="34" cy="64" rx="7" ry="4" fill="#ff8fb1" opacity=".7"/>
+      <ellipse cx="86" cy="64" rx="7" ry="4" fill="#ff8fb1" opacity=".7"/>
+    </g>
+  </defs>
+</svg>
+
+<div class="card" id="card">
+
+  <!-- ===== 畫面一:開始畫面 ===== -->
+  <div id="screen-start">
+    <svg class="mascot" viewBox="0 0 120 96" aria-hidden="true">
+      <use href="#mascot-shape"/>
+      <path class="mouth-idle" d="M54 64 Q60 70 66 64" fill="none" stroke="#3b3355" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <div class="icon-badge" data-icon="game" aria-hidden="true"></div>
+    <h1 id="game-title">闖關小冒險</h1>
+    <p class="desc" id="game-desc">輸入你的名字,一關一關往前走吧!</p>
+    <div class="story hidden" id="game-story"></div>
+    <details class="teacher hidden" id="teacher-notes"><summary>給老師</summary><div id="teacher-text"></div></details>
+    <div class="level-errors hidden" id="level-errors" role="alert"></div>
+    <div class="level-warnings hidden" id="level-warnings"></div>
+    <input type="text" id="player-name" placeholder="你的名字或暱稱">
+    <button class="btn-primary" id="btn-start">開始闖關</button>
+    <button class="btn-secondary hidden" id="btn-reset">從頭開始</button>
+  </div>
+
+  <!-- ===== 畫面二:遊戲進行中 ===== -->
+  <div id="screen-game" class="hidden">
+    <div class="game-head">
+      <svg class="mascot small" id="game-mascot" viewBox="0 0 120 96" aria-hidden="true">
+        <use href="#mascot-shape"/>
+        <path class="mouth-idle" d="M54 64 Q60 70 66 64" fill="none" stroke="#3b3355" stroke-width="4" stroke-linecap="round"/>
+        <path class="mouth-happy" d="M50 62 Q60 76 70 62 Z" fill="#3b3355"/>
+        <path class="mouth-sad" d="M53 70 Q60 62 67 70" fill="none" stroke="#3b3355" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <div class="icon-badge small" id="game-icon" data-icon="game" aria-hidden="true"></div>
+      <div class="progress-area">
+        <div class="stepper hidden" id="stepper" aria-hidden="true"></div>
+        <div class="progress-wrap" id="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+      </div>
+      <span class="timer hidden" id="timer" aria-label="剩餘時間"></span>
+      <span class="hearts hidden" id="lives"></span>
+    </div>
+    <div class="toolbar">
+      <div class="inventory hidden" id="inventory" aria-label="道具袋"></div>
+      <button class="tool-btn hidden" id="btn-hint">💡 提示</button>
+      <button class="tool-btn" id="btn-sound" aria-label="音效開關">🔊</button>
+    </div>
+
+    <div class="level-body" id="level-body">
+      <div class="level-title" id="level-title"></div>
+      <p class="scene hidden" id="scene"></p>
+      <div class="art hidden" id="art"></div>
+      <div id="clues"></div>
+      <div class="question" id="question-text"></div>
+
+      <!-- 作答區:由各題型自己決定放什麼;提示文字在上下兩區之間 -->
+      <div id="gate" class="hidden"><button class="clue-reveal" id="btn-gate" style="margin-bottom:12px"></button></div>
+      <div id="answer-top"></div>
+      <div class="feedback" id="feedback" aria-live="polite"></div>
+      <div class="explain hidden" id="explain"></div>
+      <div class="next-wrap hidden" id="next-wrap"><button class="btn-primary" id="btn-next">下一關 ▶</button></div>
+      <div id="answer-bottom"></div>
+    </div>
+  </div>
+
+  <!-- ===== 畫面三:結算畫面 ===== -->
+  <div id="screen-end" class="hidden">
+    <svg class="mascot happy" viewBox="0 0 120 96" aria-hidden="true">
+      <use href="#mascot-shape"/>
+      <path class="mouth-happy" d="M50 62 Q60 76 70 62 Z" fill="#3b3355"/>
+    </svg>
+    <div class="icon-badge happy" aria-hidden="true">🏆</div>
+    <h1 id="end-title">全部過關!</h1>
+    <div class="story hidden" id="end-story"></div>
+    <div class="summary" id="end-summary"></div>
+    <button class="btn-secondary" id="btn-restart">再玩一次</button>
+  </div>
+
+  <!-- ===== 畫面四:挑戰失敗(愛心用完或時間到) ===== -->
+  <div id="screen-fail" class="hidden">
+    <svg class="mascot sad" viewBox="0 0 120 96" aria-hidden="true">
+      <use href="#mascot-shape"/>
+      <path class="mouth-sad" d="M53 70 Q60 62 67 70" fill="none" stroke="#3b3355" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <div class="icon-badge sad" aria-hidden="true">💔</div>
+    <h1 id="fail-title">挑戰失敗…</h1>
+    <div class="story hidden" id="fail-story"></div>
+    <p class="desc" id="fail-text"></p>
+    <div class="summary" id="fail-summary"></div>
+    <button class="btn-primary" id="btn-retry" style="margin-top:18px">再試一次</button>
+  </div>
+
+  <div class="submit-status" id="submit-status"></div>
+
+</div>
+
+<!-- 提示視窗:一層一層打開(level.hints) -->
+<div class="overlay hidden" id="hint-modal" role="dialog" aria-modal="true" aria-labelledby="hint-heading">
+  <div class="modal">
+    <h2 id="hint-heading">💡 提示</h2>
+    <div id="hint-list"></div>
+    <button class="btn-secondary" id="btn-hint-close">回到關卡</button>
+  </div>
+</div>
+
+<!-- 程式分成三個 <script>(仍然是同一個檔案):
+     1. 錯誤顯示:下面兩段只要有語法錯誤(漏逗號、引號或括號沒成對),就在開始畫面顯示第幾行出錯
+     2. 設定與規則包:GAS_URL、STORAGE_KEY、RULES-PACK
+     3. 引擎
+   分開寫是因為同一個 <script> 裡只要有一個語法錯誤,整段都不會執行,連錯誤訊息都顯示不出來。不要合併回去。 -->
+<script>
+(function () {
+  let shown = false;
+  window.addEventListener("error", function (e) {
+    if (window.__engineReady || shown) return;      // 只處理「遊戲還沒準備好」時的第一個錯誤
+    shown = true;
+    const box = document.getElementById("level-errors");
+    const btn = document.getElementById("btn-start");
+    if (btn) btn.disabled = true;
+    if (!box) return;
+    const where = e.lineno ? `(這個檔案的第 ${e.lineno} 行附近)` : "";
+    box.textContent = `程式有錯誤,遊戲無法開始${where}:${e.message || "未知的錯誤"}。`
+      + "最常見的原因是漏了逗號、引號或括號沒有成對,請修正後重新整理。";
+    box.classList.remove("hidden");
+  });
+})();
+</script>
+
+<script>
+/* =========================================================
+   上傳與存檔設定
+   ========================================================= */
+
+/* Google Apps Script 上傳網址
+   部署好你自己的 GAS 後端(參考 SKILL.md 的步驟)之後,把網址貼在這裡。
+   如果還沒決定要不要串接,先放著沒關係,遊戲仍然可以正常玩,只是最後不會真的送出資料。 */
+const GAS_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+/* 存檔用的 key —— 同一個 GitHub 帳號如果放多個遊戲,
+   請把這裡改成不同的名稱,避免互相覆蓋進度 */
+const STORAGE_KEY = "geo-latlon-room-progress";
+
+/* ===== RULES-PACK:BEGIN =====
+   規則包:《經緯密室:老館長的航海日誌》(國中七年級地理:經緯度、方位、比例尺、時區)
+   依教師腳本製作。只用內建題型,引擎沒有修改。
+   ========================================================= */
+
+/* ---------- 插圖(要寫在 LEVELS 前面) ---------- */
+
+/* 第 1 關:地球儀(viewBox 440×330,球心 (220,165),半徑 125)。格子 slotPos 依這個座標換算 */
+const GLOBE_SVG = `<style>.board-slots .slot { white-space: nowrap; }</style><svg viewBox="0 0 440 330" width="300" role="img" aria-label="地球儀,畫著三條橫向圓圈與兩條連接南北極的半圓">
+  <circle cx="220" cy="165" r="125" fill="var(--surface)" stroke="currentColor" stroke-width="3"/>
+  <text x="220" y="30" font-size="14" text-anchor="middle" fill="currentColor" font-weight="700">北極</text>
+  <text x="220" y="312" font-size="14" text-anchor="middle" fill="currentColor" font-weight="700">南極</text>
+  <circle cx="220" cy="40" r="3" fill="currentColor"/><circle cx="220" cy="290" r="3" fill="currentColor"/>
+  <g fill="none" stroke="var(--pink)" stroke-width="3">
+    <ellipse cx="220" cy="165" rx="125" ry="16"/>
+    <ellipse cx="220" cy="115" rx="115" ry="14"/>
+    <ellipse cx="220" cy="50" rx="50" ry="6"/>
+    <path d="M220 40 A55 125 0 0 1 220 290" stroke-width="4"/>
+    <path d="M220 40 A55 125 0 0 0 220 290" stroke-dasharray="7 6"/>
+  </g>
+  <g stroke="var(--pink)" stroke-width="2" stroke-dasharray="2 4" fill="none">
+    <path d="M95 165 H60"/><path d="M335 115 H350"/><path d="M170 50 H140"/>
+  </g>
+  <g font-size="14" fill="currentColor" font-weight="700">
+    <text x="102" y="152">0°</text>
+    <text x="112" y="103">23.5°</text>
+    <text x="274" y="55">66.5°</text>
+    <text x="280" y="203">0°</text>
+  </g>
+  <path d="M248 72 h12 v-4 a6 6 0 0 0 -12 0 z" fill="var(--butter)" stroke="currentColor" stroke-width="1.5"/>
+  <text x="264" y="74" font-size="11" fill="currentColor">格林威治天文台</text>
+</svg>`;
+
+/* 第 2 關:海圖(viewBox 400×300)。本初經線在 x=240、赤道在 y=140;每 15° = 40 單位。
+   x = 240 + 經度×40/15(東經為正),y = 140 − 緯度×40/15(北緯為正)。★ 在 (120,220) = 西經 45°、南緯 30° */
+const CHART_SVG = (() => {
+  const pt = (lon, lat) => `${(240 + lon * 40 / 15).toFixed(1)},${(140 - lat * 40 / 15).toFixed(1)}`;
+  const poly = (list) => list.map(([a, b]) => pt(a, b)).join(" ");
+  const SAM = [[-77, 8], [-72, 12], [-62, 10], [-50, 0], [-35, -5], [-39, -15], [-48, -26], [-51, -31], [-58, -38], [-65, -55], [-72, -50], [-73, -35], [-71, -18], [-81, -5], [-80, 0]];
+  const AFR = [[-17, 15], [-16, 21], [-10, 30], [-6, 36], [10, 37], [32, 31], [43, 12], [51, 11], [40, -15], [35, -25], [20, -35], [12, -17], [9, -1], [9, 4], [0, 5], [-8, 4], [-13, 8]];
+  return `<svg viewBox="0 0 400 300" width="300" role="img" aria-label="沒有經緯線的海圖,左邊緣和上邊緣各有一個刻痕,海上有一顆金色星號">
+  <rect width="400" height="300" fill="#d8e6e8"/>
+  <g fill="#e6d3a3" stroke="#7a5c2e" stroke-width="1.5" stroke-linejoin="round">
+    <polygon points="${poly(SAM)}"/><polygon points="${poly(AFR)}"/>
+  </g>
+  <path d="M0 140 h14 M240 0 v14" stroke="#7a1f1f" stroke-width="4"/>
+  <text x="18" y="136" font-size="13" fill="#7a1f1f" font-weight="700">赤道</text>
+  <text x="234" y="14" font-size="13" text-anchor="end" fill="#7a1f1f" font-weight="700">本初經線</text>
+  <polygon points="120,208 123.5,216.5 132,217 125.5,222.5 127.5,231 120,226.5 112.5,231 114.5,222.5 108,217 116.5,216.5" fill="#e0a800" stroke="#7a5c2e" stroke-width="1"/>
+  <g transform="translate(372 44)" fill="#3b2a14">
+    <polygon points="0,-26 7,0 -7,0"/><polygon points="0,26 7,0 -7,0" fill="none" stroke="#3b2a14" stroke-width="1.5"/>
+    <text x="0" y="-30" font-size="13" text-anchor="middle" font-weight="700">北</text>
+  </g>
+  <rect width="400" height="300" fill="none" stroke="#7a5c2e" stroke-width="4"/>
+</svg>`;
+})();
+
+/* 第 2 關:透明經緯格片(viewBox −130~130,與海圖同比例:40 單位 = 一格)。中心 (0,0) 是粗線交叉點 */
+const GRID_SVG = (() => {
+  let g = "";
+  [-120, -80, -40, 40, 80, 120].forEach(v => {
+    g += `<line x1="${v}" y1="-130" x2="${v}" y2="130"/><line x1="-130" y1="${v}" x2="130" y2="${v}"/>`;
+  });
+  let n = "";
+  [40, 80, 120].forEach((v, i) => {
+    const t = (i + 1) * 15;
+    n += `<text x="${v - 3}" y="-4" text-anchor="end">${t}</text><text x="${-v + 3}" y="-4">${t}</text>`;
+    n += `<text x="4" y="${v - 4}">${t}</text><text x="4" y="${-v - 4}">${t}</text>`;
+  });
+  return `<svg viewBox="-130 -130 260 260" role="img" aria-label="透明經緯格片">
+  <rect x="-130" y="-130" width="260" height="260" fill="rgba(255,255,255,.12)" stroke="#1d4e89" stroke-width="2"/>
+  <g stroke="#1d4e89" stroke-width="1.2" opacity=".85">${g}</g>
+  <g stroke="#1d4e89" stroke-width="4"><line x1="0" y1="-130" x2="0" y2="130"/><line x1="-130" y1="0" x2="130" y2="0"/></g>
+  <circle r="5" fill="#1d4e89"/>
+  <g font-size="14" fill="#1d4e89" font-weight="700">${n}</g>
+  <g font-size="9" fill="#1d4e89"><text x="-126" y="112">粗橫線對準赤道,</text><text x="-126" y="124">粗直線對準本初經線</text></g>
+</svg>`;
+})();
+
+/* 第 3 關:羅盤大廳地板(viewBox 300×300,每塊石板 60)。雕像在 C3 = 中央 */
+const FLOOR_SVG = (() => {
+  let tiles = "";
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    const name = "ABCDE"[c] + (r + 1);
+    tiles += `<rect x="${c * 60 + 2}" y="${r * 60 + 2}" width="56" height="56" rx="4" fill="var(--surface)" stroke="currentColor" stroke-width="1.5"/>`;
+    if (name !== "C3") tiles += `<text x="${c * 60 + 30}" y="${r * 60 + 36}" font-size="15" text-anchor="middle" fill="currentColor">${name}</text>`;
+  }
+  return `<svg viewBox="0 0 300 300" width="300" role="img" aria-label="5 乘 5 的石板地板,中央 C3 是地球儀雕像">${tiles}
+  <circle cx="150" cy="150" r="24" fill="var(--butter)" stroke="currentColor" stroke-width="2"/>
+  <text x="150" y="146" font-size="11" text-anchor="middle" fill="#3b2a14" font-weight="700">雕像</text>
+  <text x="150" y="160" font-size="9" text-anchor="middle" fill="#3b2a14">指北針座</text>
+</svg>`;
+})();
+
+/* 第 3 關:指北針(北指向畫面右方) */
+const COMPASS_SVG = `<svg viewBox="0 0 100 100" role="img" aria-label="指北針">
+  <circle cx="50" cy="50" r="46" fill="rgba(255,248,225,.92)" stroke="#8a6a2e" stroke-width="5"/>
+  <polygon points="88,50 50,43 50,57" fill="#b3261e"/>
+  <polygon points="12,50 50,43 50,57" fill="#6b6b6b"/>
+  <circle cx="50" cy="50" r="5" fill="#3b2a14"/>
+  <text x="74" y="36" font-size="15" text-anchor="middle" fill="#b3261e" font-weight="700">北</text>
+</svg>`;
+
+/* 第 4 關:港灣舊地圖(viewBox 400×300)。1 公分 = 40 單位:
+   燈塔 (60,110) → 港口 (300,110) 相距 240 = 6 公分;比例尺 (40,250)~(140,250) = 2.5 公分 = 5 公里 */
+const HARBOR_SVG = `<svg viewBox="0 0 400 300" width="300" role="img" aria-label="港灣舊地圖,有燈塔、港口和線段比例尺">
+  <rect width="400" height="300" fill="#d8e6e8"/>
+  <path d="M0 0 H110 C90 60 40 80 30 140 C20 190 0 200 0 210 Z" fill="#e6d3a3" stroke="#7a5c2e" stroke-width="1.5"/>
+  <path d="M400 0 V200 C360 190 330 150 320 120 C310 80 340 40 330 0 Z" fill="#e6d3a3" stroke="#7a5c2e" stroke-width="1.5"/>
+  <g fill="#3b2a14" font-weight="700" font-size="14" text-anchor="middle">
+    <circle cx="60" cy="110" r="5"/><text x="60" y="72">燈塔</text>
+    <circle cx="300" cy="110" r="5"/><text x="300" y="92">港口</text>
+  </g>
+  <path d="M54 104 l6 -26 l6 26 z" fill="#b3261e" opacity=".5"/>
+  <g>
+    <rect x="40" y="242" width="50" height="8" fill="#3b2a14"/><rect x="90" y="242" width="50" height="8" fill="#fff" stroke="#3b2a14" stroke-width="1.5"/>
+    <text x="40" y="236" font-size="12" text-anchor="middle" fill="#3b2a14" font-weight="700">0</text>
+    <text x="140" y="236" font-size="12" text-anchor="middle" fill="#3b2a14" font-weight="700">5 公里</text>
+  </g>
+  <rect width="400" height="300" fill="none" stroke="#7a5c2e" stroke-width="4"/>
+</svg>`;
+
+/* 第 4 關:黃銅直尺(viewBox 340×44,0 刻度在 x=10,每公分 40 單位,刻度在上緣) */
+const RULER_SVG = (() => {
+  let t = "";
+  for (let k = 0; k <= 16; k++) {
+    const x = 10 + k * 20, whole = k % 2 === 0;
+    t += `<line x1="${x}" y1="0" x2="${x}" y2="${whole ? 16 : 9}"/>`;
+    if (whole) t += `<text x="${x}" y="32" stroke="none">${k / 2}</text>`;
+  }
+  return `<svg viewBox="0 0 340 44" role="img" aria-label="黃銅直尺,單位公分">
+  <rect x="0" y="0" width="340" height="44" rx="3" fill="rgba(214,170,80,.6)" stroke="#6b4f1d" stroke-width="2"/>
+  <g stroke="#3b2a14" stroke-width="1.5" font-size="12" text-anchor="middle" fill="#3b2a14" font-weight="700">${t}</g>
+  <text x="330" y="40" font-size="9" text-anchor="end" fill="#3b2a14">公分</text>
+</svg>`;
+})();
+
+/* 第 5 關:無線電與懷錶正面(晚上 9:00) */
+const RADIO_SVG = `<svg viewBox="0 0 320 150" width="300" role="img" aria-label="老式無線電,旁邊是懷錶正面,指著 9 點整">
+  <rect x="10" y="30" width="170" height="100" rx="10" fill="#7a5230" stroke="currentColor" stroke-width="2"/>
+  <rect x="24" y="44" width="80" height="50" rx="4" fill="#e6d3a3"/>
+  <g stroke="#3b2a14" stroke-width="1.5">${[0, 1, 2, 3, 4, 5, 6].map(i => `<line x1="${30 + i * 11}" y1="56" x2="${30 + i * 11}" y2="${i % 2 ? 62 : 66}"/>`).join("")}</g>
+  <circle cx="140" cy="64" r="18" fill="#3b2a14" stroke="#c9a14a" stroke-width="3"/>
+  <circle cx="60" cy="112" r="7" fill="#555"/><text x="76" y="116" font-size="11" fill="#fff">訊號燈</text>
+  <line x1="150" y1="30" x2="170" y2="4" stroke="currentColor" stroke-width="3"/>
+  <g transform="translate(250 78)">
+    <circle r="54" fill="#fff8e1" stroke="#c9a14a" stroke-width="6"/>
+    ${Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6; return `<line x1="${(44 * Math.sin(a)).toFixed(1)}" y1="${(-44 * Math.cos(a)).toFixed(1)}" x2="${(50 * Math.sin(a)).toFixed(1)}" y2="${(-50 * Math.cos(a)).toFixed(1)}" stroke="#3b2a14" stroke-width="2"/>`; }).join("")}
+    <text y="22" font-size="12" text-anchor="middle" fill="#3b2a14" font-weight="700">台灣</text>
+    <text y="38" font-size="10" text-anchor="middle" fill="#3b2a14">10/14 晚上</text>
+    <line x1="0" y1="0" x2="-28" y2="0" stroke="#3b2a14" stroke-width="5" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="0" y2="-40" stroke="#3b2a14" stroke-width="3" stroke-linecap="round"/>
+    <circle r="4" fill="#3b2a14"/>
+  </g>
+</svg>`;
+
+/* ---------- 常見錯誤的判斷規則(用到的小工具) ---------- */
+const GEO_LAT_NAMES = ["赤道", "北回歸線", "南回歸線", "北極圈"];
+const GEO_LON_NAMES = ["本初經線", "180°經線"];
+
+/* =========================================================
+   第一部分:關卡資料與設定
+   ========================================================= */
+const LEVELS = [
+  { type: "assign", title: "第 1 關:地球儀展示廳",
+    scene: "展示廳中央有一座大地球儀,上面畫了五條發光的線。旁邊的木架上掛著六塊黃銅名牌,地球儀上有五個空的名牌插槽。",
+    clues: [
+      { title: "地球儀上的五條線", text: "最上方是北極,最下方是南極。\n線 A:橫向的圓圈,在北極和南極正中間,是所有橫向圓圈裡最長的,標著 0°。\n線 B:橫向的圓圈,在線 A 和北極之間、比較靠近線 A,標著 23.5°。\n線 C:從北極畫到南極的半圓,經過格林威治天文台,標著 0°。\n線 D:從北極畫到南極的虛線半圓,畫在地球儀的背面,沒有標數字。\n線 E:橫向的小圓圈,很靠近北極,標著 66.5°。" },
+      { title: "底座上的銘文", text: "「線 C 與線 D 合起來,剛好繞地球一整圈。」" },
+      { title: "牆上的說明卡", text: "緯線:與赤道平行的圓圈,度數從赤道向南、向北增加,最大 90°。\n經線:連接南北兩極的半圓,度數從本初經線向東、向西增加,最大 180°。" }
+    ],
+    question: "把黃銅名牌拖到地球儀上對應的線(插槽)。五個插槽各放一塊,會有一塊用不到。",
+    slots: ["線 A", "線 B", "線 C", "線 D", "線 E"],
+    items: ["赤道", "北回歸線", "南回歸線", "北極圈", "本初經線", "180°經線"],
+    answer: ["赤道", "北回歸線", "本初經線", "180°經線", "北極圈"],
+    board: GLOBE_SVG,
+    slotPos: [[10.9, 50], [86, 34.8], [60, 72.7], [38.2, 62.1], [28.4, 14.5]],   // 依 GLOBE_SVG 的 viewBox 440×330 換算:A(48,165) B(378,115) C(264,240) D(168,205) E(125,48)
+    confirmLabel: "轉動地球儀",
+    mistakeOf: (g) => {
+      const s = g.split("、");
+      if (s[0] === "本初經線" || s[2] === "赤道") return "線 A 和線 C 都標 0°,但線 A 是橫向的圓圈(緯線),線 C 是連接兩極的半圓(經線)。0° 緯線是赤道,0° 經線才是本初經線,它們是兩條不同的線喔!";
+      if ([0, 1, 4].some(i => GEO_LON_NAMES.includes(s[i])) || [2, 3].some(i => GEO_LAT_NAMES.includes(s[i])))
+        return "先分類:A、B、E 是橫向的圓圈(緯線);C、D 是從北極連到南極的半圓(經線)。經線的名牌只能放在 C、D。";
+      if (s[1] === "南回歸線") return "線 B 標 23.5°,但它在赤道和「北極」之間——在赤道北邊的是北回歸線,南回歸線在赤道和南極之間。";
+      return "";
+    },
+    hints: [
+      "先把五條線分成兩組:哪些是橫的圓圈?哪些是從北極連到南極的?看看牆上的說明卡。",
+      "A 和 C 都標 0°,但一條是緯線、一條是經線;B 在赤道的北邊還是南邊?D 和 C 合起來剛好一圈,0° 的正對面是幾度?",
+      "A 赤道、B 北回歸線、C 本初經線、D 180°經線、E 北極圈(南回歸線用不到)。"
+    ],
+    success: "地球儀緩緩轉動,底座「喀」地彈開一個小抽屜,裡面是一片畫滿格子的透明塑膠片。",
+    reward: ["grid"],
+    explanation: "緯線是和赤道平行的圓圈,赤道最長,越靠近兩極越短;經線是連接南北極的半圓,每一條都一樣長(經線不像緯線有長有短)。\n\n本初經線(0°)和 180°經線合起來是一個繞地球一圈的大圓,把地球分成東、西半球;赤道把地球分成南、北半球。回歸線約在南北緯 23.5°,極圈約在南北緯 66.5°(精確數值約 23.4°、66.6°,課本取近似值)。" },
+
+  { type: "dial", title: "第 2 關:海圖桌",
+    scene: "一張大海圖攤在桌上,上面畫著海岸線和一顆金色的★,卻一條經緯線都沒有。桌邊有一個鐵盒,盒蓋上有四個轉盤。",
+    clues: [
+      { title: "海圖桌", needs: "grid", reveal: "拿出 🔲 透明經緯格片,疊到海圖上",
+        text: "海圖右上角的方位圖示:箭頭朝上,寫著「北」。左邊緣的刻痕寫「赤道」,上邊緣的刻痕寫「本初經線」。\n格片上每一條細線旁的數字是 15、30、45(四個方向都一樣,沒有寫東西南北)。",
+        align: { base: CHART_SVG, overlay: GRID_SVG, start: [38, 62], target: [60, 46.67], size: 65, tolerance: 4,
+                 tip: "拖動格片(也可以點一下格片,再用方向鍵移動)。照格片角落的說明,把粗線對準兩個刻痕。",
+                 alignedText: "「喀」——格片卡進海圖桌的定位槽。粗橫線對準了赤道的刻痕,粗直線對準了本初經線的刻痕,★ 剛好落在格線的交叉點上。" } },
+      { title: "盒蓋上的字", text: "「寶藏的經度、緯度,就是開盒的密碼。」" }
+    ],
+    question: "轉動鐵盒上的四個轉盤:經度組(東經 / 西經 + 度數)、緯度組(北緯 / 南緯 + 度數)。",
+    answer: ["西經", "45°", "南緯", "30°"],
+    wheels: [["東經", "西經"], ["0°", "15°", "30°", "45°", "60°", "75°", "90°", "105°", "120°", "135°", "150°", "165°", "180°"],
+             ["北緯", "南緯"], ["0°", "15°", "30°", "45°", "60°", "75°", "90°"]],
+    sep: ["", " ", ""],
+    labels: ["東 / 西", "經度", "北 / 南", "緯度"],
+    confirmLabel: "打開鐵盒",
+    mistakeOf: (g) => {
+      const m = g.replace(/\s/g, "").match(/(東經|西經)(\d+)°(北緯|南緯)(\d+)°/);
+      if (!m) return "";
+      const [, ew, lon, ns, lat] = m;
+      if (lon === "30" && lat === "45") return "經度和緯度對調了!經度要看直線(經線)離粗直線幾條,緯度要看橫線(緯線)離粗橫線幾條。";
+      if (lon === "30" || lat === "15") return "粗線本身是 0°,不算第 1 條。從粗線往外,第 1 條細線才是 15°。";
+      if (ew === "東經") return "方位圖示說上方是北,那左邊是西還是東?★ 在本初經線的左邊。經度不是一律寫東經喔。";
+      if (ns === "北緯") return "數字讀對了,但 ★ 在赤道的上面還是下面?下方是南,在赤道以南要寫南緯。";
+      return "";
+    },
+    hints: [
+      "先把格片疊上海圖並對齊。格片上的粗線分別是 0° 經線和 0° 緯線;看 ★ 在它們的哪一邊。",
+      "方位圖示告訴你上方是北,那左邊是東還是西?下方是北還是南?第一條細線是 15°,不是 0°。",
+      "經度轉到「西經 45°」,緯度轉到「南緯 30°」。"
+    ],
+    success: "鐵盒「喀」一聲打開,裡面有一個黃銅指北針,底下壓著一張泛黃的日誌頁。",
+    reward: ["compass", "log"],
+    explanation: "用經緯度表示的位置叫做「絕對位置」,地球上每一點都只有一組經緯度。\n\n讀經緯度一定要先找 0° 經線和赤道當基準:在本初經線以東是東經、以西是西經;在赤道以北是北緯、以南是南緯。經度看經線(直線),緯度看緯線(橫線),不要對調。\n\n日誌頁上寫著:「老船最後的位置:西經 45°、南緯 30°。記住這個位置,最後會用到。」" },
+
+  { type: "sequence", title: "第 3 關:羅盤大廳",
+    scene: "一間正方形大廳,地板是 5 × 5 共 25 塊石板,正中央是一座地球儀雕像。每塊石板都刻著編號。",
+    clues: [
+      { title: "大廳門口的告示", text: "「本大廳的地板圖,上方不一定是北方。」" },
+      { title: "館長的紙條", text: "「從雕像出發,依序走下面四段,每走完一段,就踩下你停住的那塊石板:\n1. 往正北走 2 步\n2. 往西南走 2 步\n3. 往東南走 1 步\n4. 往正南走 1 步」\n(走一步 = 走到相鄰的一格;斜著走一步 = 走到斜角相鄰的那一格。)" },
+      { title: "地板(從上往下看)", needs: "compass", reveal: "拿出 🧭 指北針,放到地板上",
+        text: "直行由左到右是 A~E,橫列由上到下是 1~5。雕像的底座上有一個圓形的指北針座。",
+        align: { base: FLOOR_SVG, overlay: COMPASS_SVG, start: [86, 86], target: [50, 50], size: 22, tolerance: 6,
+                 tip: "把指北針拖到雕像底座的指北針座上(也可以點一下指北針,再用方向鍵移動)。",
+                 alignedText: "指北針穩穩放進了指北針座,指針晃了幾下,停住了。看看紅色的指針指向哪裡。" } }
+    ],
+    question: "依序踩下四塊石板。踩錯任何一塊,石板會全部熄滅,要從頭來。",
+    buttons: ["A1", "B1", "C1", "D1", "E1", "A2", "B2", "C2", "D2", "E2", "A3", "B3", "C3", "D3", "E3",
+              "A4", "B4", "C4", "D4", "E4", "A5", "B5", "C5", "D5", "E5"],
+    cols: 5, blocked: ["C3"], strict: true,
+    answer: ["E3", "C1", "B2", "A2"],
+    mistakes: {
+      "C1": "你把畫面的上方當成北方了!門口的告示說「上方不一定是北方」。先把指北針放到地板上,看看北方在哪裡。",
+      "E3→D2": "第一步對了!不過西南要走 2 步,途中經過的石板不用踩,只踩停住的那一塊。",
+      "E3→C5": "北方找對了,但西南走錯方向。面向北方(右邊)站著,右手邊是東、左手邊是西;西南是「西」和「南」的中間。"
+    },
+    mistakeOf: (g) => {
+      if (g.replace(/\s/g, "") === "E3→C1→B2→A2") return "";
+      const n = g.split("→").length;      // strict:given 停在按錯的那一步,所以步數 = 錯在第幾步
+      return ["",
+        "第一步就錯了:先用指北針確認北方在畫面的哪一邊,再從雕像往北走 2 步。",
+        "往北的那一步對了。西南是「西」和「南」的中間:先想清楚北在右邊時,西和南各在哪一邊。",
+        "東南是「東」和「南」的中間。北在右邊時,東在哪一邊?南在哪一邊?",
+        "最後一步往正南:北在右邊,正南就在它的對面。"][n] || "";
+    },
+    hints: [
+      "先把指北針放到地板上,這間大廳的北方不在上面。",
+      "北在右邊。想像你面向右邊站著:你的右手邊是東、背後是南、左手邊是西。斜的方向就是兩個方向的中間。",
+      "依序踩 E3、C1、B2、A2。"
+    ],
+    success: "第四塊石板亮起後,雕像底座緩緩滑開,露出一把黃銅直尺。",
+    reward: ["ruler"],
+    explanation: "地圖沒有畫指北方向時,習慣上以上方為北;但只要有指北針或方位標示,就要以它為準。\n\n「在雕像的北方 2 步」這種以某個參考點來描述位置的方式,叫做「相對位置」;同一個地點換一個參考點,相對位置的描述就會改變,而經緯度這種絕對位置則不會變。" },
+
+  { type: "passcode", title: "第 4 關:港務室",
+    scene: "牆上掛著一張港灣舊地圖,上面有燈塔和港口。地圖下方有一個密碼鎖,鎖旁貼著一張空白的船票。",
+    clues: [
+      { title: "船票", text: "「航程(公里):____。本船由燈塔直線駛向港口。」\n燈塔和港口之間沒有任何障礙物。" },
+      { title: "用直尺量比例尺", needs: "ruler", reveal: "拿出 📏 黃銅直尺,量地圖右下角的比例尺",
+        align: { base: HARBOR_SVG, overlay: RULER_SVG, start: [50, 20], target: [50, 90.67], size: 85, tolerance: 4,
+                 tip: "把直尺拖到比例尺下面,讓 0 的刻度對準比例尺的左端(也可以點一下直尺,再用方向鍵移動)。",
+                 alignedText: "直尺的 0 對準了比例尺的左端。看看比例尺的右端(5 公里)對到直尺的幾公分。" } },
+      { title: "用直尺量燈塔到港口", needs: "ruler", reveal: "用 📏 黃銅直尺量燈塔到港口",
+        align: { base: HARBOR_SVG, overlay: RULER_SVG, start: [50, 82], target: [55, 44], size: 85, tolerance: 4,
+                 tip: "把直尺拖到燈塔和港口下面,讓 0 的刻度對準燈塔(也可以點一下直尺,再用方向鍵移動)。",
+                 alignedText: "直尺的 0 對準了燈塔。看看港口對到直尺的幾公分。" } }
+    ],
+    question: "在密碼鎖輸入航程的公里數(只能輸入數字,單位已固定為公里)。",
+    answer: "12", slots: 4,
+    mistakes: {
+      "30": "你是不是把「5 公里」當成「1 公分代表 5 公里」?先量比例尺本身有幾公分長。",
+      "6": "6 是圖上距離(公分),還要用比例尺換算成實際距離(公里)喔。",
+      "24": "你是不是算了 6 ÷ 2.5 = 2.4?那是「6 公分裡有幾段比例尺」,每一段代表 5 公里,還要再乘上去。"
+    },
+    hints: [
+      "先用直尺量比例尺,看圖上幾公分代表實際幾公里;再量燈塔到港口。",
+      "比例尺 2.5 公分代表 5 公里,那 1 公分代表幾公里?",
+      "1 公分 = 2 公里,燈塔到港口 6 公分 = 12 公里,輸入 12。"
+    ],
+    success: "密碼鎖打開,船票蓋上「准予出航」的章,抽屜裡滾出一只雙面懷錶。",
+    reward: ["watch"],
+    explanation: "比例尺表示圖上距離與實際距離的比例。這張圖 2.5 公分代表 5 公里,所以 1 公分代表 2 公里,也就是 1 公分代表 200,000 公分,寫成數字比例尺就是 1:200,000。\n\n常見的錯:用 6 ÷ 2.5 = 2.4,算出的是「6 公分是幾段比例尺」,忘了再乘上每段的 5 公里。\n\n線段比例尺的好處是地圖放大或縮小時會跟著一起縮放,不會失準。" },
+
+  { type: "dial", title: "第 5 關:無線電室",
+    scene: "一台老式無線電放在桌上,旁邊有一個可以放懷錶的凹槽。只要懷錶背面的時間正確,訊號燈就會亮起。",
+    art: RADIO_SVG,
+    needs: "watch", needsLabel: "把 ⌚ 雙面懷錶放進無線電旁的凹槽",
+    clues: [
+      { title: "無線電上的紙條", text: "「台灣時間今晚 9:00 發出訊號。請把懷錶背面調成老船所在位置的當地標準時間,訊號才會對上。」" },
+      { title: "牆上的時區說明卡", text: "地球自轉一圈 360°,需要 24 小時,所以經度每差 15°,時間差 1 小時。\n以本初經線為中央經線的時區是 0 時區;向東每 15° 時間加 1 小時,向西每 15° 時間減 1 小時。\n台灣採用東經 120° 的時間作為標準時間。" },
+      { title: "航海日誌第一頁", needs: "log", reveal: "翻開 📜 航海日誌第一頁",
+        text: "「老船最後的位置:西經 45°、南緯 30°。記住這個位置,最後會用到。」" },
+      { title: "懷錶正面", text: "「台灣 10 月 14 日 晚上 9:00」" }
+    ],
+    question: "轉動懷錶背面的時針、分針,再把切換鈕撥到「上午」或「下午」,按下無線電的發送鍵。",
+    answer: ["上午", "10", "00"],
+    wheels: [["下午", "上午"], ["12", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"], ["00", "15", "30", "45"]],
+    sep: ["", ":"],
+    labels: ["上午 / 下午", "時", "分"],
+    confirmLabel: "按下發送鍵",
+    mistakes: {
+      "上午8:00": "時差算對了,但方向反了!地球由西向東轉,東邊先天亮,所以「東早西晚」。老船在台灣的西邊,時間比台灣晚,要用減的。",
+      "下午4:00": "你用 120 − 45 = 75° 來算嗎?台灣在東經、老船在西經,中間隔著本初經線,經度差要相加。",
+      "上午2:00": "你用 120 − 45 = 75° 算時差,而且又往後加。一個東經、一個西經,經度差要相加;老船在西邊,時間要往回減。",
+      "下午6:00": "只差 3 小時是只算了老船離本初經線多遠。台灣也離本初經線 120°(8 小時),兩段都要算進去。",
+      "下午10:00": "時間 10:00 對了,但這是 12 小時制的懷錶:21:00 減 11 小時是早上還是晚上?"
+    },
+    hints: [
+      "先翻開航海日誌找到老船的經度,再分別算出台灣和老船各在第幾時區。說明卡告訴你每 15° 差 1 小時。",
+      "台灣是 +8 時區、老船是 −3 時區,兩地差幾小時?老船在西邊,時間比台灣早還是晚?",
+      "相差 11 小時,老船比台灣晚:21:00 − 11 = 10:00,把指針調到 10:00、切換到上午。"
+    ],
+    success: "訊號燈亮起,無線電傳來一陣長長的回音,遠方的紀念浮標在雷達螢幕上閃了一下。",
+    explanation: "地球由西向東自轉,東邊的地方先看到太陽,所以「東早西晚」;經度每 15° 相差 1 小時。\n\n台灣東經 120° → +8 時區;老船西經 45° → −3 時區;相差 11 小時。計算時差時,同在東經或同在西經就把經度相減,一個東經、一個西經就把經度相加(120° + 45° = 165°,165 ÷ 15 = 11)。\n\n這裡用的是「理論時區」,真實世界的時區界線會配合國界調整,有些國家還會實施夏令時間。" }
+];
+
+const ITEMS = {
+  grid:    { name: "透明經緯格片", icon: "🔲", desc: "畫滿等距格線的透明片,中央的粗線交叉處有一個小圓點" },
+  compass: { name: "指北針", icon: "🧭", desc: "黃銅指北針,紅色指針指向北方" },
+  log:     { name: "航海日誌第一頁", icon: "📜", desc: "記著老船最後的位置,最後會用到" },
+  ruler:   { name: "黃銅直尺", icon: "📏", desc: "刻著公分刻度的直尺,可以拿來量地圖" },
+  watch:   { name: "雙面懷錶", icon: "⌚", desc: "正面是台灣時間,背面的指針可以轉動" }
+};
+
+const GAME = {
+  title: "經緯密室:老館長的航海日誌",
+  desc: "解開五道地圖機關:經緯線、經緯度、方位、比例尺、時區。",
+  theme: "parchment",
+  icon: "🧭",
+  story: "你是「環球地圖社」的新社員,週末來到老地圖館幫忙整理收藏。退休的老館長留下一張紙條:他年輕時的航海日誌被鎖在館內五道機關後面,只有懂地圖的人才拿得到。\n\n日誌裡記著一艘失聯老船最後的位置,今晚 9 點(台灣時間)館方會用老無線電對那艘船的紀念浮標發出最後一次訊號。距離閉館鎖門只剩 40 分鐘,你必須在那之前打開全部機關,把訊號對準。",
+  ending: "訊號送出的瞬間,航海日誌最後一頁慢慢浮現館長的字跡:「能讀懂經緯度、方位、比例尺和時區的人,走到地球哪裡都不會迷路。」\n\n閉館鐘聲響起時,你把日誌放回展示櫃,成為地圖館的正式小館員。",
+  failStory: "閉館鐘聲響起,館內的燈一盞盞熄滅,無線電錯過了晚上 9 點的發送時間;老館長的日誌,只好等下一位冒險者來打開了。",
+  endTitle: "訊號送出!",
+  timeLimit: 2400,       // 故事寫「只剩 40 分鐘」
+  lives: 0,
+  failTo: "level",       // 超過 10 分鐘的遊戲,失敗後從這一關重來
+  shuffleChoices: true,
+  showStars: true,
+  sound: true,
+  teacherNotes: "年級 / 單元:國中七年級社會(地理)・位置與地圖\n\n對應學習內容:地 Aa-Ⅳ-1 全球經緯度座標系統;地 Aa-Ⅳ-2 全球海陸分布(位置描述);地 Ab-Ⅳ-1 地圖要素(方位、比例尺);地 Aa-Ⅳ-4 時區與時差。\n\n學習目標:\n1. 分辨經線與緯線,說出赤道、回歸線、極圈、本初經線、180°經線的位置與特徵。\n2. 用經緯網格讀出一點的經緯度,正確判斷東西經、南北緯。\n3. 依指北方向判讀八方位,用相對位置描述路線(不預設上方是北方)。\n4. 用線段比例尺把圖上距離換算成實際距離,並換算成數字比例尺。\n5. 用「經度每 15° 相差 1 小時」推算時區與時差,判斷東早西晚。\n\n帶領建議:\n1. 課前先確認學生能說出經線、緯線的定義,以及東經 / 西經、北緯 / 南緯的判斷基準;時區若尚未教過,可先只玩前四關,或先講一次時區說明卡。\n2. 第 3 關後,拿一張「上方不是北」的地圖(例如旋轉過的校園平面圖),讓學生互相出題,用八方位描述路線。\n3. 第 4 關可延伸討論大比例尺、小比例尺:1:200,000 和 1:5,000,000 哪一張比較詳細?\n4. 玩完後請學生用台灣與一個熟悉的城市練習算時差,說明東早西晚的原因;討論為什麼實際的時區界線不是筆直的。\n5. 分組遊玩時,讓每組輪流由不同人操作機關、其他人驗算,玩完說出自己踩過的錯誤做課堂總結。\n\n操作方式:名牌、格片、指北針、直尺都可以用滑鼠或手指拖曳;也可以點一下再用方向鍵移動。格片、直尺對準位置時會自動吸附固定。\n\n和原腳本的差異:\n・限時 40 分鐘(依故事);時間到從失敗的那一關重來。\n・第 3 關的指北針做成「放到地板上」的線索卡,不擋住石板,學生不放指北針也能先踩,才有機會犯「上方就是北」的錯並立刻得到回饋。\n・第 4 關密碼鎖不能輸入小數點,「2.4」這個錯誤改寫在解說裡;學生若輸入 24 也會得到對應的提醒。\n・第 5 關常見錯誤「上午 4:00」依計算(21:00 − 5 小時)更正為「下午 4:00」。"
+};
+
+/* =========================================================
+   第二部分:題型與規則(只用內建題型)
+   ========================================================= */
+const LEVEL_TYPES = {};
+
+/* 結算多顯示「剩餘時間」 */
+function summaryRows(info) {
+  return [
+    ["館員", info.playerName],
+    ["解開機關", `${info.levelsPassed} / ${info.totalLevels}`],
+    ["試錯次數", String(info.wrongCount)],
+    ["看了幾層提示", String(info.hintsUsed)],
+    ["獲得星星", `${info.totalStars} / ${info.totalLevels * 3}`],
+    ["剩餘時間", `${Math.floor(info.timeLeft / 60)} 分 ${info.timeLeft % 60} 秒`]
+  ];
+}
+/* ===== RULES-PACK:END ===== */
+</script>
+
+<script>
+
+/* =========================================================
+   第三部分:遊戲流程(引擎)—— 通常不需要修改
+   引擎負責:關卡狀態機、進度、愛心、倒數、星星、線索、道具、提示、音效、存檔與續玩、結算、上傳成績。
+   每一關的作答畫面由「題型」負責(內建十一種,可在第二部分新增)。
+   ========================================================= */
+
+/* 遊戲狀態(不要改既有欄位名稱,底下的函式都依賴這些欄位) */
+let state = {
+  currentLevel: 0,
+  correctCount: 0,
+  wrongCount: 0,
+  startTime: null,
+  playerName: "",
+  lives: 0,        // 剩幾顆愛心(GAME.lives 大於 0 時才有意義)
+  levelWrong: 0,   // 目前這一關答錯幾次(給星星用)
+  stars: [],       // 每個已通過的關卡拿到幾顆星
+  items: [],       // 已經拿到的道具 id
+  hintsUsed: 0,    // 整場看了幾層提示
+  levelHints: 0,   // 目前這一關看了幾層提示
+  timeLeft: 0      // 倒數剩幾秒(GAME.timeLimit 大於 0 時才有意義)
+};
+
+const el = (id) => document.getElementById(id);
+const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+const isText = (s) => typeof s === "string" && !!s.trim();
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+const ITEM_DEFS = (typeof ITEMS !== "undefined" && ITEMS) ? ITEMS : {};
+const THEMES = ["cute", "warm", "parchment", "scifi", "terminal"];
+const hintsOf = (level) => (Array.isArray(level.hints) && level.hints.length) ? level.hints : (level.hint ? [level.hint] : []);
+const itemLabel = (id) => { const it = ITEM_DEFS[id] || {}; return `${it.icon ? it.icon + " " : ""}${it.name || id}`; };
+
+/* ---------- 規則的預設版本 ----------
+   第二部分沒有寫某個函式時,引擎改用這裡的版本。引擎一律透過 rule("名稱", ...參數) 呼叫 */
+const DEFAULT_RULES = {
+  levelStars(wrongTries, level, hintsUsed) {
+    const n = wrongTries + Math.max(0, (hintsUsed || 0) - 1);
+    return n === 0 ? 3 : n === 1 ? 2 : 1;
+  },
+  summaryRows(info) {
+    const rows = [["玩家", info.playerName], ["通過關卡", `${info.levelsPassed} / ${info.totalLevels}`], ["答錯次數", String(info.wrongCount)]];
+    if (LEVELS.some(lv => hintsOf(lv).length > 1)) rows.push(["看了幾層提示", String(info.hintsUsed)]);
+    if (GAME.showStars) rows.push(["獲得星星", `${info.totalStars} / ${info.totalLevels * 3}`]);
+    rows.push(["花費時間", `${info.durationSec} 秒`]);
+    return rows;
+  },
+  validateRules() { return { errors: [], warnings: [] }; }
+};
+function rule(name, ...args) {
+  const fn = typeof window[name] === "function" ? window[name] : DEFAULT_RULES[name];
+  return fn(...args);
+}
+
+/* ---------- 音效(Web Audio 合成,不用音檔)與浮動訊息 ---------- */
+let audioCtx = null;
+let soundOn = GAME.sound !== false;
+function tone(freq, dur = 0.15, type = "sine", vol = 0.08, delay = 0) {
+  if (!soundOn) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    audioCtx = audioCtx || new AC();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t = audioCtx.currentTime + delay, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + dur);
+  } catch (e) { /* 沒有聲音不影響遊戲 */ }
+}
+/* 每個音效是一串 [頻率, 秒數, 延遲, 波形] */
+const SFX = {
+  click: [[700, 0.05]],
+  right: [[523, 0.15], [659, 0.15, 0.1], [784, 0.3, 0.2]],
+  wrong: [[180, 0.2, 0, "sawtooth"], [140, 0.25, 0.15, "sawtooth"]],
+  item:  [[880, 0.1], [1175, 0.25, 0.08]],
+  win:   [[523, 0.15], [659, 0.15, 0.12], [784, 0.15, 0.24], [1047, 0.5, 0.36]],
+  fail:  [[300, 0.3, 0, "triangle"], [220, 0.3, 0.25, "triangle"], [150, 0.6, 0.5, "triangle"]]
+};
+function sfx(name) { (SFX[name] || []).forEach(([f, d, delay, type]) => tone(f, d, type || "sine", 0.08, delay || 0)); }
+function toast(msg) {
+  const t = mk("div", "toast", msg);
+  t.setAttribute("role", "status");
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+/* ---------- 內建題型 ---------- */
+const confirmBtn = (lv) => mk("button", "btn-primary btn-confirm", (lv && lv.confirmLabel) || "✓ 確認");
+const isNum = (n) => typeof n === "number" && Number.isFinite(n);
+
+/* 轉輪鎖:把答案拆成每個轉輪的答案,並決定每個轉輪有哪些選項 */
+function dialParts(lv) {
+  const ans = Array.isArray(lv.answer) ? lv.answer.map(String) : String(lv.answer).split("");
+  const preset = ans.every(a => /^[0-9]$/.test(a)) ? "0123456789".split("")
+    : ans.every(a => /^[A-Z]$/.test(a)) ? "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("") : null;
+  const w = lv.wheels;
+  const wheels = ans.map((_, i) => !Array.isArray(w) ? preset : (Array.isArray(w[0]) ? w[i] : w));
+  return { ans, wheels: wheels.map(o => Array.isArray(o) ? o.map(String) : o) };
+}
+/* 轉輪之間的分隔字:sep 是字串時每兩個轉輪之間都放;是陣列時 sep[0] 放在第 1、2 個轉輪之間… */
+const sepAt = (lv, i) => Array.isArray(lv.sep) ? String(lv.sep[i - 1] || "") : (lv.sep || "");
+/* 玩家轉出來的樣子(例如 "上午10:00"),給 mistakes 比對 */
+const dialKey = (lv, vals) => vals.map((v, i) => (i ? sepAt(lv, i) : "") + v).join("");
+/* 計數、滑桿共用:數值範圍 */
+function rangeOf(lv, defMax) {
+  const min = isNum(lv.min) ? lv.min : 0, max = isNum(lv.max) ? lv.max : defMax, step = isNum(lv.step) ? lv.step : 1;
+  return { min, max, step, start: isNum(lv.start) ? lv.start : min };
+}
+function validateRange(lv, defMax) {
+  if (!isNum(lv.answer)) return ["answer 要是數字(不要加引號)"];
+  const { min, max, step, start } = rangeOf(lv, defMax), e = [];
+  if (!(min < max)) e.push("min 要比 max 小");
+  if (!(step > 0)) e.push("step 要大於 0");
+  if (e.length) return e;
+  if (lv.answer < min || lv.answer > max) e.push(`answer(${lv.answer})要在 ${min} 到 ${max} 之間`);
+  if (start < min || start > max) e.push(`start(${start})要在 ${min} 到 ${max} 之間`);
+  const off = Math.abs((lv.answer - start) / step);
+  if (!(lv.tolerance > 0) && Math.abs(off - Math.round(off)) > 1e-9) e.push(`從 ${start} 每次加減 ${step},到不了 answer(${lv.answer})`);
+  return e.length ? e : { errors: [], warnings: start === lv.answer ? ["一開始的數值就是答案,用 start 換一個起點"] : [] };
+}
+const fmtNum = (n) => String(Math.round(n * 1000) / 1000);
+
+/* 旋轉水管共用:方向 0 上、1 右、2 下、3 左。沒轉的時候 I 開口是上下、L 是上右、T 是上右下 */
+const PIPE_SHAPES = { I: [0, 2], L: [0, 1], T: [0, 1, 2] };
+const PIPE_NAMES = { I: "直管", L: "彎管", T: "三通管" };
+const pipeOpenings = (kind, rot) => PIPE_SHAPES[kind].map(d => (d + rot) % 4);
+/* 照規則算水流到哪裡。回傳 { wet: 有水的格子, problem: 沒過關的原因("" = 過關) } */
+function pipeFlow(lv, rots) {
+  const n = lv.size, last = n * n - 1, wet = new Set();
+  const open = (i) => pipeOpenings(lv.tiles[i], rots[i] % 4);
+  let leak = false, out = false;
+  if (open(0).includes(0)) {
+    const todo = [0];
+    wet.add(0);
+    while (todo.length) {
+      const i = todo.pop();
+      open(i).forEach(d => {
+        if (i === 0 && d === 0) return;                    // 入口
+        if (i === last && d === 2) { out = true; return; } // 出口
+        const r = Math.floor(i / n) + [-1, 0, 1, 0][d], c = i % n + [0, 1, 0, -1][d];
+        if (r < 0 || c < 0 || r >= n || c >= n) { leak = true; return; }
+        const j = r * n + c;
+        if (!open(j).includes((d + 2) % 4)) { leak = true; return; }
+        if (!wet.has(j)) { wet.add(j); todo.push(j); }
+      });
+    }
+  }
+  const missed = (lv.valves || []).filter(i => !wet.has(i)).length;
+  const problem = (lv.shocks || []).some(i => wet.has(i)) ? "⚡ 接到危險的那一格了!"
+    : !wet.size ? "左上角的管子沒有接上入口"
+    : leak ? "有開口沒接上,漏出來了"
+    : !out ? "還沒接到右下角的出口"
+    : missed ? `還有 ${missed} 個閥門沒有接通` : "";
+  return { wet, problem };
+}
+
+/* ---------- 拖曳 ----------
+   dragToSlot:把物件拖到 .slot 上放下。原本「點物件、再點格子」的操作照樣可以用(鍵盤和自動試玩走這條)。
+   用 Pointer Events,滑鼠和手指都能拖;拖完放開時瀏覽器還會送一次 click,用 wasDrag() 忽略 */
+let dragJustEnded = 0;
+const wasDrag = () => Date.now() - dragJustEnded < 300;
+function dragToSlot(chip, onDrop) {
+  chip.style.touchAction = "none";
+  chip.classList.add("draggable");
+  chip.addEventListener("pointerdown", (e) => {
+    if (chip.disabled || e.button > 0) return;
+    const x0 = e.clientX, y0 = e.clientY;
+    let ghost = null, hover = null;
+    const slotAt = (x, y) => { const t = document.elementFromPoint && document.elementFromPoint(x, y); return t ? t.closest(".slot") : null; };
+    const move = (ev) => {
+      if (!ghost) {
+        if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 6) return;     // 移動不到 6px 當作點選
+        ghost = chip.cloneNode(true);
+        ghost.classList.add("drag-ghost");
+        document.body.appendChild(ghost);
+        chip.classList.add("dragging");
+      }
+      ev.preventDefault();
+      ghost.style.left = ev.clientX + "px";
+      ghost.style.top = ev.clientY + "px";
+      const s = slotAt(ev.clientX, ev.clientY);
+      if (s !== hover) { if (hover) hover.classList.remove("drop-hover"); hover = s; if (s) s.classList.add("drop-hover"); }
+    };
+    const end = (ev) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+      if (!ghost) return;
+      ghost.remove();
+      chip.classList.remove("dragging");
+      if (hover) hover.classList.remove("drop-hover");
+      dragJustEnded = Date.now();
+      const s = ev.type === "pointerup" ? slotAt(ev.clientX, ev.clientY) : null;
+      if (s && !s.disabled) onDrop(s);
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+  });
+}
+
+/* 疊圖 / 定位共用:base 是底圖,上面疊一個可以拖的圖層(overlay)。
+   位置一律用「底圖寬、高的百分比」,記的是圖層的中心點。鍵盤:點一下圖層後用方向鍵移動(Shift 一次 5%) */
+const isPos = (p) => Array.isArray(p) && p.length === 2 && p.every(v => isNum(v) && v >= 0 && v <= 100);
+const near = (p, t, tol) => Math.hypot(p[0] - t[0], p[1] - t[1]) <= tol;
+function validateAlign(a, prefix) {
+  const e = [];
+  if (!a || typeof a !== "object") return [`${prefix}要是物件`];
+  if (!isText(a.base)) e.push(`${prefix}base 要寫底圖的 HTML(通常是行內 SVG)`);
+  if (!isPos(a.target)) e.push(`${prefix}target 要是 [左右%, 上下%],0~100`);
+  if (a.start !== undefined && !isPos(a.start)) e.push(`${prefix}start 要是 [左右%, 上下%],0~100`);
+  if (a.size !== undefined && !(isNum(a.size) && a.size > 0 && a.size <= 100)) e.push(`${prefix}size 是圖層寬度佔底圖的百分比(1~100)`);
+  if (a.tolerance !== undefined && !(isNum(a.tolerance) && a.tolerance > 0)) e.push(`${prefix}tolerance 要是大於 0 的數字(百分比)`);
+  if (!e.length && near(a.start || [15, 15], a.target, a.tolerance || 4)) e.push(`${prefix}start 離 target 太近,一開始就對好了`);
+  return e;
+}
+function alignWidget(cfg, onMove) {
+  const box = mk("div", "align-box");
+  box.innerHTML = cfg.base;                       // 出題者自己寫的插圖
+  const ov = mk("div", "align-overlay");
+  ov.innerHTML = cfg.overlay || '<div class="align-pin">📍</div>';
+  ov.tabIndex = 0;
+  ov.setAttribute("role", "button");
+  ov.setAttribute("aria-label", `${cfg.label || "可以拖動的圖層"},用方向鍵移動`);
+  ov.style.width = (cfg.size || 30) + "%";
+  box.appendChild(ov);
+  const pos = (cfg.start || [15, 15]).slice();
+  let locked = false;
+  const clamp = (v) => Math.max(0, Math.min(100, v));
+  const place = () => { ov.style.left = pos[0] + "%"; ov.style.top = pos[1] + "%"; ov.dataset.x = pos[0]; ov.dataset.y = pos[1]; };
+  ov.addEventListener("pointerdown", (e) => {
+    if (locked || e.button > 0) return;
+    const r = box.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    e.preventDefault();
+    const x0 = e.clientX, y0 = e.clientY, p0 = pos.slice();
+    if (ov.setPointerCapture) ov.setPointerCapture(e.pointerId);
+    ov.classList.add("dragging");
+    const move = (ev) => { pos[0] = clamp(p0[0] + (ev.clientX - x0) / r.width * 100); pos[1] = clamp(p0[1] + (ev.clientY - y0) / r.height * 100); place(); };
+    const end = () => {
+      ov.removeEventListener("pointermove", move);
+      ov.removeEventListener("pointerup", end);
+      ov.removeEventListener("pointercancel", end);
+      ov.classList.remove("dragging");
+      onMove(pos);
+    };
+    ov.addEventListener("pointermove", move);
+    ov.addEventListener("pointerup", end);
+    ov.addEventListener("pointercancel", end);
+  });
+  ov.addEventListener("keydown", (e) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (locked || !d) return;
+    e.preventDefault();
+    const k = e.shiftKey ? 5 : 1;
+    pos[0] = clamp(pos[0] + d[0] * k);
+    pos[1] = clamp(pos[1] + d[1] * k);
+    place();
+    onMove(pos);
+  });
+  place();
+  return { box, ov, pos, place, lock(v) { locked = v; ov.classList.toggle("locked", v); ov.tabIndex = v ? -1 : 0; } };
+}
+
+const BUILTIN_TYPES = {
+
+  /* 定位:把標記拖到底圖上正確的位置(在地圖上指出某個經緯度、在圖上找出某個部位),按確認才檢查 */
+  locate: {
+    validate(lv) {
+      return validateAlign({ base: lv.base, target: lv.target, start: lv.start, size: lv.size, tolerance: lv.tolerance }, "");
+    },
+    render(lv, ctx) {
+      let touched = false;
+      const w = alignWidget({ base: lv.base, overlay: lv.marker, start: lv.start, size: lv.size || 12, label: lv.markerLabel || "標記" }, () => { touched = true; });
+      const ok = confirmBtn(lv);
+      ok.addEventListener("click", () => {
+        if (!touched) return;
+        w.lock(true);
+        ok.disabled = true;
+        const right = near(w.pos, lv.target, lv.tolerance || 5);
+        const given = `${Math.round(w.pos[0])},${Math.round(w.pos[1])}`;      // 給 mistakeOf 判斷放在哪一區
+        if (right) { w.pos[0] = lv.target[0]; w.pos[1] = lv.target[1]; w.place(); }
+        ctx.answer(right, given).then(() => { w.lock(false); ok.disabled = false; });
+      });
+      ctx.top.appendChild(w.box);
+      ctx.top.appendChild(mk("div", "align-tip", lv.tip || "拖動標記到正確的位置(也可以點一下標記,再用方向鍵移動)"));
+      ctx.top.appendChild(ok);
+    }
+  },
+
+  /* 選擇題 */
+  choice: {
+    validate(lv) {
+      const e = [];
+      if (!Array.isArray(lv.choices) || lv.choices.length < 2) {
+        e.push("choices 至少要有 2 個選項");
+      } else {
+        if (lv.choices.some(c => !isText(c))) e.push("choices 每個選項都要是不空白的文字");
+        if (!Number.isInteger(lv.answerIndex) || lv.answerIndex < 0 || lv.answerIndex >= lv.choices.length) {
+          e.push(`answerIndex 要是 0 到 ${lv.choices.length - 1} 的整數(從 0 開始算)`);
+        }
+      }
+      return e;
+    },
+    render(lv, ctx) {
+      const order = lv.choices.map((_, i) => i);
+      const shown = (lv.shuffle !== undefined ? lv.shuffle : GAME.shuffleChoices) !== false ? shuffle(order) : order;   // 存原本的索引,answerIndex 不用改
+      const btns = shown.map(i => mk("button", "choice", lv.choices[i]));
+      const lock = (v) => btns.forEach(b => { b.disabled = v; });
+      btns.forEach((b, k) => b.addEventListener("click", () => {
+        lock(true);
+        const ok = shown[k] === lv.answerIndex;
+        b.classList.add(ok ? "correct" : "wrong");
+        ctx.answer(ok, lv.choices[shown[k]]).then(() => { b.classList.remove("wrong"); lock(false); });
+      }));
+      btns.forEach(b => ctx.top.appendChild(b));
+    }
+  },
+
+  /* 複選題:要選的全部選到、不該選的都沒選,才算對 */
+  multi: {
+    validate(lv) {
+      const e = [];
+      if (!Array.isArray(lv.choices) || lv.choices.length < 2 || lv.choices.some(c => !isText(c))) return ["choices 至少要有 2 個不空白的選項"];
+      const a = lv.answerIndexes;
+      if (!Array.isArray(a) || !a.length) e.push("answerIndexes 要是陣列,寫出所有正確選項的索引(從 0 算),例如 [0, 2]");
+      else if (a.some(i => !Number.isInteger(i) || i < 0 || i >= lv.choices.length)) e.push(`answerIndexes 裡的每個數字要是 0 到 ${lv.choices.length - 1} 的整數`);
+      else if (new Set(a).size !== a.length) e.push("answerIndexes 裡有重複的索引");
+      return e;
+    },
+    render(lv, ctx) {
+      const order = lv.choices.map((_, i) => i);
+      const shown = (lv.shuffle !== undefined ? lv.shuffle : GAME.shuffleChoices) !== false ? shuffle(order) : order;
+      const picked = new Set();
+      const ok = confirmBtn(lv);
+      const btns = shown.map(i => {
+        const b = mk("button", "choice", lv.choices[i]);
+        b.setAttribute("aria-pressed", "false");
+        b.addEventListener("click", () => {
+          picked.has(i) ? picked.delete(i) : picked.add(i);
+          b.classList.toggle("picked", picked.has(i));
+          b.setAttribute("aria-pressed", String(picked.has(i)));
+        });
+        ctx.top.appendChild(b);
+        return b;
+      });
+      const lock = (v) => { btns.forEach(b => { b.disabled = v; }); ok.disabled = v; };
+      ok.addEventListener("click", () => {
+        if (!picked.size) return;
+        lock(true);
+        const right = picked.size === lv.answerIndexes.length && lv.answerIndexes.every(i => picked.has(i));
+        ctx.answer(right, lv.choices.filter((_, i) => picked.has(i)).join("、")).then(() => lock(false));     // 答錯保留玩家的選擇,讓他修改
+      });
+      ctx.top.appendChild(ok);
+    }
+  },
+
+  /* 密碼鍵盤:答案只能用 0-9、* 和 # */
+  passcode: {
+    validate(lv) {
+      if (typeof lv.answer !== "string") return ['answer 要用字串,例如 "7" 而不是 7'];
+      if (!/^[0-9*#]+$/.test(lv.answer)) return [`answer 只能用 0-9、* 和 #(目前是 "${lv.answer}");有字母或中文請改用 text 或 dial`];
+      if (lv.slots !== undefined && !(Number.isInteger(lv.slots) && lv.slots >= lv.answer.length && lv.slots <= 8)) return [`slots 要是 ${lv.answer.length} 到 8 的整數(格子數,不能比答案短)`];
+      return [];
+    },
+    render(lv, ctx) {
+      // 電話鍵盤排列:1-9、* 0 #,最下排是刪除與確認(確認鍵佔兩格)
+      const LAYOUT = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#", "⌫", "✓"];
+      const slots = lv.slots || lv.answer.length;     // slots 可以比答案長,避免格子數洩漏答案位數
+      let input = "";
+      const display = mk("div", "passcode-display");
+      const keypad = mk("div", "keypad");
+      ctx.top.appendChild(display);
+      ctx.bottom.appendChild(keypad);
+
+      function paint() {
+        display.innerHTML = "";
+        for (let i = 0; i < slots; i++) display.appendChild(mk("div", "passcode-slot" + (input[i] ? " filled" : ""), input[i] || ""));
+      }
+      const keys = LAYOUT.map(label => {
+        const b = mk("button", "key", label);
+        b.dataset.key = label;
+        if (label === "*" || label === "#") b.classList.add("symbol");
+        if (label === "⌫") { b.classList.add("back"); b.setAttribute("aria-label", "刪除"); }
+        if (label === "✓") { b.classList.add("confirm"); b.textContent = "✓ 確認"; }
+        b.addEventListener("click", () => press(label));
+        keypad.appendChild(b);
+        return b;
+      });
+      const lock = (v) => keys.forEach(k => { k.disabled = v; });
+
+      function press(label) {
+        if (label === "⌫") { input = input.slice(0, -1); paint(); return; }
+        if (label === "✓") { submit(); return; }
+        if (input.length < slots) { input += label; paint(); }
+      }
+      function submit() {
+        if (input.length === 0) return;      // 還沒輸入就按確認,不算答錯
+        lock(true);
+        const ok = input === lv.answer;
+        if (!ok) display.classList.add("passcode-shake");
+        ctx.answer(ok, input).then(() => {
+          display.classList.remove("passcode-shake");
+          input = "";
+          paint();
+          lock(false);
+        });
+      }
+      // 電腦上也可以直接用實體鍵盤輸入數字、*、#、Backspace、Enter
+      function onKey(e) {
+        const label = e.key === "Backspace" ? "⌫" : e.key === "Enter" ? "✓" : (/^[0-9*#]$/.test(e.key) ? e.key : null);
+        if (!label) return;
+        const btn = keys.find(k => k.dataset.key === label);
+        if (!btn || btn.disabled) return;
+        e.preventDefault();
+        btn.classList.add("pressed");
+        setTimeout(() => btn.classList.remove("pressed"), 100);
+        press(label);
+      }
+      document.addEventListener("keydown", onKey);
+      paint();
+      return () => document.removeEventListener("keydown", onKey);
+    }
+  },
+
+  /* 文字題:玩家用鍵盤輸入文字,answer 可以是字串或字串陣列(都算對) */
+  text: {
+    validate(lv) {
+      const list = Array.isArray(lv.answer) ? lv.answer : [lv.answer];
+      if (!list.length || list.some(a => !isText(a))) {
+        return ['answer 要是不空白的字串,或是字串陣列(例如 ["cat", "Cat"])'];
+      }
+      return [];
+    },
+    render(lv, ctx) {
+      const norm = (s) => {
+        const t = String(s).normalize("NFKC").trim().replace(/\s+/g, " ");
+        return lv.caseSensitive ? t : t.toLowerCase();
+      };
+      const accepted = [].concat(lv.answer).map(norm);
+      const input = mk("input", "text-answer");
+      input.type = "text";
+      input.placeholder = lv.placeholder || "在這裡輸入答案";
+      input.autocomplete = "off";
+      input.setAttribute("autocapitalize", "off");
+      input.setAttribute("spellcheck", "false");
+      const ok = confirmBtn(lv);
+      ctx.top.appendChild(input);
+      ctx.top.appendChild(ok);
+
+      function submit() {
+        if (!input.value.trim()) return;      // 還沒輸入就按確認,不算答錯
+        input.disabled = ok.disabled = true;
+        const right = accepted.includes(norm(input.value));
+        if (!right) input.classList.add("passcode-shake");
+        ctx.answer(right, input.value).then(() => {
+          input.classList.remove("passcode-shake");
+          input.value = "";
+          input.disabled = ok.disabled = false;
+          input.focus();
+        });
+      }
+      ok.addEventListener("click", submit);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) submit(); });
+      input.focus();
+    }
+  },
+
+  /* 轉輪鎖:每個轉輪用 ▲▼ 轉到正確的字 */
+  dial: {
+    validate(lv) {
+      const okAnswer = isText(lv.answer) || (Array.isArray(lv.answer) && lv.answer.length && lv.answer.every(isText));
+      if (!okAnswer) return ['answer 要是字串(每個字一個轉輪,例如 "GOLD")或字串陣列(例如 ["11", "45"])'];
+      const { ans, wheels } = dialParts(lv), errors = [];
+      ans.forEach((a, i) => {
+        const opts = wheels[i];
+        if (!Array.isArray(opts) || opts.length < 2) errors.push(`第 ${i + 1} 個轉輪沒有選項:答案不是「全部數字」或「全部大寫字母」時,要用 wheels 寫出轉輪的選項`);
+        else if (!opts.includes(a)) errors.push(`第 ${i + 1} 個轉輪的選項裡沒有答案「${a}」`);
+      });
+      const warnings = [];
+      if (!errors.length && ans.every((a, i) => wheels[i][0] === a)) warnings.push("轉輪一開始的位置就是答案,調整 wheels 的順序");
+      if (ans.length > 6) warnings.push("轉輪超過 6 個,在手機上可能排不下");
+      if (!errors.length && wheels.some(o => o.some(x => x.length > 5))) warnings.push("有轉輪選項超過 5 個字,在手機上可能擠不下");
+      if (Array.isArray(lv.sep) && lv.sep.length !== ans.length - 1) warnings.push(`sep 寫成陣列時,要有 ${ans.length - 1} 個(每兩個轉輪之間一個,不要分隔就寫 "")`);
+      return { errors, warnings };
+    },
+    render(lv, ctx) {
+      const { ans, wheels } = dialParts(lv);
+      const pos = ans.map(() => 0);
+      const row = mk("div", "dial");
+      const ok = confirmBtn(lv);
+      const btns = [];
+      let touched = false;
+      wheels.forEach((opts, i) => {
+        if (i && sepAt(lv, i)) row.appendChild(mk("span", "dial-sep", sepAt(lv, i)));
+        const w = mk("div", "wheel"), val = mk("div", "wheel-val" + (opts.some(o => o.length > 2) ? " long" : ""), opts[0]);
+        if (Array.isArray(lv.labels) && lv.labels[i]) w.appendChild(mk("div", "wheel-label", lv.labels[i]));
+        const turn = (d) => {
+          touched = true;
+          pos[i] = (pos[i] + d + opts.length) % opts.length;
+          val.textContent = opts[pos[i]];
+          val.classList.remove("turn"); void val.offsetWidth; val.classList.add("turn");
+          ctx.tone(300 + pos[i] * 12, 0.04, "triangle");
+        };
+        [["▲", -1, "上一個"], ["▼", 1, "下一個"]].forEach(([label, d, aria], k) => {
+          const b = mk("button", "wheel-btn", label);
+          b.dataset.wheel = i; b.dataset.dir = d;
+          b.setAttribute("aria-label", `第 ${i + 1} 個轉輪:${aria}`);
+          b.addEventListener("click", () => turn(d));
+          btns.push(b);
+          if (k === 0) { w.appendChild(b); w.appendChild(val); } else w.appendChild(b);
+        });
+        row.appendChild(w);
+      });
+      const lock = (v) => { btns.forEach(b => { b.disabled = v; }); ok.disabled = v; };
+      ok.addEventListener("click", () => {
+        if (!touched) return;
+        lock(true);
+        const right = pos.every((p, i) => wheels[i][p] === ans[i]);
+        if (!right) row.classList.add("passcode-shake");
+        ctx.answer(right, dialKey(lv, pos.map((p, i) => wheels[i][p]))).then(() => { row.classList.remove("passcode-shake"); lock(false); });
+      });
+      ctx.top.appendChild(row);
+      ctx.top.appendChild(ok);
+    }
+  },
+
+  /* 順序機關:照正確順序按按鈕(踩地磚、彈琴、按開關) */
+  sequence: {
+    validate(lv) {
+      const e = [];
+      if (!Array.isArray(lv.buttons) || lv.buttons.length < 2 || lv.buttons.some(b => !isText(b))) return ["buttons 至少要有 2 個不空白的文字"];
+      if (new Set(lv.buttons).size !== lv.buttons.length) e.push("buttons 裡有重複的文字");
+      if (!Array.isArray(lv.answer) || !lv.answer.length) e.push("answer 要是陣列,照順序寫出要按的按鈕文字");
+      else lv.answer.forEach(a => { if (!lv.buttons.includes(a)) e.push(`answer 裡的「${a}」不在 buttons 裡`); });
+      if (lv.tones !== undefined && (!Array.isArray(lv.tones) || lv.tones.length !== lv.buttons.length || lv.tones.some(t => !isNum(t)))) e.push("tones 要是數字陣列,數量和 buttons 一樣");
+      if (lv.cols !== undefined && !(Number.isInteger(lv.cols) && lv.cols > 0)) e.push("cols 要是正整數");
+      if (lv.blocked !== undefined) {
+        if (!Array.isArray(lv.blocked) || lv.blocked.some(b => !(lv.buttons || []).includes(b))) e.push("blocked 要是 buttons 裡的文字陣列(不能按的格子)");
+        else if (Array.isArray(lv.answer) && lv.answer.some(a => lv.blocked.includes(a))) e.push("answer 裡有 blocked 的格子,玩家按不到");
+      }
+      return e;
+    },
+    render(lv, ctx) {
+      const cols = lv.cols || (lv.buttons.length <= 4 ? lv.buttons.length : 3);
+      const blocked = lv.blocked || [];
+      const trail = mk("div", "seq-trail");
+      const grid = mk("div", "seq-grid");
+      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      const reset = mk("button", "link-btn", "↺ 重新來過");
+      let picked = [], locked = false;
+      const first = (p) => p.split("\n")[0];
+      const paint = () => {
+        trail.textContent = picked.length ? picked.map(first).join(" → ") : (lv.strict || lv.hideCount ? "依序按下" : `依序按 ${lv.answer.length} 個`);
+        btns.forEach((b, i) => {      // 按過的格子保持亮著,標上第幾步
+          const steps = picked.map((p, k) => p === lv.buttons[i] ? k + 1 : 0).filter(Boolean);
+          b.classList.toggle("on", steps.length > 0);
+          b.dataset.n = steps.join(",");
+        });
+      };
+      const btns = lv.buttons.map((label, i) => {
+        const b = mk("button", "seq-btn" + (blocked.includes(label) ? " blocked" : ""), label);
+        b.disabled = blocked.includes(label);
+        b.addEventListener("click", () => {
+          if (locked) return;
+          ctx.tone(lv.tones ? lv.tones[i] : 220 + i * 40, 0.3, lv.tones ? "sine" : "triangle");
+          b.classList.add("lit");
+          setTimeout(() => b.classList.remove("lit"), 250);
+          picked.push(label);
+          paint();
+          // strict:每按一步就檢查,按錯立刻算答錯、全部熄滅;否則按滿才一起檢查
+          const wrongStep = lv.strict && label !== lv.answer[picked.length - 1];
+          if (!wrongStep && picked.length < lv.answer.length) return;
+          setLock(true);
+          const right = !wrongStep && picked.every((p, k) => p === lv.answer[k]);
+          ctx.answer(right, picked.map(first).join("→")).then(() => { picked = []; paint(); setLock(false); });
+        });
+        grid.appendChild(b);
+        return b;
+      });
+      function setLock(v) { locked = v; btns.forEach((b, i) => { b.disabled = v || blocked.includes(lv.buttons[i]); }); reset.disabled = v; }
+      reset.addEventListener("click", () => { picked = []; paint(); });
+      ctx.top.appendChild(trail);
+      ctx.top.appendChild(grid);
+      ctx.top.appendChild(reset);
+      paint();
+    }
+  },
+
+  /* 計數:用 + − 調到正確的數量。visual: "balance" 會畫天平,按確認後才往重的一邊傾斜 */
+  counter: {
+    validate(lv) {
+      const r = validateRange(lv, 99);
+      if (lv.visual !== undefined && lv.visual !== "balance" && lv.visual !== "cup") return ['visual 只能是 "balance"、"cup"(或不寫)'];
+      return r;
+    },
+    render(lv, ctx) {
+      const { min, max, step, start } = rangeOf(lv, 99);
+      let value = start, touched = false;
+      const row = mk("div", "stepper-row"), minus = mk("button", "round-btn", lv.minusLabel || "−"), plus = mk("button", "round-btn", lv.plusLabel || "+");
+      if (lv.minusLabel || lv.plusLabel) minus.style.width = plus.style.width = "auto", minus.style.borderRadius = plus.style.borderRadius = "999px", minus.style.padding = plus.style.padding = "0 18px", minus.style.fontSize = plus.style.fontSize = "1.1rem";
+      const out = mk("div", "readout"), ok = confirmBtn(lv);
+      minus.setAttribute("aria-label", "減少"); plus.setAttribute("aria-label", "增加");
+      let beam = null, rightPan = null, water = null;
+      if (lv.visual === "cup") {         // 量杯:每一格一條刻度,水位跟著數值變
+        const cup = mk("div", "cup");
+        cup.style.setProperty("--tick", `${200 / Math.max(1, Math.round((max - min) / step))}px`);
+        water = mk("div", "water");
+        cup.appendChild(water);
+        ctx.top.appendChild(cup);
+      }
+      if (lv.visual === "balance") {
+        const box = mk("div", "balance");
+        box.innerHTML = '<div class="pillar"></div><div class="base"></div><div class="beam"><div class="pan left"><span></span></div><div class="pan right"><span></span></div></div>';
+        beam = box.querySelector(".beam");
+        rightPan = box.querySelector(".pan.right span");
+        box.querySelector(".pan.left span").textContent = lv.leftLabel || "?";
+        ctx.top.appendChild(box);
+      }
+      const tilt = () => { if (beam) beam.style.setProperty("--tilt", value === lv.answer ? "0deg" : value < lv.answer ? "-9deg" : "9deg"); };
+      const paint = () => {
+        out.innerHTML = `${escapeHtml(fmtNum(value))}<small>${escapeHtml(lv.unit || "")}</small>`;
+        if (rightPan) rightPan.textContent = `${fmtNum(value)} ${lv.unit || ""}`;
+        if (water) water.style.height = `${((value - min) / (max - min)) * 100}%`;
+        minus.disabled = value <= min; plus.disabled = value >= max;
+      };
+      const change = (d) => { touched = true; value = Math.min(max, Math.max(min, value + d)); paint(); };
+      minus.addEventListener("click", () => change(-step));
+      plus.addEventListener("click", () => change(step));
+      ok.addEventListener("click", () => {
+        if (!touched) return;
+        minus.disabled = plus.disabled = ok.disabled = true;
+        tilt();
+        ctx.answer(value === lv.answer, fmtNum(value)).then(() => { ok.disabled = false; paint(); });
+      });
+      row.appendChild(minus); row.appendChild(out); row.appendChild(plus);
+      ctx.top.appendChild(row);
+      ctx.top.appendChild(ok);
+      paint();
+      if (beam) beam.style.setProperty("--tilt", "-9deg");      // 一開始右盤是空的,左邊比較重
+    }
+  },
+
+  /* 滑桿:拖到正確的數值。visual: "compass" 會畫一個指針跟著轉的羅盤(數值當作角度) */
+  slider: {
+    validate(lv) {
+      if (!isNum(lv.min) || !isNum(lv.max)) return ["min 和 max 都要寫數字"];
+      if (lv.tolerance !== undefined && !(isNum(lv.tolerance) && lv.tolerance >= 0)) return ["tolerance 要是 0 以上的數字"];
+      if (lv.visual !== undefined && lv.visual !== "compass") return ['visual 只能是 "compass"(或不寫)'];
+      return validateRange(lv, lv.max);
+    },
+    render(lv, ctx) {
+      const { min, max, step, start } = rangeOf(lv, lv.max);
+      let touched = false, needle = null;
+      if (lv.visual === "compass") {
+        const c = mk("div", "compass");
+        needle = mk("div", "needle");
+        [["e", "E"], ["s", "S"], ["w", "W"]].forEach(([cls, t]) => c.appendChild(mk("i", "compass-mark " + cls, t)));
+        c.appendChild(needle);
+        ctx.top.appendChild(c);
+      }
+      const out = mk("div", "readout");
+      const input = mk("input", "slider");
+      input.type = "range"; input.min = min; input.max = max; input.step = step; input.value = start;
+      input.setAttribute("aria-label", lv.question);
+      const ok = confirmBtn(lv);
+      const paint = () => {
+        out.innerHTML = `${escapeHtml(fmtNum(Number(input.value)))}<small>${escapeHtml(lv.unit || "")}</small>`;
+        if (needle) needle.style.transform = `rotate(${Number(input.value)}deg)`;
+      };
+      input.addEventListener("input", () => { touched = true; paint(); });
+      ok.addEventListener("click", () => {
+        if (!touched) return;
+        input.disabled = ok.disabled = true;
+        const right = Math.abs(Number(input.value) - lv.answer) <= (lv.tolerance || 0) + 1e-9;
+        ctx.answer(right, fmtNum(Number(input.value))).then(() => { input.disabled = ok.disabled = false; });
+      });
+      out.style.margin = "0 auto 4px";
+      ctx.top.appendChild(out);
+      ctx.top.appendChild(input);
+      ctx.top.appendChild(ok);
+      paint();
+    }
+  },
+
+  /* 旋轉水管:點管件轉 90 度,接出一條從左上角(上方流入)到右下角(下方流出)的密閉水路。
+     過關是照規則算水流(pipeFlow),不是比對 solution;solution 只用來驗算這一關有解 */
+  pipes: {
+    validate(lv) {
+      const errors = [], warnings = [];
+      if (!Number.isInteger(lv.size) || lv.size < 2 || lv.size > 6) return ["size 要是 2 到 6 的整數"];
+      const cells = lv.size * lv.size;
+      const rotList = (k) => Array.isArray(lv[k]) && lv[k].length === cells && lv[k].every(r => Number.isInteger(r) && r >= 0 && r <= 3);
+      const cellList = (k) => lv[k] === undefined || (Array.isArray(lv[k]) && lv[k].every(i => Number.isInteger(i) && i >= 0 && i < cells));
+      if (!Array.isArray(lv.tiles) || lv.tiles.length !== cells || lv.tiles.some(t => !PIPE_SHAPES[t])) errors.push(`tiles 要有 ${cells} 格,每格是 "I"(直管)、"L"(彎管)或 "T"(三通管)`);
+      ["start", "solution"].forEach(k => { if (!rotList(k)) errors.push(`${k} 要有 ${cells} 個 0~3 的整數(每格順時針轉幾次 90 度)`); });
+      ["valves", "shocks"].forEach(k => { if (!cellList(k)) errors.push(`${k} 要是格子索引的陣列(0 到 ${cells - 1})`); });
+      if (errors.length) return errors;
+      if ((lv.valves || []).some(i => (lv.shocks || []).includes(i))) errors.push("同一格不能既是 valves 又是 shocks");
+      const sol = pipeFlow(lv, lv.solution).problem;
+      if (sol) errors.push(`solution 這組轉法過不了關(${sol}),這一關可能無解`);
+      if (!pipeFlow(lv, lv.start).problem) warnings.push("start 一開始就是通的,換一組起始轉法");
+      return { errors, warnings };
+    },
+    render(lv, ctx) {
+      const n = lv.size, turns = lv.start.slice();
+      const styled = (tag, css, text) => { const e = mk(tag, "", text); e.style.cssText = css; return e; };
+      const label = "color:var(--muted);font-size:.9rem;font-weight:700;max-width:380px;margin:0 auto 4px;";
+      const grid = styled("div", `display:grid;grid-template-columns:repeat(${n},1fr);gap:6px;max-width:380px;margin:0 auto 4px;`);
+      const ok = confirmBtn(lv);
+      let touched = false, locked = false;
+
+      const cells = lv.tiles.map((kind, i) => {
+        const shock = (lv.shocks || []).includes(i), valve = (lv.valves || []).includes(i);
+        const b = styled("button", `position:relative;aspect-ratio:1;padding:0;border:var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--pop-press);touch-action:manipulation;overflow:hidden;${shock ? "border-color:var(--bad);border-width:2px;" : ""}`);
+        b.className = "pipe-cell";
+        const arms = PIPE_SHAPES[kind].map(d => `<line x1="20" y1="20" x2="${20 + [0, 20, 0, -20][d]}" y2="${20 + [-20, 0, 20, 0][d]}" stroke="currentColor" stroke-width="11"/>`).join("");
+        b.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true" style="display:block;width:100%;height:100%;transition:transform .2s,color .2s">${arms}<circle cx="20" cy="20" r="5.5" fill="currentColor"/></svg>`;
+        if (valve) b.appendChild(styled("span", "position:absolute;left:50%;top:50%;width:30%;height:30%;transform:translate(-50%,-50%);border-radius:50%;background:var(--butter);border:2px solid var(--surface);"));
+        if (shock) b.appendChild(styled("span", "position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:1.3rem;line-height:1;", "⚡"));
+        b.addEventListener("click", () => {
+          if (locked) return;
+          touched = true;
+          turns[i]++;
+          ctx.tone(260 + (turns[i] % 4) * 40, 0.05);
+          paint();
+        });
+        grid.appendChild(b);
+        return { b, svg: b.firstChild, kind, mark: valve ? "(閥門)" : shock ? "(危險)" : "" };
+      });
+
+      function paint() {
+        const { wet } = pipeFlow(lv, turns);
+        cells.forEach(({ b, svg, kind, mark }, i) => {
+          svg.style.transform = `rotate(${turns[i] * 90}deg)`;
+          svg.style.color = wet.has(i) ? "var(--pink)" : "var(--muted)";
+          const dirs = pipeOpenings(kind, turns[i] % 4).map(d => "上右下左"[d]).join("、");
+          b.setAttribute("aria-label", `第 ${Math.floor(i / n) + 1} 列第 ${i % n + 1} 格:${PIPE_NAMES[kind]}${mark},開口朝${dirs}${wet.has(i) ? ",已接通" : ""}`);
+          b.disabled = locked;
+        });
+        ok.disabled = locked;
+      }
+      ok.addEventListener("click", () => {
+        if (!touched) return;                        // 還沒動過管件就按,不算答錯
+        locked = true; paint();
+        const { problem } = pipeFlow(lv, turns);
+        if (problem) ctx.toast(problem);
+        ctx.answer(!problem).then(() => { locked = false; paint(); });
+      });
+
+      ctx.top.appendChild(styled("div", label, lv.inLabel || "💧 入口 ↓"));
+      ctx.top.appendChild(grid);
+      ctx.top.appendChild(styled("div", label + "text-align:right;margin-bottom:14px;", lv.outLabel || "↓ 出口"));
+      ctx.top.appendChild(ok);
+      paint();
+    }
+  },
+
+  /* 放置:點一個物件,再點要放的格子(點已經放東西的格子可以拿回來)。也可以拿來做配對 */
+  assign: {
+    validate(lv) {
+      const e = [];
+      if (!Array.isArray(lv.slots) || !lv.slots.length || lv.slots.some(s => !isText(s))) return ["slots 要是至少有 1 個文字的陣列(每一格的名稱)"];
+      if (!Array.isArray(lv.items) || !lv.items.length || lv.items.some(s => !isText(s))) return ["items 要是至少有 1 個文字的陣列(可以放的物件)"];
+      if (!Array.isArray(lv.answer) || lv.answer.length !== lv.slots.length) return [`answer 要是陣列,長度和 slots 一樣(${lv.slots.length}),依序寫每一格該放的物件,留空寫 null`];
+      if (lv.multiple && lv.answer.some(a => !Array.isArray(a))) return ['multiple: true 時,answer 的每一格要寫成陣列,例如 [["水筆仔", "矽藻"], ["彈塗魚"], []]'];
+      const left = lv.items.slice();
+      lv.answer.forEach((a, i) => {
+        [].concat(a === null ? [] : a).forEach(x => {
+          const k = left.indexOf(x);
+          if (k < 0) e.push(`answer 第 ${i + 1} 格的「${x}」不在 items 裡(或數量不夠)`); else left.splice(k, 1);
+        });
+      });
+      if (lv.answer.every(a => a === null || (Array.isArray(a) && !a.length))) e.push("answer 不能每一格都是空的");
+      if (lv.board !== undefined) {
+        if (!isText(lv.board)) e.push("board 要是插圖的 HTML 字串(格子會疊在這張圖上)");
+        if (!Array.isArray(lv.slotPos) || lv.slotPos.length !== lv.slots.length || lv.slotPos.some(p => !isPos(p))) e.push(`有 board 時,slotPos 要寫 ${lv.slots.length} 個位置,每個是 [左右%, 上下%](0~100)`);
+      }
+      return e;
+    },
+    render(lv, ctx) {
+      // 每一格放的是 items 的第幾個(陣列);multiple: true 時一格可以放很多個(分類),否則一格一個
+      const placed = lv.slots.map(() => []);
+      const order = shuffle(lv.items.map((_, i) => i));
+      const tray = mk("div", "chip-row"), ok = confirmBtn(lv);
+      // 有 board 時,格子疊在插圖上(slotPos 是每一格中心點的位置,百分比);沒有就排成一列
+      let grid, layer;
+      if (lv.board) {
+        grid = mk("div", "board");
+        grid.innerHTML = lv.board;          // 出題者自己寫的插圖
+        layer = mk("div", "board-slots");
+        grid.appendChild(layer);
+      } else grid = layer = mk("div", "slots");
+      let selected = null, locked = false;
+      const labels = (s) => placed[s].map(i => lv.items[i]);
+      function put(s, i) {
+        if (lv.multiple) placed[s].push(i); else placed[s] = [i];
+        selected = null;
+        ctx.sfx("item");
+        paint();
+      }
+      function paint() {
+        layer.innerHTML = ""; tray.innerHTML = "";
+        lv.slots.forEach((name, s) => {
+          const b = mk("button", "slot" + (placed[s].length ? " filled" : ""));
+          b.dataset.s = s;
+          if (lv.board) { b.style.left = lv.slotPos[s][0] + "%"; b.style.top = lv.slotPos[s][1] + "%"; }
+          b.appendChild(mk("span", "slot-label", name));
+          b.appendChild(mk("span", "slot-item", labels(s).join("、")));
+          b.disabled = locked;
+          b.addEventListener("click", () => {
+            if (wasDrag()) return;
+            if (selected !== null) return put(s, selected);
+            if (placed[s].length) placed[s].pop();               // 沒選物件時點格子:拿回最後放的那一個
+            else ctx.toast("把下面的物件拖過來(或先點物件,再點格子)");
+            paint();
+          });
+          layer.appendChild(b);
+        });
+        order.forEach(i => {
+          if (placed.some(p => p.includes(i))) return;
+          const b = mk("button", "chip" + (selected === i ? " selected" : ""), lv.items[i]);
+          b.disabled = locked;
+          b.addEventListener("click", () => { if (wasDrag()) return; selected = selected === i ? null : i; paint(); });
+          dragToSlot(b, (slotEl) => { if (!locked) put(Number(slotEl.dataset.s), i); });
+          tray.appendChild(b);
+        });
+        ok.disabled = locked;
+      }
+      ok.addEventListener("click", () => {
+        if (placed.every(p => !p.length)) return;
+        locked = true; selected = null; paint();
+        const cell = (list) => [].concat(list === null ? [] : list).map(String).sort().join("+");
+        const got = lv.slots.map((_, s) => cell(labels(s)));
+        const want = lv.answer.map(cell);
+        const key = (list) => (lv.anyOrder ? list.slice().sort() : list).join("\n");   // anyOrder:只看放了哪些,不看放在哪一格
+        ctx.answer(key(got) === key(want), got.map(c => c || "空").join("、")).then(() => { locked = false; paint(); });     // 答錯保留擺法,讓玩家調整
+      });
+      ctx.top.appendChild(grid);
+      ctx.top.appendChild(tray);
+      ctx.top.appendChild(ok);
+      paint();
+    }
+  }
+};
+/* 規則包沒有寫 LEVEL_TYPES 時,當作沒有自訂題型 */
+const CUSTOM_TYPES = (typeof LEVEL_TYPES !== "undefined" && LEVEL_TYPES) ? LEVEL_TYPES : {};
+const allTypes = () => ({ ...BUILTIN_TYPES, ...CUSTOM_TYPES });
+const typeOf = (level) => allTypes()[level.type || "choice"];
+
+/* ---------- 檢查資料 ----------
+   開始畫面載入時執行。學員手改 LEVELS 很容易漏逗號、把答案寫成數字、答案索引超出範圍,
+   有問題就在開始畫面顯示紅字、不讓開始遊戲,避免玩到一半才出現空白畫面。
+   每種題型自己檢查自己的欄位(validate),新增題型時一起寫 */
+function validateEngine() {
+  const errors = [], warnings = [];
+  if (!Array.isArray(LEVELS) || LEVELS.length === 0) return { errors: ["LEVELS 必須是一個至少有一關的陣列"], warnings };
+  const types = allTypes();
+  Object.entries(CUSTOM_TYPES).forEach(([name, t]) => {
+    if (!t || typeof t.render !== "function" || typeof t.validate !== "function") errors.push(`LEVEL_TYPES 的「${name}」要有 validate(level) 和 render(level, ctx) 兩個函式`);
+  });
+  if (!Number.isInteger(GAME.lives) || GAME.lives < 0) errors.push("GAME.lives 要是 0 以上的整數(0 代表不限)");
+  if (GAME.failTo !== "start" && GAME.failTo !== "level") errors.push('GAME.failTo 只能是 "start" 或 "level"');
+  if (GAME.timeLimit !== undefined && (!Number.isInteger(GAME.timeLimit) || GAME.timeLimit < 0)) errors.push("GAME.timeLimit 要是 0 以上的整數(單位是秒,0 代表不限時)");
+  if (GAME.theme !== undefined && !THEMES.includes(GAME.theme)) errors.push(`GAME.theme 只能是 ${THEMES.map(t => `"${t}"`).join("、")}`);
+  Object.entries(ITEM_DEFS).forEach(([id, it]) => {
+    if (!it || !isText(it.name)) errors.push(`ITEMS 的「${id}」要有 name(道具名稱)`);
+  });
+  const owned = new Set();          // 走到這一關之前已經拿到的道具
+  LEVELS.forEach((lv, i) => {
+    const name = `第 ${i + 1} 關`;
+    if (!lv || typeof lv !== "object") { errors.push(`${name}:不是有效的關卡物件(檢查逗號和大括號)`); return; }
+    if (!isText(lv.question)) errors.push(`${name}:question 要寫題目文字`);
+    ["hint", "explanation", "title", "scene", "art", "success"].forEach(k => {
+      if (lv[k] !== undefined && typeof lv[k] !== "string") errors.push(`${name}:${k} 要是文字`);
+    });
+    if (lv.hints !== undefined && (!Array.isArray(lv.hints) || lv.hints.some(h => !isText(h)))) errors.push(`${name}:hints 要是文字陣列(由淺到深的提示)`);
+    if (lv.clues !== undefined && !Array.isArray(lv.clues)) errors.push(`${name}:clues 要是陣列`);
+    (Array.isArray(lv.clues) ? lv.clues : []).forEach((c, k) => {
+      const cn = `${name}的第 ${k + 1} 張線索`;
+      if (typeof c === "string") { if (!c.trim()) errors.push(`${cn}:是空白的`); return; }
+      if (!c || typeof c !== "object" || (!isText(c.text) && !isText(c.html) && !c.align)) { errors.push(`${cn}:要寫 text(文字)、html(插圖)或 align(疊圖對齊)`); return; }
+      if (c.align) validateAlign(c.align, "align.").forEach(m => errors.push(`${cn}:${m}`));
+      [].concat(c.needs || []).forEach(id => {
+        if (!ITEM_DEFS[id]) errors.push(`${cn}:needs 的道具「${id}」不在 ITEMS 裡`);
+        else if (!owned.has(id)) errors.push(`${cn}:需要道具「${ITEM_DEFS[id].name}」,但前面沒有任何關卡的 reward 給這個道具,玩家會卡住`);
+      });
+    });
+    [].concat(lv.needs || []).forEach(id => {
+      if (!ITEM_DEFS[id]) errors.push(`${name}:needs 的道具「${id}」不在 ITEMS 裡`);
+      else if (!owned.has(id)) errors.push(`${name}:需要道具「${ITEM_DEFS[id].name}」,但前面沒有任何關卡的 reward 給這個道具,玩家會卡住`);
+    });
+    if (lv.reward !== undefined && !Array.isArray(lv.reward)) errors.push(`${name}:reward 要是道具 id 的陣列,例如 ["key"]`);
+    const type = lv.type || "choice";
+    const t = types[type];
+    if (!t) errors.push(`${name}:不認得的題型 "${type}",目前有 ${Object.keys(types).join("、")}`);
+    else if (typeof t.validate === "function") {
+      try {
+        const r = t.validate(lv) || [];
+        (Array.isArray(r) ? r : (r.errors || [])).forEach(m => errors.push(`${name}:${m}`));
+        if (!Array.isArray(r)) (r.warnings || []).forEach(m => warnings.push(`${name}:${m}`));
+      } catch (e) { errors.push(`${name}:檢查題型「${type}」時出錯:${e.message}`); }
+    }
+    if ((type === "choice" || type === "multi") && Array.isArray(lv.choices) && new Set(lv.choices).size !== lv.choices.length) warnings.push(`${name}:有兩個選項的文字一樣`);
+    if (type === "passcode" && typeof lv.answer === "string" && lv.answer.length > 8) warnings.push(`${name}:密碼超過 8 格,在手機上可能排不下`);
+    if (lv.mistakeOf !== undefined && typeof lv.mistakeOf !== "function") errors.push(`${name}:mistakeOf 要是函式,例如 (given) => given.includes("菇") ? "菇不能行光合作用喔" : ""`);
+    if (lv.mistakeOf && !CUSTOM_TYPES[type]) {
+      let rights = [];
+      try { rights = answerKeys(lv); } catch (e) { /* ignore */ }
+      rights.forEach(a => { let m = ""; try { m = lv.mistakeOf(String(a)); } catch (e) { m = ""; } if (m) errors.push(`${name}:mistakeOf 把正確答案「${a}」也判成錯誤`); });
+    }
+    if (lv.mistakes !== undefined && !CUSTOM_TYPES[type]) {     // 自訂題型自己決定 mistakes 怎麼用
+      if (!lv.mistakes || typeof lv.mistakes !== "object" || Array.isArray(lv.mistakes) || Object.values(lv.mistakes).some(v => !isText(v))) {
+        errors.push(`${name}:mistakes 要寫成 { "錯誤答案": "給學生的話", ... }`);
+      } else if (t) {
+        let rights = [];
+        try { rights = answerKeys(lv); } catch (e) { /* 資料有錯時上面已經報過 */ }
+        rights.forEach(a => {
+          if (a !== undefined && Object.keys(lv.mistakes).some(k => canonKey(lv, k) === canonKey(lv, a))) errors.push(`${name}:mistakes 裡的「${a}」其實是正確答案`);
+        });
+      }
+    }
+    (Array.isArray(lv.reward) ? lv.reward : []).forEach(id => {
+      if (!ITEM_DEFS[id]) errors.push(`${name}:reward 的道具「${id}」不在 ITEMS 裡`);
+      else if (owned.has(id)) warnings.push(`${name}:道具「${ITEM_DEFS[id].name}」前面的關卡已經給過了`);
+      owned.add(id);
+    });
+  });
+  Object.keys(ITEM_DEFS).forEach(id => { if (!owned.has(id)) warnings.push(`道具「${ITEM_DEFS[id].name || id}」沒有任何關卡的 reward 會給`); });
+  if (GAME.lives > 0 && GAME.lives > LEVELS.length * 3) warnings.push("愛心數比關卡數的三倍還多,幾乎不可能失敗");
+  if (GAME.timeLimit > 0 && GAME.timeLimit < LEVELS.length * 10) warnings.push("timeLimit 的單位是秒:目前平均每關不到 10 秒,幾乎不可能過關");
+  const idx = LEVELS.filter(lv => lv && (lv.type || "choice") === "choice").map(lv => lv.answerIndex);
+  if (GAME.shuffleChoices === false && idx.length >= 3 && idx.every(i => i === idx[0])) {
+    warnings.push(`選項不會打亂(shuffleChoices 是 false),但每一題選擇題的正確答案都在第 ${idx[0] + 1} 個選項,玩家很快就會發現`);
+  }
+  return { errors, warnings };
+}
+
+/* 內建題型的正確答案,寫成 mistakes 比對用的樣子(用來檢查 mistakes 有沒有把正確答案寫進去) */
+function answerKeys(lv) {
+  const t = lv.type || "choice";
+  if (t === "choice") return [lv.choices[lv.answerIndex]];
+  if (t === "multi") return [lv.choices.filter((_, i) => lv.answerIndexes.includes(i)).join("、")];
+  if (t === "passcode" || t === "text") return [].concat(lv.answer);
+  if (t === "dial") return [dialKey(lv, dialParts(lv).ans)];
+  if (t === "sequence") return [lv.answer.map(a => a.split("\n")[0]).join("→")];
+  if (t === "counter" || t === "slider") return [fmtNum(lv.answer)];
+  if (t === "assign") return lv.anyOrder ? [] : [lv.answer.map(a => [].concat(a === null ? [] : a).join("+") || "空").join("、")];
+  return [];
+}
+
+function paintList(id, title, items) {
+  const box = el(id);
+  const shown = items.slice(0, 12);
+  box.innerHTML = "";
+  if (items.length) {
+    box.appendChild(document.createTextNode(title));
+    const ul = document.createElement("ul");
+    shown.forEach(m => { const li = document.createElement("li"); li.textContent = m; ul.appendChild(li); });
+    if (items.length > shown.length) { const li = document.createElement("li"); li.textContent = `…還有 ${items.length - shown.length} 項`; ul.appendChild(li); }
+    box.appendChild(ul);
+  }
+  box.classList.toggle("hidden", !items.length);
+}
+function runValidation() {
+  const errors = [], warnings = [];
+  const merge = (fn) => {
+    try {
+      const r = fn() || {};
+      (r.errors || []).forEach(x => errors.push(x));
+      (r.warnings || []).forEach(x => warnings.push(x));
+    } catch (e) { errors.push("檢查程式出錯:" + e.message); }
+  };
+  merge(validateEngine);
+  if (!errors.length) merge(() => rule("validateRules"));
+  paintList("level-errors", "關卡資料有問題,請修正後重新整理:", errors);
+  paintList("level-warnings", "提醒(不影響開始,但可能不是你要的設計):", warnings);
+  el("btn-start").disabled = errors.length > 0;
+  return { errors, warnings };
+}
+
+/* ---------- 存檔與續玩 ---------- */
+function saveProgress(override) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, ...(override || {}) })); } catch (e) { /* 存不了就算了 */ }
+}
+function loadProgress() {
+  let raw = null;
+  try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return false; }
+  if (!raw) return false;
+  try {
+    const saved = JSON.parse(raw);
+    // 存檔的關卡位置必須還在目前的 LEVELS 範圍內;
+    // 改過關卡數量後,舊存檔可能超出範圍,這時直接丟掉,避免畫面空白或報錯
+    const ok = Number.isInteger(saved.currentLevel) && saved.currentLevel >= 0 && saved.currentLevel < LEVELS.length;
+    if (ok) {
+      state = { ...state, ...saved };
+      if (!Array.isArray(state.stars)) state.stars = [];
+      state.items = Array.isArray(state.items) ? state.items.filter(id => ITEM_DEFS[id]) : [];
+      return true;
+    }
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) { /* 存檔壞掉就當作沒有存檔,重新開始 */ }
+  return false;
+}
+const freshState = (name) => ({ currentLevel: 0, correctCount: 0, wrongCount: 0, startTime: null, playerName: name || "", lives: 0, levelWrong: 0, stars: [], items: [], hintsUsed: 0, levelHints: 0, timeLeft: 0 });
+
+function startGame() {
+  if (runValidation().errors.length) return;
+  const nameInput = el("player-name").value.trim();
+  state.playerName = nameInput || "玩家";
+  if (!state.startTime) state.startTime = Date.now();     // 續玩時保留原本的開始時間
+  if (GAME.lives > 0 && (!(state.lives > 0) || state.lives > GAME.lives)) state.lives = GAME.lives;
+  if (GAME.timeLimit > 0 && (!(state.timeLeft > 0) || state.timeLeft > GAME.timeLimit)) state.timeLeft = GAME.timeLimit;
+  showScreen("screen-game");
+  renderLevel(state.currentLevel);
+  startTimer();
+  saveProgress();
+}
+function showScreen(id) {
+  ["screen-start", "screen-game", "screen-end", "screen-fail"].forEach(s => el(s).classList.toggle("hidden", s !== id));
+  el("hint-modal").classList.add("hidden");
+}
+
+/* 吉祥物(或主題圖示)的表情:"happy" / "sad" / "" (回到平常) */
+function setMascot(mood) {
+  [el("game-mascot"), el("game-icon")].forEach(m => {
+    m.classList.remove("happy", "sad");
+    void m.getBoundingClientRect(); // 讓動畫可以連續重播
+    if (mood) m.classList.add(mood);
+  });
+}
+
+function renderLives() {
+  const box = el("lives");
+  box.classList.toggle("hidden", !(GAME.lives > 0));
+  if (GAME.lives > 0) {
+    const left = Math.max(0, state.lives);
+    box.textContent = "❤️".repeat(left) + "🖤".repeat(Math.max(0, GAME.lives - left));
+    box.setAttribute("aria-label", `剩 ${left} 顆愛心`);
+  }
+}
+
+/* 關卡進度:12 關以內畫成一顆一顆的關卡節點,更多關就用進度條 */
+function renderProgress(index) {
+  const steps = LEVELS.length <= 12;
+  el("stepper").classList.toggle("hidden", !steps);
+  el("progress-wrap").classList.toggle("hidden", steps);
+  el("progress-bar").style.width = Math.round((index / LEVELS.length) * 100) + "%";
+  if (!steps) return;
+  el("stepper").innerHTML = LEVELS.map((_, i) =>
+    (i ? `<span class="step-line${i <= index ? " done" : ""}"></span>` : "")
+    + `<span class="step${i < index ? " done" : i === index ? " now" : ""}">${i < index ? "✓" : i + 1}</span>`).join("");
+}
+
+/* ---------- 倒數計時 ----------
+   只有在作答中才會扣時間:看解說、停在開始或結算畫面時不扣 */
+let timerId = null;
+function renderTimer() {
+  const box = el("timer"), on = GAME.timeLimit > 0;
+  box.classList.toggle("hidden", !on);
+  if (!on) return;
+  const t = Math.max(0, state.timeLeft);
+  box.textContent = `⏱ ${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+  box.classList.toggle("danger", t <= 30);
+}
+function tick() {
+  if (locked || el("screen-game").classList.contains("hidden")) return;
+  state.timeLeft--;
+  renderTimer();
+  if (state.timeLeft <= 0) { locked = true; failGame("time"); return; }
+  saveProgress();
+}
+function startTimer() {
+  clearInterval(timerId);
+  if (GAME.timeLimit > 0) timerId = setInterval(tick, 1000);
+  renderTimer();
+}
+
+/* ---------- 道具袋 ---------- */
+function renderInventory(fresh) {
+  const box = el("inventory");
+  box.classList.toggle("hidden", !Object.keys(ITEM_DEFS).length);
+  box.innerHTML = "";
+  box.appendChild(mk("span", "inv-label", state.items.length ? "🎒" : "🎒 還沒有道具"));
+  state.items.forEach(id => {
+    const it = ITEM_DEFS[id];
+    if (!it) return;
+    const chip = mk("button", "item-chip" + ((fresh || []).includes(id) ? " new" : ""), itemLabel(id));
+    chip.title = it.desc || it.name;
+    chip.addEventListener("click", () => toast(it.desc ? `${it.name}:${it.desc}` : it.name));
+    box.appendChild(chip);
+  });
+}
+
+/* ---------- 線索卡 ----------
+   有 reveal 或 needs 的線索一開始蓋住,按下按鈕(需要的道具都有)才顯示 */
+function renderClues(level) {
+  const box = el("clues");
+  box.innerHTML = "";
+  (level.clues || []).forEach(raw => {
+    const c = typeof raw === "string" ? { text: raw } : raw;
+    const card = mk("div", "clue");
+    if (c.title) card.appendChild(mk("h4", "clue-title", c.title));
+    const body = mk("div", "clue-body");
+    if (c.text) body.appendChild(document.createTextNode(c.text));
+    if (c.html) { const h = mk("div"); h.innerHTML = c.html; body.appendChild(h); }   // html 是出題者自己寫的插圖,不是玩家輸入
+    if (c.align) {
+      // 疊圖對齊:把圖層拖到底圖上,靠近 target 就吸附固定,再顯示 alignedText(對齊之後才讀得到的資訊)
+      const a = c.align;
+      const after = a.alignedText ? mk("div", "align-after hidden", a.alignedText) : null;
+      const w = alignWidget(a, (pos) => {
+        if (!near(pos, a.target, a.tolerance || 4)) return;
+        pos[0] = a.target[0]; pos[1] = a.target[1];
+        w.place(); w.lock(true);
+        card.classList.add("aligned");
+        sfx("item");
+        if (after) after.classList.remove("hidden");
+      });
+      body.appendChild(w.box);
+      body.appendChild(mk("div", "align-tip", a.tip || "拖動上面的圖層對準位置(也可以點一下圖層,再用方向鍵移動)"));
+      if (after) body.appendChild(after);
+    }
+    const needs = [].concat(c.needs || []);
+    if (c.reveal || needs.length) {
+      body.classList.add("hidden");
+      const b = mk("button", "clue-reveal", c.reveal || `使用 ${needs.map(itemLabel).join(" + ")}`);
+      b.addEventListener("click", () => {
+        if (needs.some(id => !state.items.includes(id))) { sfx("wrong"); toast("還沒有拿到需要的道具"); return; }
+        sfx("item");
+        b.remove();
+        body.classList.remove("hidden");
+        body.classList.add("revealed");
+      });
+      card.appendChild(b);
+    }
+    card.appendChild(body);
+    box.appendChild(card);
+  });
+}
+
+/* ---------- 分層提示 ----------
+   level.hints 由淺到深;玩家每按一次多看一層,看過的層數會記到 state.hintsUsed(給星星和結算用) */
+function renderHints() {
+  const level = LEVELS[state.currentLevel], hints = hintsOf(level), list = el("hint-list");
+  list.innerHTML = "";
+  hints.slice(0, state.levelHints).forEach((h, i) => {
+    const tier = mk("div", "hint-tier");
+    tier.appendChild(mk("b", "", hints.length > 1 ? `第 ${i + 1} 層提示` : "提示"));
+    tier.appendChild(document.createTextNode(h));
+    list.appendChild(tier);
+  });
+  if (state.levelHints < hints.length) {
+    const more = mk("button", "btn-primary", state.levelHints ? `再看下一層(${state.levelHints + 1} / ${hints.length})` : `看提示(共 ${hints.length} 層)`);
+    more.id = "btn-hint-more";
+    more.addEventListener("click", () => {
+      state.levelHints++;
+      state.hintsUsed++;
+      if (!locked) saveProgress();
+      renderHints();
+    });
+    list.appendChild(more);
+  }
+}
+function openHints() { renderHints(); el("hint-modal").classList.remove("hidden"); el("btn-hint-close").focus(); }
+function closeHints() { el("hint-modal").classList.add("hidden"); }
+
+/* ---------- 畫出目前這一關 ---------- */
+let cleanup = null;
+let locked = false;          // 這一關已經答對、正在換關,不再接受作答(不存檔)
+let advanceTimer = null;
+const ctx = {
+  top: null, bottom: null,
+  answer: (isCorrect, given) => answer(isCorrect, given),
+  sfx, tone, toast,
+  hasItem: (id) => state.items.includes(id)
+};
+
+function renderLevel(index) {
+  if (cleanup) { try { cleanup(); } catch (e) { /* 題型的清理出錯不影響換關 */ } cleanup = null; }
+  clearTimeout(advanceTimer);
+  locked = false;
+  const level = LEVELS[index];
+  el("level-title").textContent = `${level.title || `第 ${index + 1} 關`}(${index + 1} / ${LEVELS.length})`;
+  el("scene").textContent = level.scene || "";
+  el("scene").classList.toggle("hidden", !level.scene);
+  el("art").innerHTML = level.art || "";        // art 是出題者自己寫的插圖(行內 SVG 等),不是玩家輸入
+  el("art").classList.toggle("hidden", !level.art);
+  renderClues(level);
+  el("question-text").textContent = level.question;
+  el("feedback").textContent = "";
+  el("feedback").className = "feedback";
+  el("explain").classList.add("hidden");
+  el("next-wrap").classList.add("hidden");
+  el("btn-hint").classList.toggle("hidden", !hintsOf(level).length);
+  closeHints();
+  setMascot("");
+  renderLives();
+  renderTimer();
+  renderInventory();
+  const body = el("level-body");
+  body.classList.remove("enter"); void body.offsetWidth; body.classList.add("enter");
+
+  ctx.top = el("answer-top");
+  ctx.bottom = el("answer-bottom");
+  ctx.top.innerHTML = "";
+  ctx.bottom.innerHTML = "";
+  ctx.bottom.classList.remove("hidden");
+  cleanup = typeOf(level).render(level, ctx) || null;
+  // 關卡有 needs:機關先蓋住,玩家按「使用道具」才能操作
+  const needs = [].concat(level.needs || []);
+  el("gate").classList.toggle("hidden", !needs.length);
+  ctx.top.classList.toggle("hidden", !!needs.length);
+  ctx.bottom.classList.toggle("hidden", !!needs.length);
+  el("btn-gate").textContent = level.needsLabel || `使用 ${needs.map(itemLabel).join(" + ")}`;
+
+  renderProgress(index);
+}
+
+/* ---------- 處理作答 ----------
+   題型呼叫 ctx.answer(isCorrect):
+   答對 → 記星星、發道具、顯示回饋(有解說就停住等玩家按「下一關」,沒有就稍後自動換關);Promise 不會 resolve
+   答錯 → 計次、扣愛心、顯示提示;愛心用完就挑戰失敗,否則 0.6 秒後 resolve,題型把輸入重新打開
+   所有「換關卡」的動作都要經過 goToNextLevel(),不要在別的地方直接改 state.currentLevel */
+function answer(isCorrect, given) {
+  const never = new Promise(() => {});
+  if (locked) return never;
+  const level = LEVELS[state.currentLevel];
+  if (isCorrect) {
+    locked = true;
+    state.correctCount++;
+    const stars = Math.max(0, Math.min(3, Math.round(rule("levelStars", state.levelWrong, level, state.levelHints) || 0)));
+    state.stars.push(stars);
+    const got = (level.reward || []).filter(id => ITEM_DEFS[id] && !state.items.includes(id));
+    state.items.push(...got);
+    if (got.length) renderInventory(got);
+    showFeedback(true, level, stars, got);
+    // 這裡不存檔:關卡位置要到 goToNextLevel() 才前進,現在存的話,
+    // 停在解說畫面重新整理會回到同一關再答對一次,答對數和星星就重複計算了
+    if (level.explanation) {
+      el("explain").textContent = level.explanation;
+      el("explain").classList.remove("hidden");
+      el("answer-bottom").classList.add("hidden");
+      const last = state.currentLevel === LEVELS.length - 1;
+      el("btn-next").textContent = last ? "完成 ▶" : "下一關 ▶";
+      el("next-wrap").classList.remove("hidden");
+      el("btn-next").focus();
+    } else {
+      advanceTimer = setTimeout(goToNextLevel, (level.success || got.length) ? 1800 : 800);   // 有劇情文字或道具時多停一下讓玩家讀
+    }
+    return never;
+  }
+  state.wrongCount++;
+  state.levelWrong++;
+  if (GAME.lives > 0) state.lives--;
+  renderLives();
+  showFeedback(false, level, 0, null, given);
+  if (GAME.lives > 0 && state.lives <= 0) {
+    locked = true;
+    saveAfterFail();
+    setTimeout(() => failGame("lives"), 700);
+    return never;
+  }
+  saveProgress();
+  return new Promise(resolve => setTimeout(resolve, 600));
+}
+
+/* 挑戰失敗時的存檔:
+   failTo "level" → 留著存檔(愛心和時間補滿、這一關重新計次),在失敗畫面重新整理也能從這一關繼續
+   failTo "start" → 刪掉存檔,重新整理就是從第一關開始 */
+function saveAfterFail() {
+  if (GAME.failTo === "level") {
+    saveProgress({ lives: GAME.lives, levelWrong: 0, timeLeft: GAME.timeLimit || 0 });
+  } else {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+  }
+}
+
+/* 答錯時,依玩家給的答案找 level.mistakes 裡對應的話(忽略空白、大小寫、全半形) */
+const normKey = (s) => String(s).normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+/* 複選題不管選項順序、放置題不管同一格裡的順序,所以比對前先排好 */
+function canonKey(level, s) {
+  const t = level.type || "choice", k = normKey(s);
+  if (t === "multi") return k.split("、").sort().join("、");
+  if (t === "assign") return k.split("、").map(c => c.split("+").sort().join("+")).join("、");
+  return k;
+}
+function mistakeFor(level, given) {
+  if (given === undefined || given === null) return "";
+  if (level.mistakes) {
+    const k = Object.keys(level.mistakes).find(k => canonKey(level, k) === canonKey(level, given));
+    if (k) return level.mistakes[k];
+  }
+  // mistakeOf(given):用規則判斷(例如「只要選了菇」),回傳要說的話,不符合就回傳 ""
+  if (typeof level.mistakeOf === "function") { try { return level.mistakeOf(String(given)) || ""; } catch (e) { /* 規則寫錯不影響遊戲 */ } }
+  return "";
+}
+function showFeedback(isCorrect, level, stars, got, given) {
+  if (isCorrect) {
+    const starText = GAME.showStars && stars ? " " + "⭐".repeat(stars) : "";
+    const last = state.currentLevel === LEVELS.length - 1;
+    const itemText = got && got.length ? `\n🎒 獲得:${got.map(itemLabel).join("、")}` : "";
+    el("feedback").textContent = (level.success || (last ? "答對了!全部過關 🎉" : "答對了!往下一關出發 ✨")) + starText + itemText;
+    el("feedback").className = "feedback good";
+    setMascot("happy");
+    sfx(got && got.length ? "item" : "right");
+  } else {
+    const mistake = mistakeFor(level, given);
+    el("feedback").textContent = mistake ? `🤔 ${mistake}` : level.hint ? `再想想:${level.hint}` : (hintsOf(level).length ? "不對喔,再試一次!卡住了可以按上面的「💡 提示」" : "再試一次!");
+    el("feedback").className = "feedback bad";
+    setMascot("sad");
+    sfx("wrong");
+  }
+}
+
+/* ---------- 前進下一關(所有「換關卡」的動作都要經過這個函式) ---------- */
+function goToNextLevel() {
+  state.currentLevel++;
+  state.levelWrong = 0;
+  state.levelHints = 0;
+  saveProgress();
+  if (state.currentLevel >= LEVELS.length) {
+    finishGame();
+  } else {
+    renderLevel(state.currentLevel);
+  }
+}
+
+/* ---------- 遊戲結束:通關或挑戰失敗 ---------- */
+function makeInfo(result) {
+  return {
+    playerName: state.playerName,
+    result,
+    levelsPassed: state.correctCount,
+    totalLevels: LEVELS.length,
+    wrongCount: state.wrongCount,
+    hintsUsed: state.hintsUsed,
+    totalStars: state.stars.reduce((a, b) => a + b, 0),
+    durationSec: Math.round((Date.now() - state.startTime) / 1000),
+    timeLeft: Math.max(0, state.timeLeft)
+  };
+}
+function renderSummary(id, info) {
+  el(id).innerHTML = rule("summaryRows", info)
+    .map(([k, v]) => `<div class="summary-row"><span>${escapeHtml(k)}</span><span>${escapeHtml(v)}</span></div>`).join("");
+}
+function showStory(id, text) {
+  el(id).textContent = text || "";
+  el(id).classList.toggle("hidden", !text);
+}
+
+/* payload 裡的欄位由使用者決定;加欄位時 gas-backend.gs 的 HEADERS 和 rowFor() 也要對應 */
+function uploadResult(info) {
+  sendResultsToSheet({
+    playerName: info.playerName,
+    totalLevels: info.totalLevels,
+    levelsPassed: info.levelsPassed,
+    wrongCount: info.wrongCount,
+    totalStars: info.totalStars,
+    result: info.result,
+    durationSec: info.durationSec
+  });
+}
+
+function finishGame() {
+  const info = makeInfo("pass");
+  renderProgress(LEVELS.length);
+  showScreen("screen-end");
+  showStory("end-story", GAME.ending);
+  renderSummary("end-summary", info);
+  sfx("win");
+  uploadResult(info);
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+}
+
+/* reason:"lives" 愛心用完 / "time" 時間到 */
+function failGame(reason) {
+  const info = makeInfo("fail");
+  const why = reason === "time" ? "時間到了" : "愛心用完了";
+  showScreen("screen-fail");
+  showStory("fail-story", GAME.failStory);
+  el("fail-text").textContent = GAME.failTo === "level"
+    ? `${why}。再試一次,會從第 ${state.currentLevel + 1} 關重新開始(愛心和時間補滿)。`
+    : `${why}。再試一次,會從第一關重新開始。`;
+  renderSummary("fail-summary", info);
+  el("submit-status").textContent = "";
+  sfx("fail");
+  uploadResult(info);
+  saveAfterFail();
+}
+
+function retryAfterFail() {
+  el("submit-status").textContent = "";
+  if (GAME.failTo === "level") {
+    state.lives = GAME.lives;
+    state.levelWrong = 0;
+  } else {
+    state = freshState(state.playerName);
+    state.startTime = Date.now();
+    state.lives = GAME.lives;
+  }
+  state.timeLeft = GAME.timeLimit || 0;
+  showScreen("screen-game");
+  renderLevel(state.currentLevel);
+  startTimer();
+  saveProgress();
+}
+
+/* ---------- 送資料到 Google Apps Script ----------
+   使用 no-cors 模式:前端讀不到回應內容是正常現象,
+   不代表送出失敗,不要改成用回應內容判斷成功與否 */
+function sendResultsToSheet(payload) {
+  const statusEl = el("submit-status");
+  if (!GAS_URL || GAS_URL.indexOf("PASTE_YOUR") === 0) {
+    statusEl.textContent = "(尚未設定 Google 試算表網址,成績只顯示在畫面上)";
+    return;
+  }
+  statusEl.textContent = "成績上傳中...";
+  fetch(GAS_URL, {
+    method: "POST",
+    mode: "no-cors",
+    // no-cors 模式下瀏覽器只允許 text/plain 這類簡單的 Content-Type;後端一樣用 JSON.parse 讀內容
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    keepalive: true,               // 玩家一看到結算就關分頁,這筆成績也還是會送出去
+    body: JSON.stringify(payload)
+  }).then(() => {
+    statusEl.textContent = "成績已送出 ✅";
+  }).catch(() => {
+    statusEl.textContent = "送出失敗,請檢查網路連線";
+  });
+}
+
+/* ---------- 初始化與事件綁定 ---------- */
+function resetProgress() {
+  state = freshState("");
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+  el("player-name").value = "";
+  el("btn-start").textContent = "開始闖關";
+  el("btn-reset").classList.add("hidden");
+}
+el("btn-start").addEventListener("click", startGame);
+el("btn-reset").addEventListener("click", resetProgress);
+el("btn-next").addEventListener("click", goToNextLevel);
+el("btn-retry").addEventListener("click", retryAfterFail);
+el("btn-gate").addEventListener("click", () => {
+  const needs = [].concat(LEVELS[state.currentLevel].needs || []);
+  if (needs.some(id => !state.items.includes(id))) { sfx("wrong"); toast("還沒有拿到需要的道具"); return; }
+  sfx("item");
+  el("gate").classList.add("hidden");
+  ctx.top.classList.remove("hidden");
+  ctx.bottom.classList.remove("hidden");
+});
+el("btn-hint").addEventListener("click", openHints);
+el("btn-hint-close").addEventListener("click", closeHints);
+el("hint-modal").addEventListener("click", (e) => { if (e.target === el("hint-modal")) closeHints(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeHints(); });
+el("btn-sound").addEventListener("click", () => {
+  soundOn = !soundOn;
+  el("btn-sound").textContent = soundOn ? "🔊" : "🔇";
+  sfx("click");
+});
+el("btn-restart").addEventListener("click", () => {
+  state = freshState("");
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+  showScreen("screen-start");
+  el("player-name").value = "";
+  el("submit-status").textContent = "";
+  el("btn-start").textContent = "開始闖關";
+  el("btn-reset").classList.add("hidden");
+});
+
+document.documentElement.dataset.theme = THEMES.includes(GAME.theme) ? GAME.theme : "cute";
+document.querySelectorAll('.icon-badge[data-icon="game"]').forEach(b => { b.textContent = GAME.icon || "🗝️"; });
+el("btn-sound").textContent = soundOn ? "🔊" : "🔇";
+if (GAME.title) {
+  el("game-title").textContent = GAME.title;
+  document.title = GAME.title;     // 瀏覽器分頁的標題也跟著 GAME.title,不用另外改 <title>
+}
+if (GAME.desc) el("game-desc").textContent = GAME.desc;
+showStory("game-story", GAME.story);
+el("teacher-text").textContent = GAME.teacherNotes || "";
+el("teacher-notes").classList.toggle("hidden", !GAME.teacherNotes);
+if (GAME.endTitle) el("end-title").textContent = GAME.endTitle;
+if (!runValidation().errors.length && loadProgress()) {
+  el("player-name").value = state.playerName;
+  el("btn-start").textContent = `繼續闖關(第 ${state.currentLevel + 1} 關)`;
+  el("btn-reset").classList.remove("hidden");
+}
+window.__engineReady = true;   // 之後的錯誤不再由最上面的錯誤顯示處理
+</script>
+
+</body>
+</html>

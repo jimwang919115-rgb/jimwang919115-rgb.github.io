@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>變法圖強:晚清改革接力</title>
+<style>
+  :root {
+    --bg: #1e1f29;
+    --panel: #2a2c3a;
+    --panel-2: #1c1d27;
+    --line: #3f4158;
+    --accent: #6c8cff;
+    --good: #4caf82;
+    --bad: #e0556f;
+    --gold: #e0b34f;
+    --text: #f1f1f6;
+    --muted: #9698ab;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .shell {
+    width: 100%;
+    max-width: 720px;
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 26px 22px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 8px; }
+  h2 { font-size: 1.1rem; margin: 0 0 12px; }
+  p.desc { color: var(--muted); margin: 0 0 18px; line-height: 1.6; }
+  label.field { display: block; margin-bottom: 14px; }
+  label.field > span { display: block; color: var(--muted); font-size: .9rem; margin-bottom: 6px; }
+  input[type="text"] {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--text); font-size: 1rem; margin-bottom: 8px;
+  }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seg button { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 8px 14px; font-weight: 600; }
+  .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button {
+    cursor: pointer; border: none; border-radius: 10px; padding: 12px 18px; font-size: 1rem; font-weight: 600;
+    font-family: inherit;
+  }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--line); margin-top: 10px; width: 100%; }
+  .btn-gold { background: var(--gold); color: #2a2200; width: 100%; }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-row .btn-secondary { margin-top: 0; }
+  .faction-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: .85rem; font-weight: 700; color: #1c1d27; }
+  .turn-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .turn-head .who { font-size: 1.2rem; font-weight: 700; }
+  .stats-row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: .9rem; margin-bottom: 12px; }
+  .hand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-bottom: 14px; min-height: 90px; }
+  .hand-card { border-radius: 10px; padding: 8px 6px; font-size: .8rem; text-align: center; border: 2px solid var(--line); background: var(--panel-2); line-height: 1.4; }
+  .hand-card .score { font-weight: 700; font-size: .95rem; }
+  .hand-card .role { color: var(--muted); font-size: .72rem; margin-top: 2px; }
+  .breakdown { color: var(--muted); font-size: .85rem; margin: -4px 0 14px; }
+  .hint { color: var(--muted); font-size: .85rem; margin: 8px 0 0; text-align: center; min-height: 1.2em; }
+  .board { display: grid; gap: 6px; margin-bottom: 16px; }
+  .board-row { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+  .board-row.now { border-color: var(--gold); border-width: 2px; }
+  .board-row .bar { align-self: stretch; border-radius: 4px; }
+  .board-row .meta { color: var(--muted); font-size: .8rem; }
+  .board-row .pts { font-size: 1.3rem; font-weight: 700; }
+  .summary-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: .95rem; }
+  .submit-status { color: var(--muted); font-size: .85rem; margin-top: 14px; text-align: center; }
+  .best-note { color: var(--muted); font-size: .85rem; margin-top: 8px; text-align: center; }
+  .hidden { display: none !important; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .modal-box { background: var(--panel); border-radius: 14px; padding: 22px; max-width: 440px; width: 100%; border: 1px solid var(--gold); max-height: 90vh; overflow: auto; }
+  .modal-box h3 { margin: 0 0 6px; color: var(--gold); }
+  .choice-btn { display: block; width: 100%; text-align: left; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: .95rem; }
+  .choice-btn.correct { background: rgba(76,175,130,0.2); border-color: var(--good); }
+  .choice-btn.wrong { background: rgba(224,85,111,0.2); border-color: var(--bad); }
+  .feedback { min-height: 20px; font-size: .9rem; margin: 6px 0 4px; }
+  .feedback.good { color: var(--good); }
+  .feedback.bad { color: var(--bad); }
+  .action-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .action-bar button { margin-top: 0; width: 100%; }
+  .blocked-hint { min-height: 0; line-height: 1.6; }
+  .blocked-hint:empty { display: none; }
+  .hand-card.fresh { box-shadow: 0 0 0 3px var(--gold); }
+  .game-errors, .game-warnings { border-radius: 8px; padding: 10px 12px 10px 28px; margin: 0 0 14px; font-size: .9rem; line-height: 1.6; }
+  .game-errors { background: #3a1c28; border: 2px solid var(--bad); }
+  .game-warnings { background: #3a321c; border: 2px solid var(--gold); }
+  .game-errors .title, .game-warnings .title { list-style: none; margin-left: -16px; font-weight: 700; }
+  .game-errors .title { color: #ff9aa8; }
+  .game-warnings .title { color: var(--gold); }
+  .handover { text-align: center; }
+  .handover .big { font-size: 2rem; font-weight: 700; margin: 8px 0 16px; }
+  /* ===== 晚清改革接力:舊報紙風格(覆蓋範本配色) ===== */
+  :root {
+    --bg: #d9ccae; --panel: #f3ead3; --panel-2: #fbf6e8; --line: #b9a888;
+    --accent: #8b2e1f; --good: #3d6b3a; --bad: #a3282b; --gold: #c8962e;
+    --text: #2b2418; --muted: #6f6350;
+  }
+  body {
+    font-family: "Noto Serif TC", "Source Han Serif TC", "PMingLiU", "MingLiU", "Songti TC", serif;
+    background: var(--bg) repeating-linear-gradient(0deg, rgba(90,70,40,.04) 0 2px, transparent 2px 5px);
+  }
+  .shell { max-width: 860px; border: 1px solid #a8957033; box-shadow: 0 10px 28px rgba(60,40,10,.25), inset 0 0 60px rgba(150,120,70,.18); }
+  h1 { font-size: 1.6rem; letter-spacing: .06em; border-bottom: 3px double var(--text); padding-bottom: 8px; }
+  .faction-tag { color: #fff; }
+  .btn-gold { color: #2b2418; }
+  .game-errors { background: #f7dcd8; }
+  .game-warnings { background: #f6ebc8; }
+  .modal-overlay { background: rgba(40,28,10,.55); }
+  .modal-box { border: 2px solid var(--text); box-shadow: 0 8px 30px rgba(0,0,0,.35); max-width: 520px; line-height: 1.65; }
+  .modal-box h3 { color: var(--accent); }
+  .muted { color: var(--muted); }
+  #board { display: none !important; }       /* 用下方的各隊改革區取代引擎的記分板(單人加電腦時也要看得到對手) */
+
+  /* 手牌 */
+  .hand-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+  .hand-card { cursor: pointer; background: var(--panel-2); text-align: left; padding: 8px 9px; transition: transform .12s; }
+  .hand-card:hover { transform: translateY(-3px); }
+  .cd-type { font-size: .7rem; color: var(--muted); letter-spacing: .05em; }
+  .cd-name { font-weight: 700; font-size: 1rem; margin: 2px 0; }
+  .cd-score { color: var(--accent); font-weight: 700; font-size: .8rem; }
+  .cd-desc { color: var(--muted); font-size: .72rem; line-height: 1.45; margin-top: 3px; }
+
+  /* 時間軸與各隊改革區 */
+  .masthead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; border-top: 3px double var(--text); border-bottom: 1px solid var(--text); padding: 4px 0; margin-bottom: 8px; font-weight: 700; letter-spacing: .1em; }
+  .masthead span { font-weight: 400; letter-spacing: 0; color: var(--muted); font-size: .9rem; }
+  #qing-timer.timeup { color: var(--bad); }
+  .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+  .act { border: 1px solid var(--line); border-radius: 6px; padding: 6px; text-align: center; background: var(--panel-2); }
+  .act.closed { background: repeating-linear-gradient(45deg, #e8dcc0 0 6px, #efe5cd 6px 12px); color: var(--muted); }
+  .act.now { border: 2px solid var(--accent); box-shadow: 0 0 0 2px #8b2e1f22; }
+  .act-no { font-size: .75rem; color: var(--muted); }
+  .act-era { font-weight: 700; }
+  .act-ev { font-size: .72rem; color: var(--muted); }
+  .players { display: grid; gap: 6px; margin-bottom: 14px; }
+  .prow { display: grid; grid-template-columns: 6px 1fr auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--panel-2); }
+  .prow.now { border: 2px solid var(--gold); }
+  .pbar { align-self: stretch; border-radius: 3px; }
+  .pname { font-weight: 700; }
+  .pmeta { font-weight: 400; color: var(--muted); font-size: .78rem; margin-left: 8px; }
+  .ppts { font-size: 1.4rem; font-weight: 700; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .chip { font-size: .74rem; border: 1px solid; border-left-width: 4px; border-radius: 4px; padding: 1px 6px; background: #fff8; display: inline-flex; gap: 4px; align-items: baseline; }
+  .chip small { font-size: .66rem; }
+  .chip.down { opacity: .45; text-decoration: line-through; }
+  .empty { font-size: .75rem; color: var(--muted); }
+  #qing-log { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 8px; font-size: .8rem; color: var(--muted); line-height: 1.6; }
+  .log-title { font-weight: 700; color: var(--text); }
+  .extra { display: inline-block; background: var(--accent); color: #fff; padding: 2px 10px; letter-spacing: .3em; font-weight: 700; margin-bottom: 6px; }
+  .act-title { font-size: 1.15rem; border-bottom: 3px double var(--text); padding-bottom: 6px; }
+  .act-lead { font-size: 1.05rem; }
+  .res-good { color: var(--good) !important; } .res-mid { color: var(--gold) !important; } .res-bad { color: var(--bad) !important; }
+  .myth { background: #f6ebc8; border-left: 4px solid var(--gold); padding: 6px 10px; }
+  .cpu-lines { padding-left: 20px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ===== 畫面一:開始畫面(選模式、人數、名字) ===== -->
+  <div id="screen-start">
+    <h1 id="game-title">⚔️ 卡牌對戰教育遊戲</h1>
+    <p class="desc" id="game-desc">每位玩家會被分配到一個陣營。輪到你時可以抽卡,抽卡途中會遇到「機會命運」問答,答對加分、答錯扣分;分數夠高還能發動戰鬥!</p>
+    <div class="field" id="mode-field">
+      <label class="field"><span>遊玩模式</span></label>
+      <div class="seg" id="mode-seg"></div>
+    </div>
+    <div class="field hidden" id="count-field" style="margin-top:14px">
+      <label class="field"><span id="count-label">玩家人數(同一台裝置輪流操作)</span></label>
+      <div class="seg" id="count-seg"></div>
+    </div>
+    <div id="name-inputs" style="margin-top:14px"></div>
+    <ul class="game-errors hidden" id="game-errors"></ul>
+    <ul class="game-warnings hidden" id="game-warnings"></ul>
+    <button class="btn-primary" id="btn-start">開始遊戲</button>
+    <div class="best-note" id="best-note"></div>
+  </div>
+
+  <!-- ===== 畫面二:遊戲進行中(輪流行動) ===== -->
+  <div id="screen-game" class="hidden">
+    <div class="board" id="board"></div>
+    <div class="turn-head">
+      <span class="who" id="turn-who"></span>
+      <span class="faction-tag" id="faction-tag"></span>
+    </div>
+    <div class="stats-row">
+      <span id="stat-turn"></span>
+      <span id="stat-progress"></span>
+      <span id="stat-chance"></span>
+    </div>
+    <div class="hand-grid" id="hand-grid"></div>
+    <div class="breakdown" id="breakdown"></div>
+    <div class="action-bar" id="action-bar"></div>
+    <div class="hint blocked-hint" id="blocked-hint"></div>
+    <p class="hint" id="turn-hint"></p>
+  </div>
+
+  <!-- ===== 畫面三:結算畫面 ===== -->
+  <div id="screen-end" class="hidden">
+    <h1 id="end-title">🎉 遊戲結束!</h1>
+    <div id="end-summary"></div>
+    <div class="submit-status" id="submit-status"></div>
+    <button class="btn-secondary" id="btn-restart">再玩一次</button>
+  </div>
+
+  <!-- ===== 機會命運問答視窗 ===== -->
+  <div id="question-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 id="q-title">🎴 機會命運</h3>
+      <p id="q-who" style="color:var(--muted);margin:0 0 6px"></p>
+      <p id="q-text"></p>
+      <div id="q-choices"></div>
+      <div class="feedback" id="q-feedback"></div>
+    </div>
+  </div>
+
+  <!-- ===== 通用視窗:換人、選戰鬥對象、戰鬥結果 ===== -->
+  <div id="info-modal" class="modal-overlay hidden">
+    <div class="modal-box" id="info-box"></div>
+  </div>
+
+</div>
+
+<!-- 程式分成三個 <script>(仍然是同一個檔案):
+     1. 錯誤顯示:下面兩段只要有語法錯誤(漏逗號、引號或括號沒成對),就在開始畫面顯示第幾行出錯
+     2. 設定與規則包:GAS_URL、STORAGE_KEY、RULES-PACK
+     3. 引擎
+   分開寫是因為同一個 <script> 裡只要有一個語法錯誤,整段都不會執行,連錯誤訊息都顯示不出來。不要合併回去。 -->
+<script>
+(function () {
+  let shown = false;
+  window.addEventListener("error", function (e) {
+    if (window.__engineReady || shown) return;      // 只處理「遊戲還沒準備好」時的第一個錯誤
+    shown = true;
+    const box = document.getElementById("game-errors");
+    const btn = document.getElementById("btn-start");
+    if (btn) btn.disabled = true;
+    if (!box) return;
+    const where = e.lineno ? `(這個檔案的第 ${e.lineno} 行附近)` : "";
+    const li = document.createElement("li");
+    li.className = "title";
+    li.textContent = `程式有錯誤,遊戲無法開始${where}:${e.message || "未知的錯誤"}。`
+      + "最常見的原因是漏了逗號、引號或括號沒有成對,請修正後重新整理。";
+    box.innerHTML = "";
+    box.appendChild(li);
+    box.classList.remove("hidden");
+  });
+})();
+</script>
+
+<script>
+/* =========================================================
+   上傳與存檔設定
+   ========================================================= */
+/* 6. Google Apps Script 上傳網址 */
+const GAS_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+/* 7. localStorage key(記錄這台裝置的歷史最高分)。多個遊戲共用網域時要改成不同名字;
+   改了計分規則(加分倍率、卡牌分數等)之後也要換一個新名字,不然舊規則的最高分會一直掛在開始畫面 */
+const STORAGE_KEY = "edu-card-qing-reform-best";
+
+/* ===== RULES-PACK:BEGIN =====
+   規則包:國中八年級歷史《變法圖強:晚清改革接力》
+   - 四幕(自強 → 維新 → 新政立憲 → 革命),每幕 2 回合,共 8 回合
+   - 每回合:抽 1 張 → 最多出 2 張(出牌是免費行動)→ 按「結束回合」(手牌超過 5 張先丟牌)
+   - 改革卡在對的那一幕打出拿滿分;過去的陣營 1 分;時代未到 0 分、卡進棄牌堆
+   - 阻力卡要打對陣營才有效;史料卡答一題,答對 +1 分並抽 1 張
+   - 每一幕換一位先手;單人模式加 1~3 個電腦(簡單/普通)
+   ========================================================= */
+
+/* =========================================================
+   第一部分:資料與設定
+   ========================================================= */
+
+/* 1. 陣營 = 玩家的隊伍顏色(沒有任何加成)。卡片所屬的「派別」在下面的 ERAS */
+const FACTIONS = [
+  { key: "red",  label: "赤隊", color: "#a3282b" },
+  { key: "blue", label: "藍隊", color: "#2f5470" },
+  { key: "ink",  label: "墨隊", color: "#3b3631" },
+  { key: "gold", label: "金隊", color: "#9a6b12" }
+];
+
+/* 卡片的派別(背面才印)。數字 = 第幾幕是它的主場 */
+const ERAS = {
+  1: { label: "自強派",   movement: "自強運動",       color: "#7a5a2e" },
+  2: { label: "維新派",   movement: "戊戌變法",       color: "#2f6b4f" },
+  3: { label: "新政立憲", movement: "清末新政與立憲", color: "#2f5470" },
+  4: { label: "革命派",   movement: "辛亥革命",       color: "#a3282b" }
+};
+
+/* 變局卡:依順序每幕翻開一張(不洗進牌堆) */
+const ACTS = [
+  { era: 1, name: "變局一:英法聯軍攻入北京(1860)", short: "英法聯軍",
+    desc: "鴉片戰爭後,英法聯軍又攻入北京,清廷決心學習西方的船堅砲利。" },
+  { era: 2, name: "變局二:甲午戰敗、馬關條約(1895)", short: "甲午戰敗",
+    desc: "清朝敗給日本,割讓臺灣、澎湖,有識之士主張改革制度。" },
+  { era: 3, name: "變局三:八國聯軍、辛丑和約(1900~1901)", short: "八國聯軍",
+    desc: "八國聯軍攻入北京後,清廷被迫推行新政,後來宣布預備立憲。" },
+  { era: 4, name: "變局四:保路運動(1911)", short: "保路運動",
+    desc: "清廷把民間集資的鐵路收歸國有,四川等地群起抗爭,革命時機到來。" }
+];
+
+/* 措施卡的面向 */
+const FACETS = { mil: "軍事", eco: "經濟", edu: "文教", pol: "政治" };
+
+/* 2. 卡片種類 */
+const ROLES = [
+  { key: "person",  label: "人物" },
+  { key: "measure", label: "措施" },
+  { key: "resist",  label: "阻力" },
+  { key: "source",  label: "史料" }
+];
+
+/* 3. 主牌堆。era = 派別(1~4,正面不顯示);score = 卡上分數;facet = 措施面向;
+      desc = 正面的一句說明;know = 打出翻面後顯示的知識點
+      阻力卡:from = 第幾幕起可用,hits = 打中哪一派才有效,why = 判定後的解說 */
+const CARD_POOL = [
+  // 一、自強派
+  { id: "lhz", era: 1, role: "person", name: "李鴻章", score: 2, desc: "淮軍將領,興辦新式工廠,建立新式海軍。", know: "自強運動代表人物:創辦江南製造局(與曾國藩)、輪船招商局,建立北洋艦隊。" },
+  { id: "zgf", era: 1, role: "person", name: "曾國藩", score: 2, desc: "率湘軍對抗太平天國,設廠學習西方技術。", know: "設安慶內軍械所,參與籌設江南製造局,奏請派留美幼童。" },
+  { id: "zzt", era: 1, role: "person", name: "左宗棠", score: 2, desc: "在福州設廠造船,後來收復新疆。", know: "1866 年創辦福州船政局。" },
+  { id: "jnzz", era: 1, role: "measure", facet: "mil", name: "江南製造局", score: 3, desc: "在上海設立兵工廠,製造槍砲與輪船。", know: "1865 年設立,自強運動最大的軍事工廠。" },
+  { id: "fzcz", era: 1, role: "measure", facet: "mil", name: "福州船政局", score: 2, desc: "在福州造船,並設學堂培養海軍人才。", know: "1866 年左宗棠創辦,附設船政學堂。" },
+  { id: "bykd", era: 1, role: "measure", facet: "mil", name: "北洋艦隊", score: 3, desc: "向外國購買軍艦,建立新式海軍。", know: "1888 年成軍,甲午戰爭中全軍覆沒。" },
+  { id: "lczs", era: 1, role: "measure", facet: "eco", name: "輪船招商局", score: 2, desc: "成立輪船公司,和外國商船競爭航運。", know: "1872 年李鴻章設立,自強運動「求富」的代表。" },
+  { id: "kpkw", era: 1, role: "measure", facet: "eco", name: "開平礦務局", score: 2, desc: "用新式機器開採煤礦。", know: "1877 年起籌辦,用機器採煤。" },
+  { id: "hytc", era: 1, role: "measure", facet: "eco", name: "漢陽鐵廠", score: 2, desc: "張之洞設立的大型鋼鐵廠。", know: "1890 年代張之洞創辦。" },
+  { id: "twg", era: 1, role: "measure", facet: "edu", name: "京師同文館", score: 2, desc: "培養翻譯與外交人才的新式學校。", know: "1862 年設立。別和京師大學堂(1898,維新)搞混。" },
+  { id: "lmyt", era: 1, role: "measure", facet: "edu", name: "派遣留美幼童", score: 2, desc: "選派少年到美國留學,學習西方科技。", know: "1872 年起陸續派出 120 人,詹天佑是其中一位。" },
+  // 二、維新派
+  { id: "kyw", era: 2, role: "person", name: "康有為", score: 2, desc: "多次上書皇帝,主張仿效日本明治維新。", know: "維新派領袖。" },
+  { id: "lqc", era: 2, role: "person", name: "梁啟超", score: 2, desc: "康有為的學生,辦報宣傳變法。", know: "主筆《時務報》,維新派重要宣傳者。" },
+  { id: "gxd", era: 2, role: "person", name: "光緒帝", score: 2, desc: "年輕的皇帝,下詔推動一連串新法。", know: "1898 年下詔「明定國是」,開始百日維新。" },
+  { id: "gcss", era: 2, role: "measure", facet: "pol", name: "公車上書", score: 2, desc: "各省舉人聯名上書,反對簽約、要求變法。", know: "1895 年康有為帶頭,反對簽訂馬關條約。" },
+  { id: "jzlx", era: 2, role: "measure", facet: "pol", name: "主張君主立憲", score: 3, desc: "主張制定憲法、設立國會,皇帝依憲法治國。", know: "維新派的政治目標(百日維新期間並未真正設立國會)。" },
+  { id: "cckg", era: 2, role: "measure", facet: "pol", name: "裁撤冗官", score: 2, desc: "裁撤沒有實際功能的官署,精簡政府。", know: "百日維新的政治改革。" },
+  { id: "dxt", era: 2, role: "measure", facet: "edu", name: "京師大學堂", score: 3, desc: "設立全國最高學府,是北京大學的前身。", know: "1898 年設立,戊戌政變後唯一保留的新政。別和京師同文館(1862,自強)搞混。" },
+  { id: "fbg", era: 2, role: "measure", facet: "edu", name: "廢八股、改試策論", score: 2, desc: "科舉不再考八股文,改考討論時事的文章。", know: "只改考試內容,沒有廢除科舉(廢科舉是 1905 年清末新政)。" },
+  { id: "bgys", era: 2, role: "measure", facet: "edu", name: "開設報館與譯書局", score: 2, desc: "准許民間辦報,翻譯西方書籍。", know: "百日維新的文教措施。" },
+  { id: "jlgs", era: 2, role: "measure", facet: "eco", name: "獎勵工商", score: 2, desc: "設立農工商總局,鼓勵發明與辦廠。", know: "百日維新的經濟措施。" },
+  { id: "glyc", era: 2, role: "measure", facet: "mil", name: "改練洋操", score: 2, desc: "裁減舊式軍隊,改用西式方法練兵。", know: "百日維新的軍事改革。" },
+  // 三、新政立憲
+  { id: "cxth", era: 3, role: "person", name: "慈禧太后", score: 2, desc: "曾下令中止一次改革,八國聯軍後卻下詔推行改革。", know: "1898 年發動戊戌政變;1901 年宣布推行新政。" },
+  { id: "ysk", era: 3, role: "person", name: "袁世凱", score: 2, desc: "在小站訓練新式陸軍,後來擔任總督推動各項改革。", know: "編練新軍,與張之洞等人奏請廢除科舉。" },
+  { id: "zj", era: 3, role: "person", name: "張謇", score: 2, desc: "狀元出身,興辦紗廠與學校,帶頭請願早開國會。", know: "民間立憲派代表、實業家。" },
+  { id: "bxxj", era: 3, role: "measure", facet: "mil", name: "編練新軍", score: 2, desc: "在全國編練新式陸軍。", know: "清末新政的軍事改革;後來武昌起義的主力就是新軍。" },
+  { id: "slsb", era: 3, role: "measure", facet: "eco", name: "設立商部", score: 2, desc: "中央設立專管工商的部門,鼓勵實業。", know: "1903 年設立商部。" },
+  { id: "fckj", era: 3, role: "measure", facet: "edu", name: "廢除科舉", score: 3, desc: "實行一千三百多年的考試制度正式廢除。", know: "1905 年廢除(科舉從隋朝開始)。戊戌變法只廢八股,沒有廢科舉。" },
+  { id: "xxtl", era: 3, role: "measure", facet: "edu", name: "興學堂、留學日本", score: 2, desc: "各地廣設新式學堂,許多青年到日本留學。", know: "清末出現留學日本熱潮。" },
+  { id: "wdc", era: 3, role: "measure", facet: "pol", name: "五大臣出洋考察", score: 2, desc: "派大臣到日本、歐美考察各國憲政。", know: "1905 年派出,為立憲做準備。" },
+  { id: "ybls", era: 3, role: "measure", facet: "pol", name: "宣布預備立憲", score: 3, desc: "宣布要分階段準備實施憲法。", know: "1906 年宣布。" },
+  { id: "xfdg", era: 3, role: "measure", facet: "pol", name: "欽定憲法大綱", score: 2, desc: "公布憲法大綱,仍保障皇帝擁有很大權力。", know: "1908 年公布,定 9 年的預備期。" },
+  { id: "zyj", era: 3, role: "measure", facet: "pol", name: "設立諮議局", score: 2, desc: "各省設立議事機構,讓地方士紳參與議政。", know: "1909 年各省成立。" },
+  // 四、革命派
+  { id: "szs", era: 4, role: "person", name: "孫中山", score: 2, desc: "提出三民主義,主張推翻清朝、建立民國。", know: "革命派領袖。" },
+  { id: "hx", era: 4, role: "person", name: "黃興", score: 2, desc: "和孫中山一同領導同盟會,多次親自領導起義。", know: "同盟會重要領袖。" },
+  { id: "qj", era: 4, role: "person", name: "秋瑾", score: 2, desc: "提倡女權的女性志士,創辦《中國女報》。", know: "加入同盟會的女性革命家。" },
+  { id: "xzh", era: 4, role: "measure", facet: "pol", name: "興中會", score: 1, desc: "孫中山在檀香山成立的第一個革命團體。", know: "1894 年成立,比戊戌變法還早——革命派和其他改革是同時發展的,但它屬於革命派。" },
+  { id: "tmh", era: 4, role: "measure", facet: "pol", name: "中國同盟會", score: 3, desc: "多個革命團體在東京聯合成立。", know: "1905 年成立。" },
+  { id: "mb", era: 4, role: "measure", facet: "edu", name: "創辦《民報》", score: 2, desc: "發行刊物,宣傳三民主義。", know: "同盟會的機關報;三民主義是民族、民權、民生。" },
+  { id: "hqjk", era: 4, role: "measure", facet: "eco", name: "華僑捐款", score: 2, desc: "海外華僑出錢出力支持革命。", know: "有「華僑為革命之母」的說法。" },
+  { id: "wcqy", era: 4, role: "measure", facet: "mil", name: "武昌起義", score: 3, desc: "新軍在武昌起事,各地接連響應。", know: "1911 年 10 月 10 日。" },
+  { id: "gsdl", era: 4, role: "measure", facet: "pol", name: "各省宣布獨立", score: 2, desc: "武昌起義後,多數省分脫離清廷。", know: "1911 年底。" },
+  { id: "mgcl", era: 4, role: "measure", facet: "pol", name: "中華民國成立", score: 3, desc: "孫中山在南京就任臨時大總統。", know: "1912 年 1 月 1 日(10 月 10 日是武昌起義)。" },
+  { id: "qdtw", era: 4, role: "measure", facet: "pol", name: "清帝退位", score: 2, desc: "宣統皇帝宣布退位,帝制結束。", know: "1912 年 2 月。" },
+  // 五、阻力卡
+  { id: "jw", role: "resist", name: "甲午戰敗", from: 2, hits: 1, copies: 2, desc: "選一位對手改革區的一張卡:若它屬於「被這場戰敗證明成效有限的改革」,就失效。",
+    why: "甲午戰爭(1894~1895)北洋艦隊全軍覆沒,證明只學船砲的「自強運動」成效有限" },
+  { id: "wxzb", role: "resist", name: "戊戌政變", from: 2, hits: 2, copies: 2, desc: "選一位對手改革區的一張卡:若它屬於「被這次政變中止的改革」,就失效。",
+    why: "1898 年慈禧太后發動戊戌政變,光緒帝被幽禁,中止的是「戊戌變法(百日維新)」" },
+  { id: "hznk", role: "resist", name: "皇族內閣", from: 3, hits: 3, copies: 2, desc: "選一位對手改革區的一張卡:若它屬於「被這個內閣潑了冷水的改革」,就失效。",
+    why: "1911 年的皇族內閣多是皇族和滿洲貴族,讓期待「清末立憲」的人失望,轉而同情革命" },
+  // 六、史料卡
+  { id: "src", role: "source", name: "史料卡", copies: 4, desc: "作答一題:答對得 1 分並抽 1 張牌;答錯不得分,看解說。" }
+];
+
+/* 4. 史料卡題庫。trap = 最常見的錯誤選項(要和 choices 裡的文字完全一樣),myth = 它背後的迷思
+      答對 +1 分並抽 1 張(在規則裡處理,所以 correctBonus / wrongPenalty 填 0) */
+const QUESTION_CARDS = [
+  { id: 1, question: "自強運動的基本精神,常用哪一句話來概括?", choices: ["中體西用", "驅除韃虜,恢復中華", "民主與科學", "扶清滅洋"], answerIndex: 0,
+    explain: "以中國傳統學問為根本,學習西方技術來應用。", trap: "扶清滅洋", myth: "「扶清滅洋」是義和團的口號,不是清廷改革的口號。" },
+  { id: 2, question: "自強運動主要向西方學習哪一方面?", choices: ["議會制度", "槍砲、輪船、工廠等技術", "民主思想", "宗教信仰"], answerIndex: 1,
+    explain: "自強運動偏重「器物」,沒有改變政治制度。", trap: "議會制度", myth: "以為一開始就學議會,其實是戊戌變法以後才主張改革制度。" },
+  { id: 3, question: "清廷割讓臺灣、澎湖給日本,是根據哪一個條約?", choices: ["南京條約", "北京條約", "馬關條約", "辛丑和約"], answerIndex: 2,
+    explain: "1895 年甲午戰敗後簽訂馬關條約。", trap: "南京條約", myth: "南京條約割讓的是香港島,別把兩個條約混在一起。" },
+  { id: 4, question: "戊戌變法(百日維新)發生在哪一年?", choices: ["1868 年", "1911 年", "1905 年", "1898 年"], answerIndex: 3,
+    explain: "1898 年是戊戌年,改革約維持一百天。", trap: "1868 年", myth: "1868 年是日本明治維新,兩個「維新」被混在一起。" },
+  { id: 5, question: "戊戌政變後,哪一項新政被保留下來?", choices: ["京師大學堂", "廢八股文", "裁撤冗官", "召開國會"], answerIndex: 0,
+    explain: "京師大學堂保留下來,後來成為北京大學。", trap: "召開國會", myth: "以為維新派真的開過國會,其實只是主張,沒有實行。" },
+  { id: 6, question: "戊戌變法失敗的直接原因是什麼?", choices: ["八國聯軍攻入北京", "慈禧太后發動政變", "武昌起義", "甲午戰敗"], answerIndex: 1,
+    explain: "慈禧太后發動戊戌政變,光緒帝被幽禁,改革停止。", trap: "甲午戰敗", myth: "甲午戰敗是戊戌變法的「起因」,不是失敗的原因。" },
+  { id: 7, question: "康有為等維新派,主要以哪一國的改革為榜樣?", choices: ["法國大革命", "美國獨立革命", "日本明治維新", "英國工業革命"], answerIndex: 2,
+    explain: "日本靠維新變強,又打敗清朝,讓維新派想效法。", trap: "法國大革命", myth: "以為維新派想推翻君主,其實他們主張保留皇帝、實行君主立憲。" },
+  { id: 8, question: "清廷在哪一年正式廢除科舉?", choices: ["1862 年", "1898 年", "1912 年", "1905 年"], answerIndex: 3,
+    explain: "1905 年清末新政時廢除科舉。", trap: "1898 年", myth: "戊戌變法(1898)只廢八股、改試策論,沒有廢除科舉。" },
+  { id: 9, question: "下列哪一件事,讓清末「立憲」的呼聲大增?", choices: ["日俄戰爭中,立憲的日本打敗專制的俄國", "鴉片戰爭戰敗", "太平天國興起", "中華民國成立"], answerIndex: 0,
+    explain: "1904~1905 年日俄戰爭後,許多人認為「立憲才能強國」。", trap: "鴉片戰爭戰敗", myth: "鴉片戰爭太早了,當時引發的是學習西方技術,不是立憲。" },
+  { id: 10, question: "1911 年組成的「皇族內閣」造成什麼影響?", choices: ["立憲派更擁護清廷", "立憲派失望,轉而同情或支持革命", "列強撤出中國", "恢復科舉"], answerIndex: 1,
+    explain: "內閣多是皇族和滿洲貴族,立憲派認為清廷沒有誠意。", trap: "立憲派更擁護清廷", myth: "以為「有內閣」就代表立憲成功,忽略了內閣成員是誰。" },
+  { id: 11, question: "孫中山在 1894 年成立的第一個革命團體是?", choices: ["中國同盟會", "光復會", "興中會", "中國國民黨"], answerIndex: 2,
+    explain: "興中會 1894 年在檀香山成立。", trap: "中國同盟會", myth: "同盟會比較有名,但它是 1905 年才成立的。" },
+  { id: 12, question: "中國同盟會在哪裡成立?", choices: ["南京", "檀香山", "武昌", "日本東京"], answerIndex: 3,
+    explain: "1905 年多個革命團體在東京聯合組成同盟會。", trap: "檀香山", myth: "檀香山是興中會的成立地點,別搞混。" },
+  { id: 13, question: "「三民主義」指的是哪三項?", choices: ["民族、民權、民生", "民主、科學、自由", "自強、求富、立憲", "忠、孝、仁"], answerIndex: 0,
+    explain: "孫中山提出,並透過《民報》宣傳。", trap: "民主、科學、自由", myth: "「民主與科學」是後來新文化運動的口號。" },
+  { id: 14, question: "哪一次起義引發了辛亥革命,讓各省紛紛響應?", choices: ["廣州黃花崗之役", "武昌起義", "公車上書", "戊戌政變"], answerIndex: 1,
+    explain: "1911 年 10 月 10 日武昌起義成功,各省接連響應。", trap: "廣州黃花崗之役", myth: "黃花崗之役雖然很有名,但它失敗了,沒有直接推翻清朝。" },
+  { id: 15, question: "中華民國是在哪一天成立的?", choices: ["1911 年 10 月 10 日", "1912 年 2 月 12 日", "1912 年 1 月 1 日", "1895 年 4 月 17 日"], answerIndex: 2,
+    explain: "孫中山在南京就任臨時大總統,中華民國成立。", trap: "1911 年 10 月 10 日", myth: "10 月 10 日是武昌起義的日子,常被誤認為民國成立日。" },
+  { id: 16, question: "下列哪一項「不是」自強運動的建設?", choices: ["江南製造局", "輪船招商局", "北洋艦隊", "京師大學堂"], answerIndex: 3,
+    explain: "京師大學堂是戊戌變法時設立的。", trap: "輪船招商局", myth: "以為自強運動只有軍事,沒想到輪船公司這類「求富」的建設也屬於自強運動。" },
+  { id: 17, question: "哪一件事最能說明自強運動的成效有限?", choices: ["北洋艦隊在甲午戰爭中全軍覆沒", "武昌起義成功", "京師大學堂成立", "英法聯軍攻入北京"], answerIndex: 0,
+    explain: "花了三十年建立的海軍敗給日本。", trap: "英法聯軍攻入北京", myth: "英法聯軍是自強運動「開始前」的事件,是起因,不是結果。" },
+  { id: 18, question: "八國聯軍之後,清廷簽訂的條約是?", choices: ["馬關條約", "辛丑和約", "北京條約", "南京條約"], answerIndex: 1,
+    explain: "1901 年簽訂辛丑和約,賠款四億五千萬兩。", trap: "馬關條約", myth: "把甲午戰爭和八國聯軍兩場戰爭的條約搞混了。" },
+  { id: 19, question: "從自強運動到戊戌變法,改革的重點怎麼改變?", choices: ["一直都只學軍事", "從改革制度,轉向學習技術", "從學習技術,轉向改革政治制度", "從推翻帝制,轉向保護皇帝"], answerIndex: 2,
+    explain: "甲午戰敗後,大家發現只學技術不夠,要改制度。", trap: "從改革制度,轉向學習技術", myth: "把先後順序記反了:先學技術(器物),後改制度。" },
+  { id: 20, question: "哪一件事正式結束了中國兩千多年的帝制?", choices: ["甲午戰爭", "戊戌政變", "宣布預備立憲", "宣統皇帝退位"], answerIndex: 3,
+    explain: "1912 年清帝退位,帝制結束。", trap: "宣布預備立憲", myth: "以為「立憲」就是沒有皇帝,其實君主立憲仍然保留皇帝。" },
+  { id: 21, question: "魏源在《海國圖志》裡提出哪一個主張?", choices: ["師夷長技以制夷", "中體西用", "驅除韃虜", "民主與科學"], answerIndex: 0,
+    explain: "學習外國的長處,再用來對抗外國。", trap: "中體西用", myth: "「中體西用」是後來張之洞大力提倡的說法。" },
+  { id: 22, question: "「公車上書」主要的訴求是什麼?", choices: ["推翻清朝", "拒絕簽訂和約,主張變法", "廢除科舉", "擴建北洋艦隊"], answerIndex: 1,
+    explain: "1895 年康有為聯合各省舉人,反對簽訂馬關條約並要求變法。", trap: "推翻清朝", myth: "以為上書的人都想推翻清朝,其實維新派支持皇帝。" },
+  { id: 23, question: "清末各省設立的「諮議局」是什麼性質的機構?", choices: ["兵工廠", "軍事學校", "地方的議事機構,為立憲做準備", "革命團體"], answerIndex: 2,
+    explain: "1909 年設立,讓地方士紳討論地方事務。", trap: "革命團體", myth: "看到「議」就以為是反清的組織。" },
+  { id: 24, question: "留美幼童中,後來主持修築京張鐵路的是誰?", choices: ["孫中山", "李鴻章", "康有為", "詹天佑"], answerIndex: 3,
+    explain: "詹天佑在美國學工程,回國後修築京張鐵路。", trap: "李鴻章", myth: "李鴻章參與推動留學政策,但他不是留學生。" }
+].map(q => ({ ...q, correctBonus: 0, wrongPenalty: 0 }));
+
+/* 5. 遊戲設定 */
+const GAME = {
+  title: "📰 變法圖強:晚清改革接力",
+  desc: "晚清五十年分成四幕,每一幕翻開一張「變局卡」,宣布哪一派站上舞台。手上的人物卡、措施卡不印派別:在那一派的幕打出拿滿分,時代已過只得 1 分,時代未到就白白浪費。用阻力卡打掉對手的改革、用史料卡答題,8 回合後分數最高的隊伍獲勝!",
+
+  modes: ["solo", "hotseat"],
+  defaultMode: "solo",
+  minPlayers: 2,
+  maxPlayers: 4,
+
+  actionsPerTurn: 1,     // 「出牌」是免費行動(cost 0),「結束回合」用掉這 1 次
+  rounds: 0,             // 回合數由 RULE 控制(每幕換先手,引擎的輪數不適用)
+  dealPerTurn: 0,        // 抽牌在 onTurnStart 自己做(要從棄牌堆重洗)
+  reshufflePile: false,  // 牌堆抽完改洗棄牌堆,不重開新的一副
+  handSize: 0,
+  questionInterval: 1,
+  shuffleChoices: true,
+
+  text: {
+    questionTitle: "📜 史料卡",
+    questionName: "史料卡",
+    factionLabel: "隊伍",
+    factionTitle: "隊伍顏色",
+    countLabel: "隊伍數(同一台裝置輪流操作)",
+    countUnit: "{n} 隊",
+    nameLabel: "隊伍名稱(可留空)",
+    namePlaceholder: "第 {n} 隊",
+    defaultName: "第{n}隊",
+    handover: "接下來輪到",
+    handoverReady: "開始這一隊的回合"
+  }
+};
+
+/* 這套規則自己的數字 */
+const RULE = {
+  roundsPerAct: 2,        // 每幕幾回合(4 幕 × 2 = 8 回合)
+  startHand: 5,           // 開局每人幾張
+  handLimit: 5,           // 回合結束時手牌上限
+  playsPerTurn: 2,        // 每回合最多出幾張
+  pastScore: 1,           // 過去陣營的卡得幾分
+  leaderBonus: 1,         // 帶頭加成
+  sourceBonus: 1,         // 史料卡答對加幾分
+  fullReformBonus: 3,     // 四種面向湊齊加幾分
+  cpuAccuracy: { normal: 0.7, easy: 0.5 },   // 電腦答對史料卡的機率
+  discussSec: 90          // 多人模式每隊討論秒數(只是倒數提示,不會強制結束;0 = 不顯示)
+};
+
+/* =========================================================
+   第二部分:規則
+   ========================================================= */
+
+const ACT_NUM = ["", "一", "二", "三", "四"];
+const CPU_LEVEL = { normal: "普通", easy: "簡單" };
+let QR = { startTime: null };                       // 這一局的規則狀態(牌序、棄牌堆、紀錄)
+const QSET = { solo: 1, hotseat: 0, level: "normal" }; // 開始畫面選的電腦設定
+
+const qrReady = () => !!(QR.seq && QR.startTime === state.startTime);
+const nowAct = () => (qrReady() ? Math.min(ACTS.length, Math.floor(Math.max(QR.pos, 0) / (RULE.roundsPerAct * state.players.length)) + 1) : 1);
+const nowRound = () => (qrReady() ? Math.floor(Math.max(QR.pos, 0) / state.players.length) + 1 : 1);
+const totalRounds = () => ACTS.length * RULE.roundsPerAct;
+const zoneOf = (p) => p.zone || [];
+const upZone = (p) => zoneOf(p).filter(e => e.up);
+const facetsOf = (p) => new Set(upZone(p).filter(e => e.card.facet).map(e => e.card.facet));
+const leadingCard = (p, act) => upZone(p).find(e => e.card.role === "person" && e.onTime && e.act === act);
+const targetsFor = (p) => state.players.filter(o => o !== p && upZone(o).length > 0);
+const randomOf = (a) => a[Math.floor(Math.random() * a.length)];
+const roleName = (c) => (ROLES.find(r => r.key === c.role) || {}).label + (c.facet ? "・" + FACETS[c.facet] : "");
+
+function qlog(msg) { if (QR.log) QR.log.push(`第${nowRound()}回合|${msg}`); }
+function toDiscard(card) { delete card.fresh; QR.discard.push(card); }
+
+/* 抽 1 張:牌堆空了就把棄牌堆洗成新牌堆;兩個都空就不抽 */
+function drawOne(p) {
+  if (!state.pile.length) { state.pile = shuffle(QR.discard); QR.discard = []; }
+  if (!state.pile.length) return null;
+  return giveCard(p, state.pile.pop());
+}
+
+/* 阻力卡現在能不能用:能用回傳 "" */
+function resistReady(p, card) {
+  if (nowAct() < card.from) return `「${card.name}」第${ACT_NUM[card.from]}幕起才能使用`;
+  if (!targetsFor(p).length) return "對手的改革區沒有正面朝上的卡";
+  return "";
+}
+
+/* 打出改革卡:回傳 { pts, kind, text, short } */
+function playReform(p, card) {
+  takeCard(p, card);
+  delete card.fresh;
+  const act = nowAct(), era = ERAS[card.era];
+  if (card.era === act) {
+    const lead = card.role === "measure" ? leadingCard(p, act) : null;
+    const pts = card.score + (lead ? RULE.leaderBonus : 0);
+    p.zone.push({ card, pts, onTime: true, act, up: true });
+    p.stats.onTime++;
+    return { pts, kind: "good", short: `符合本幕 +${pts}`,
+      text: `翻開背面:${era.label}(${era.movement})—— 符合本幕!得 ${card.score} 分` +
+        (lead ? `,${lead.card.name}帶頭再 +${RULE.leaderBonus}` : "") + "。" +
+        (card.role === "person" ? `帶頭發動:這一幕你之後打出的${era.label}措施卡,每張 +${RULE.leaderBonus}。` : "") };
+  }
+  if (card.era < act) {
+    p.zone.push({ card, pts: RULE.pastScore, onTime: false, act, up: true });
+    p.stats.past++;
+    return { pts: RULE.pastScore, kind: "mid", short: `過去的陣營 +${RULE.pastScore}`,
+      text: `翻開背面:${era.label}(${era.movement})—— 那一派的時代(第${ACT_NUM[card.era]}幕)已經過去,只得 ${RULE.pastScore} 分` +
+        (card.role === "person" ? ",也不發動帶頭。" : "。") };
+  }
+  toDiscard(card);
+  p.stats.early.push(card.name);
+  return { pts: 0, kind: "bad", short: "時代未到 0 分",
+    text: `時代未到!翻開背面:${era.label}(${era.movement}),要到第${ACT_NUM[card.era]}幕才是它的舞台。這張卡進了棄牌堆,0 分。` };
+}
+
+/* 打出阻力卡:回傳 { ok, text } */
+function playResist(p, card, owner, entry) {
+  takeCard(p, card);
+  toDiscard(card);
+  const eraT = ERAS[entry.card.era], eraH = ERAS[card.hits];
+  if (entry.card.era === card.hits) {
+    entry.up = false;
+    p.stats.hit++;
+    return { ok: true, text: `命中!${owner.name} 的「${entry.card.name}」(${eraT.label})翻面失效,扣 ${entry.pts} 分。` +
+      (entry.card.role === "person" ? "這位人物也不再提供帶頭加成。" : "") + `為什麼:${card.why}。` };
+  }
+  p.stats.miss++;
+  return { ok: false, text: `沒有效果,「${card.name}」作廢。「${entry.card.name}」屬於${eraT.label};但${card.why},` +
+    `所以「${card.name}」要打「${eraH.label}」的卡。` };
+}
+
+function cardLabel(c) {
+  if (c.role === "resist") return `${c.name}(阻力・第${ACT_NUM[c.from]}幕起可用)`;
+  if (c.role === "source") return "史料卡(答一題)";
+  return `${c.name}(${roleName(c)},${c.score} 分)`;
+}
+
+/* 玩家:出一張牌(免費行動,一回合最多 2 次) */
+async function humanPlay(p) {
+  let card = QR.pre ? p.hand.find(c => c.uid === QR.pre) : null;
+  QR.pre = null;
+  if (card) {
+    const go = await showInfo(`<h3>打出「${escapeHtml(card.name)}」?</h3><p class="muted">本回合還能出 ${RULE.playsPerTurn - QR.played} 張。</p>`,
+      [{ label: "打出", primary: true, value: true }, { label: "取消", value: false }]);
+    if (!go) return false;
+  } else {
+    card = await pickFromList(`出第 ${QR.played + 1} 張牌(本回合最多 ${RULE.playsPerTurn} 張)`,
+      handOrder(p.hand).map(c => ({ label: cardLabel(c), value: c })), "先不出");
+    if (!card) return false;
+  }
+
+  if (card.role === "resist") {
+    const why = resistReady(p, card);
+    if (why) { await showInfo(`<h3>現在不能用</h3><p>${escapeHtml(why)}。</p>`, [{ label: "知道了", primary: true }]); return false; }
+    const owner = await pickFromList(`「${card.name}」要打哪一隊?`,
+      targetsFor(p).map(o => ({ label: `${o.name}(改革區 ${upZone(o).length} 張)`, value: o })));
+    if (!owner) return false;
+    const entry = await pickFromList(`選 ${owner.name} 改革區裡的一張卡`,
+      upZone(owner).map(e => ({ label: `${e.card.name}(${ERAS[e.card.era].label},${e.pts} 分)`, value: e })));
+    if (!entry) return false;
+    const r = playResist(p, card, owner, entry);
+    QR.played++;
+    qlog(`${p.name} 用「${card.name}」打 ${owner.name} 的「${entry.card.name}」:${r.ok ? "命中" : "打錯對象"}`);
+    await showInfo(`<h3>${r.ok ? "✅ 阻力生效" : "❌ 打錯對象"}</h3><p>${escapeHtml(r.text)}</p>`, [{ label: "繼續", primary: true }]);
+    return true;
+  }
+
+  if (card.role === "source") {
+    takeCard(p, card);
+    toDiscard(card);
+    QR.played++;
+    const q = drawQuestion();
+    const ok = await askQuestion(q, { score: false });
+    const wrongBtn = document.querySelector("#q-choices .choice-btn.wrong");
+    const picked = wrongBtn ? wrongBtn.textContent : "";
+    let html;
+    if (ok) {
+      p.chanceScoreDelta += RULE.sourceBonus;
+      const got = drawOne(p);
+      html = `<h3>✅ 答對了!+${RULE.sourceBonus} 分</h3><p>📖 ${escapeHtml(q.explain)}</p>` +
+        `<p>${got ? `抽到 1 張:「${escapeHtml(got.name)}」${QR.played < RULE.playsPerTurn ? "(這回合還能接著出)" : ""}` : "牌堆和棄牌堆都空了,沒有抽到牌。"}</p>`;
+    } else {
+      html = `<h3>❌ 答錯了</h3><p>正確答案:<b>${escapeHtml(q.choices[q.answerIndex])}</b></p><p>📖 ${escapeHtml(q.explain)}</p>` +
+        (picked === q.trap
+          ? `<p class="myth">⚠️ 你選的「${escapeHtml(picked)}」是常見迷思:${escapeHtml(q.myth)}</p>`
+          : `<p class="myth">⚠️ 另一個常見迷思是選「${escapeHtml(q.trap)}」:${escapeHtml(q.myth)}</p>`);
+    }
+    qlog(`${p.name} 的史料卡:${ok ? "答對 +1 並抽 1 張" : "答錯"}`);
+    await showInfo(html, [{ label: "繼續", primary: true }]);
+    return true;
+  }
+
+  const r = playReform(p, card);
+  QR.played++;
+  qlog(`${p.name} 打出「${card.name}」:${r.short}`);
+  await showInfo(`<h3 class="res-${r.kind}">「${escapeHtml(card.name)}」${escapeHtml(r.short)}</h3><p>${escapeHtml(r.text)}</p><p>📖 ${escapeHtml(card.know)}</p>`,
+    [{ label: "繼續", primary: true }]);
+  return true;
+}
+
+/* 玩家:結束回合(手牌超過上限先丟牌) */
+async function humanEnd(p) {
+  while (p.hand.length > RULE.handLimit) {
+    const c = await pickFromList(`手牌 ${p.hand.length} 張,超過 ${RULE.handLimit} 張:選一張丟掉`,
+      handOrder(p.hand).map(x => ({ label: cardLabel(x), value: x })), "先不結束回合");
+    if (!c) return false;
+    takeCard(p, c);
+    toDiscard(c);
+  }
+  return true;
+}
+
+/* ---------- 電腦 ---------- */
+function normalMove(p, flags) {
+  const act = nowAct();
+  const ref = p.hand.filter(c => c.era);
+  if (!flags.person) {
+    const per = ref.find(c => c.role === "person" && c.era === act);
+    if (per) { flags.person = true; return { card: per }; }
+  }
+  const ms = ref.filter(c => c.role === "measure" && c.era === act).sort((a, b) => b.score - a.score);
+  if (ms.length) return { card: ms[0] };
+  for (const r of p.hand.filter(c => c.role === "resist")) {
+    if (resistReady(p, r)) continue;
+    let best = null;
+    targetsFor(p).forEach(o => upZone(o).forEach(e => {
+      if (e.card.era !== r.hits) return;
+      if (!best || e.pts > best.entry.pts || (e.pts === best.entry.pts && scorePlayer(o).total > scorePlayer(best.owner).total)) best = { owner: o, entry: e };
+    }));
+    if (best) return { card: r, ...best };
+  }
+  const src = p.hand.find(c => c.role === "source");
+  if (src) return { card: src };
+  const past = ref.filter(c => c.era < act).sort((a, b) => b.score - a.score);
+  if (past.length) return { card: past[0] };
+  const per2 = ref.find(c => c.role === "person" && c.era === act);
+  return per2 ? { card: per2 } : null;
+}
+function easyMove(p) {
+  const ref = shuffle(p.hand.filter(c => c.era)).sort((a, b) => b.score - a.score);
+  if (ref.length) return { card: ref[0] };
+  const r = p.hand.find(c => c.role === "resist" && !resistReady(p, c));
+  if (r) { const owner = randomOf(targetsFor(p)); return { card: r, owner, entry: randomOf(upZone(owner)) }; }
+  const src = p.hand.find(c => c.role === "source");
+  return src ? { card: src } : null;
+}
+function cpuDiscard(p) {
+  const act = nowAct();
+  const val = (c) => (c.era ? c.score : 0);
+  if (p.cpu === "normal") {
+    const future = p.hand.filter(c => c.era > act);
+    if (future.length) {
+      const latest = Math.max(...future.map(c => c.era));
+      return future.filter(c => c.era === latest).sort((a, b) => a.score - b.score)[0];
+    }
+    const ref = p.hand.filter(c => c.era).sort((a, b) => a.score - b.score);
+    if (ref.length) return ref[0];
+  }
+  return p.hand.slice().sort((a, b) => val(a) - val(b))[0];
+}
+function doCpuMove(p, mv) {
+  const c = mv.card;
+  if (c.role === "resist") {
+    const r = playResist(p, c, mv.owner, mv.entry);
+    qlog(`${p.name} 用「${c.name}」打 ${mv.owner.name} 的「${mv.entry.card.name}」:${r.ok ? "命中" : "打錯對象"}`);
+    return `用「${c.name}」打 ${mv.owner.name} 的「${mv.entry.card.name}」:${r.ok ? `命中,扣 ${mv.entry.pts} 分` : "打錯陣營,沒有效果"}`;
+  }
+  if (c.role === "source") {
+    takeCard(p, c);
+    toDiscard(c);
+    const q = drawQuestion();
+    const ok = Math.random() < RULE.cpuAccuracy[p.cpu];
+    if (ok) { p.correctCount++; p.chanceScoreDelta += RULE.sourceBonus; drawOne(p); } else p.wrongCount++;
+    qlog(`${p.name} 的史料卡:${ok ? "答對" : "答錯"}`);
+    return `史料卡「${q.question}」:${ok ? `答對 +${RULE.sourceBonus} 並抽 1 張` : `答錯(正解:${q.choices[q.answerIndex]})`}`;
+  }
+  const r = playReform(p, c);
+  qlog(`${p.name} 打出「${c.name}」:${r.short}`);
+  return `打出「${c.name}」(${ERAS[c.era].label}):${r.short}`;
+}
+async function cpuTurn(p) {
+  const lines = [], flags = {};
+  for (let k = 0; k < RULE.playsPerTurn; k++) {
+    const mv = p.cpu === "easy" ? easyMove(p) : normalMove(p, flags);
+    if (!mv) break;
+    lines.push(doCpuMove(p, mv));
+  }
+  let dropped = 0;
+  while (p.hand.length > RULE.handLimit) { const c = cpuDiscard(p); takeCard(p, c); toDiscard(c); dropped++; }
+  if (!lines.length) lines.push("這回合沒有出牌");
+  if (dropped) lines.push(`丟掉 ${dropped} 張手牌`);
+  await showInfo(`<h3>${escapeHtml(p.name)} 的回合</h3><ul class="cpu-lines">${lines.map(l => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`,
+    [{ label: "繼續", primary: true }]);
+  return true;
+}
+
+/* ---------- 開局、每回合開始、翻開變局 ---------- */
+function setupGame() {
+  QR = { startTime: state.startTime, pos: -1, discard: [], log: [], shownAct: 0, played: 0, pre: null };
+  const nCpu = Math.min(QSET[state.mode] || 0, 4 - state.players.length);
+  const used = state.players.map(x => x.faction);
+  const free = FACTIONS.map(f => f.key).filter(k => !used.includes(k));
+  for (let i = 0; i < nCpu; i++) {
+    const cp = makePlayer(`電腦${nCpu > 1 ? i + 1 : ""}(${CPU_LEVEL[QSET.level]})`, free[i] || FACTIONS[i % FACTIONS.length].key);
+    cp.cpu = QSET.level;
+    state.players.push(cp);
+  }
+  state.players.forEach(pl => {
+    pl.zone = [];
+    pl.stats = { onTime: 0, past: 0, early: [], hit: 0, miss: 0 };
+    for (let i = 0; i < RULE.startHand; i++) { const c = drawOne(pl); if (c) delete c.fresh; }
+  });
+  // 出牌順序:第 a 幕由第 (a+1) 號先出,每幕 2 回合
+  const n = state.players.length;
+  QR.seq = [];
+  for (let a = 0; a < ACTS.length; a++)
+    for (let r = 0; r < RULE.roundsPerAct; r++)
+      for (let i = 0; i < n; i++) QR.seq.push((a + i) % n);
+}
+
+async function revealAct(act) {
+  const A = ACTS[act - 1], era = ERAS[A.era], n = state.players.length;
+  const r1 = (act - 1) * RULE.roundsPerAct + 1, r2 = act * RULE.roundsPerAct;
+  const first = state.players[QR.seq[QR.pos]];
+  await showInfo(`<div class="extra">號 外</div><h3 class="act-title">第${ACT_NUM[act]}幕 ${escapeHtml(A.name)}</h3>` +
+    `<p>${escapeHtml(A.desc)}</p><p class="act-lead">本幕主角:<b style="color:${era.color}">${era.label}</b>(${era.movement},第 ${r1}~${r2} 回合)</p>` +
+    (n > 1 ? `<p class="muted">本幕由 ${escapeHtml(first.name)} 先出。</p>` : ""),
+    [{ label: act === 1 ? "開始第一幕" : `翻開第${ACT_NUM[act]}幕`, primary: true }]);
+}
+
+async function onTurnStart() {
+  if (QR.startTime !== state.startTime) setupGame();
+  QR.pos++;
+  QR.played = 0;
+  QR.turnAt = Date.now();
+  const p = cur();
+  const act = nowAct();
+  if (act !== QR.shownAct) { QR.shownAct = act; qlog(`翻開${ACTS[act - 1].name}`); await revealAct(act); }
+  drawOne(p);
+}
+
+/* 結束條件:最後一個回合按了「結束回合」 */
+function isGameOver() {
+  return qrReady() && QR.pos >= QR.seq.length - 1 && state.actionsLeft <= 0;
+}
+/* 換人:只有出牌順序表上的下一位能接手(用來做「每幕換先手」) */
+function canTakeTurn(p) {
+  if (!qrReady()) return true;
+  return state.players.indexOf(p) === QR.seq[QR.pos + 1];
+}
+
+/* R0. 行動 */
+const ACTIONS = [
+  { key: "play", primary: true, cost: 0,
+    label: () => `出牌(還能出 ${qrReady() ? RULE.playsPerTurn - QR.played : RULE.playsPerTurn} 張)`,
+    blocked: (p) => (p.cpu ? "電腦的回合" : !qrReady() ? "準備中"
+      : QR.played >= RULE.playsPerTurn ? `這回合已經出了 ${RULE.playsPerTurn} 張,按「結束回合」` : p.hand.length ? "" : "沒有手牌"),
+    run: (p) => humanPlay(p) },
+  { key: "end", gold: true, cost: 1,
+    label: (p) => (p.cpu ? `▶ 看${p.name}出牌` : "結束回合"),
+    blocked: () => "",
+    run: (p) => (p.cpu ? cpuTurn(p) : humanEnd(p)) }
+];
+
+/* R1. 計分 */
+function scorePlayer(player) {
+  const zonePts = upZone(player).reduce((s, e) => s + e.pts, 0);
+  const full = facetsOf(player).size === Object.keys(FACETS).length ? RULE.fullReformBonus : 0;
+  const q = player.chanceScoreDelta;
+  const total = zonePts + q + full;
+  return { total, detail: `改革區 ${zonePts}` + (q ? ` + 史料卡 ${q}` : "") + (full ? ` + 全面改革 ${full}` : "") + ` = ${total}` };
+}
+
+/* R6. 名次:總分 → 符合本幕且仍有效的卡數 → 面向種類數;全部一樣就共同獲勝 */
+function rankPlayers(players) {
+  const key = (p) => [scorePlayer(p).total, upZone(p).filter(e => e.onTime).length, facetsOf(p).size];
+  const cmp = (x, y) => { const a = key(x), b = key(y); for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return b[i] - a[i]; return 0; };
+  const ranked = players.slice().sort(cmp);
+  const top = ranked.filter(p => cmp(p, ranked[0]) === 0);
+  if (top.length > 1) GAME.text.winTitle = `🏆 ${top.map(p => p.name).join("、")} 共同獲勝!`;
+  else delete GAME.text.winTitle;
+  return ranked;
+}
+
+/* 畫面 */
+function renderCard(card) {
+  const sub = card.role === "resist" ? `第${ACT_NUM[card.from]}幕起可用` : card.role === "source" ? "答題 +1 分" : `${card.score} 分`;
+  const color = card.role === "resist" ? "#7d2a22" : card.role === "source" ? "#5b5a3a" : "#8a7a5c";
+  return cardBox(`<div class="cd" data-uid="${card.uid}"><div class="cd-type">${escapeHtml(roleName(card))}</div>` +
+    `<div class="cd-name">${escapeHtml(card.name)}</div><div class="cd-score">${escapeHtml(sub)}</div>` +
+    `<div class="cd-desc">${escapeHtml(card.desc || "")}</div></div>`, color, card.fresh);
+}
+function handOrder(hand) {
+  const c = state.players.length ? cur() : null;
+  if (c && c.cpu && hand === c.hand) return [];        // 電腦的手牌不給人看
+  const rank = { person: 0, measure: 1, resist: 2, source: 3 };
+  return hand.slice().sort((a, b) => rank[a.role] - rank[b.role]);
+}
+function turnStats(p) {
+  if (!qrReady()) return ["", ""];
+  return [`第${ACT_NUM[nowAct()]}幕・第 ${nowRound()} / ${totalRounds()} 回合`,
+    p.cpu ? `電腦手牌 ${p.hand.length} 張` : `手牌 ${p.hand.length} 張(上限 ${RULE.handLimit})`];
+}
+function statusLine(p) { return `${getFaction(p.faction).label}・手牌 ${p.hand.length} 張`; }
+function ruleHint(p) {
+  paintQing();
+  if (!qrReady() || state.ended) return "";
+  if (p.cpu) return "電腦的回合:按「▶ 看電腦出牌」。";
+  const lead = leadingCard(p, nowAct());
+  return (lead ? `⭐ ${lead.card.name}帶頭中:這一幕你再打出同派別、符合本幕的措施卡,每張 +${RULE.leaderBonus}。 ` : "") +
+    `點一張手牌就能打出。` + (p.hand.length > RULE.handLimit ? `手牌超過 ${RULE.handLimit} 張,結束回合時要丟牌。` : "");
+}
+function summaryRows(p, sc) {
+  const st = p.stats || { onTime: 0, past: 0, early: [], hit: 0, miss: 0 };
+  return [
+    [say("factionLabel"), getFaction(p.faction).label + (p.cpu ? `・電腦(${CPU_LEVEL[p.cpu]})` : "")],
+    ["計分", sc.detail],
+    ["符合本幕打出 / 過去陣營", `${st.onTime} / ${st.past} 張`],
+    ["時代未到(0 分)", st.early.length ? st.early.join("、") : "沒有"],
+    ["阻力卡 命中 / 打錯", `${st.hit} / ${st.miss}`],
+    ["史料卡 答對 / 答錯", `${p.correctCount} / ${p.wrongCount}`],
+    ["改革面向", [...facetsOf(p)].map(f => FACETS[f]).join("、") || "沒有"]
+  ];
+}
+
+/* 時間軸、各隊改革區、戰報(畫在引擎畫面之外的兩個區塊,每次重畫時更新) */
+function paintQing() {
+  const top = document.getElementById("qing-top"), logBox = document.getElementById("qing-log");
+  if (!top || !logBox) return;
+  if (!qrReady()) { top.innerHTML = ""; logBox.innerHTML = ""; return; }
+  const act = nowAct();
+  const timeline = ACTS.map((A, i) => {
+    const a = i + 1, open = a <= QR.shownAct, era = ERAS[A.era];
+    return `<div class="act${a === act ? " now" : ""}${open ? "" : " closed"}"><div class="act-no">第${ACT_NUM[a]}幕</div>` +
+      (open ? `<div class="act-era" style="color:${era.color}">${era.label}</div><div class="act-ev">${escapeHtml(A.short)}</div>` : `<div class="act-era">?</div><div class="act-ev">尚未翻開</div>`) + `</div>`;
+  }).join("");
+  const showTimer = state.mode === "hotseat" && RULE.discussSec > 0 && !cur().cpu && !state.ended;
+  const players = state.players.map((o, i) => {
+    const chips = zoneOf(o).map(e => `<span class="chip${e.up ? "" : " down"}" style="border-color:${ERAS[e.card.era].color}" title="${escapeHtml(e.card.name)}">` +
+      `${escapeHtml(e.card.name)}<small style="color:${ERAS[e.card.era].color}">${ERAS[e.card.era].label}</small><b>${e.up ? e.pts : "失效"}</b></span>`).join("");
+    const lead = leadingCard(o, act);
+    return `<div class="prow${i === state.turn ? " now" : ""}"><span class="pbar" style="background:${getFaction(o.faction).color}"></span>` +
+      `<div class="pmain"><div class="pname">${i === state.turn ? "▶ " : ""}${escapeHtml(o.name)}<span class="pmeta">手牌 ${o.hand.length}${lead ? `・⭐${escapeHtml(lead.card.name)}帶頭` : ""}・面向 ${facetsOf(o).size}/4</span></div>` +
+      `<div class="chips">${chips || '<span class="empty">改革區還沒有卡</span>'}</div></div><span class="ppts">${scorePlayer(o).total}</span></div>`;
+  }).join("");
+  top.innerHTML = `<div class="masthead">變法圖強 晚清改革接力<span>第 ${nowRound()} / ${totalRounds()} 回合${showTimer ? ` ・ 討論 <b id="qing-timer"></b>` : ""}</span></div>` +
+    `<div class="timeline">${timeline}</div><div class="players">${players}</div>`;
+  logBox.innerHTML = `<div class="log-title">戰報</div>` + QR.log.slice(-6).reverse().map(l => `<div>${escapeHtml(l)}</div>`).join("");
+  tickTimer();
+}
+function tickTimer() {
+  const t = document.getElementById("qing-timer");
+  if (!t || !QR.turnAt) return;
+  const left = Math.max(0, RULE.discussSec - Math.floor((Date.now() - QR.turnAt) / 1000));
+  t.textContent = left > 0 ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : "時間到!";
+  t.className = left > 0 ? "" : "timeup";
+}
+setInterval(tickTimer, 1000);
+
+/* 開始畫面:電腦對手的數量與程度(引擎沒有這個選項,在這裡加) */
+(function addCpuSetup() {
+  const anchor = document.getElementById("count-field");
+  const box = document.createElement("div");
+  box.id = "qing-setup";
+  anchor.parentNode.insertBefore(box, anchor.nextSibling);
+  const top = document.createElement("div"); top.id = "qing-top";
+  const sg = document.getElementById("screen-game"); sg.insertBefore(top, sg.firstChild);
+  const lg = document.createElement("div"); lg.id = "qing-log"; sg.appendChild(lg);
+
+  function paint() {
+    if (typeof state === "undefined") return;
+    const mode = state.mode, humans = mode === "hotseat" ? state.playerCount : 1;
+    const opts = mode === "solo" ? [1, 2, 3] : [0, 1, 2, 3].filter(k => humans + k <= 4);
+    if (!opts.includes(QSET[mode])) QSET[mode] = opts[0];
+    box.innerHTML = `<div class="field" style="margin-top:14px"><label class="field"><span>${mode === "solo" ? "電腦對手" : "加入電腦隊伍(當「標竿」)"}</span></label><div class="seg">` +
+      opts.map(k => `<button type="button" data-qcpu="${k}" aria-pressed="${QSET[mode] === k}">${k === 0 ? "不加" : k + " 個電腦"}</button>`).join("") + `</div></div>` +
+      (QSET[mode] > 0 ? `<div class="field" style="margin-top:10px"><label class="field"><span>電腦程度</span></label><div class="seg">` +
+        Object.keys(CPU_LEVEL).map(k => `<button type="button" data-qlevel="${k}" aria-pressed="${QSET.level === k}">${CPU_LEVEL[k]}${k === "normal" ? "(讀過書)" : "(只看分數)"}</button>`).join("") + `</div></div>` : "");
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b && b.dataset.qcpu !== undefined) QSET[state.mode] = +b.dataset.qcpu;
+    if (b && b.dataset.qlevel) QSET.level = b.dataset.qlevel;
+    setTimeout(paint, 0);     // 等引擎處理完模式、人數的切換再畫
+  });
+  // 點手牌直接出牌
+  document.getElementById("hand-grid").addEventListener("click", (e) => {
+    const d = e.target.closest(".hand-card") && e.target.closest(".hand-card").querySelector("[data-uid]");
+    const p = state.players.length ? cur() : null;
+    if (!d || !p || p.cpu || state.busy || state.acting || state.ended || state.handover) return;
+    if (ACTIONS[0].blocked(p)) return;
+    QR.pre = +d.dataset.uid;
+    performAction("play");
+  });
+  setTimeout(paint, 0);
+})();
+
+/* R8. 檢查這套規則的資料 */
+function validateRules() {
+  const errors = [], warnings = [];
+  const roleKeys = ROLES.map(r => r.key);
+  const ids = new Set();
+  CARD_POOL.forEach(c => {
+    const n = `卡片「${c.name || c.id}」`;
+    if (ids.has(c.id)) errors.push(`${n}:id 重複`);
+    ids.add(c.id);
+    if (!roleKeys.includes(c.role)) errors.push(`${n}:role「${c.role}」不在 ROLES 裡`);
+    if (c.role === "person" || c.role === "measure") {
+      if (!ERAS[c.era]) errors.push(`${n}:era 要是 1~4`);
+      if (typeof c.score !== "number" || !Number.isFinite(c.score)) errors.push(`${n}:score 要是數字`);
+      if (c.role === "measure" && !FACETS[c.facet]) errors.push(`${n}:措施卡要有 facet(mil / eco / edu / pol)`);
+      if (!c.know) warnings.push(`${n}:沒有 know(打出後的知識點)`);
+    }
+    if (c.role === "resist") {
+      if (!ERAS[c.hits]) errors.push(`${n}:hits 要是 1~4`);
+      if (!Number.isInteger(c.from) || c.from < 1 || c.from > ACTS.length) errors.push(`${n}:from 要是 1~${ACTS.length}`);
+      if (!c.why) errors.push(`${n}:要寫 why(判定後的解說)`);
+    }
+  });
+  ACTS.forEach((A, i) => { if (!ERAS[A.era]) errors.push(`變局 ${i + 1}:era 不在 ERAS 裡`); });
+  QUESTION_CARDS.forEach((q, i) => {
+    if (!q.explain) errors.push(`史料卡第 ${i + 1} 題:沒有 explain(解說)`);
+    if (q.trap && !q.choices.includes(q.trap)) errors.push(`史料卡第 ${i + 1} 題:trap「${q.trap}」不在選項裡(要一字不差)`);
+    if (q.trap === q.choices[q.answerIndex]) errors.push(`史料卡第 ${i + 1} 題:trap 不能是正確答案`);
+  });
+  const total = CARD_POOL.reduce((s, c) => s + (c.copies || 1), 0);
+  if (total !== 54) warnings.push(`主牌堆共 ${total} 張(設計書是 54 張)`);
+  return { errors, warnings };
+}
+/* ===== RULES-PACK:END ===== */
+</script>
+
+<script>
+
+/* =========================================================
+   第三部分:遊戲流程(引擎)—— 通常不需要修改
+   引擎不認識任何具體規則,只負責:輪流、發牌、讓玩家做行動、換人、結算、上傳成績。
+   怎麼計分、有哪些行動、什麼時候結束,都由第二部分提供。
+   ========================================================= */
+
+/* 遊戲狀態。每位玩家的資料都在 players 陣列裡。
+   規則需要新的玩家欄位(例如籌碼、俘虜)時,在 makePlayer() 裡加。
+   要替換既有欄位(例如把 battleResult 換成勝敗場數)也可以,但搜尋整份檔案,
+   所有用到它的地方都要一起改,finishGame() 的 payload 和 gas-backend.gs 也要對應 */
+let state = {
+  mode: GAME.defaultMode,
+  playerCount: Math.min(GAME.maxPlayers, Math.max(GAME.minPlayers, GAME.defaultPlayers || GAME.minPlayers)),   // 多人模式開始畫面預設選幾人
+  players: [],
+  turn: 0,
+  busy: false,       // 問答或視窗開著時為 true,期間鎖住所有行動按鈕
+  acting: false,     // 某個行動正在執行(包含它開的視窗)時為 true
+  handover: false,   // 交接畫面開著時為 true,期間不畫手牌
+  ended: false,      // 遊戲已經結束、停在最後的手牌等玩家按「看結果」時為 true
+  startTime: null,
+  round: 1,          // 目前第幾輪(每次輪回第一位玩家就 +1)
+  actionsLeft: 0,    // 這回合還剩幾次行動
+  pile: [],          // 共用牌堆(GAME.dealPerTurn > 0 時使用)
+  qBag: []           // 問答卡的洗牌袋,抽完再洗
+};
+
+function makePlayer(name, faction) {
+  return {
+    name, faction,
+    drawQueue: [],        // 抽卡佇列(GAME.handSize > 0 時才有內容)
+    hand: [],             // 手上的牌。可以隨時增減(合成、被搶走…),請用 giveCard / takeCard
+    chanceScoreDelta: 0,
+    correctCount: 0,
+    wrongCount: 0,
+    battleBonus: 0,
+    battlesUsed: 0,
+    battleResult: null,   // null | "win" | "lose" | "defended-win" | "defended-lose"
+    flags: {}             // 規則用的旗標,例如 lostKing
+  };
+}
+
+const el = (id) => document.getElementById(id);
+const getFaction = (key) => FACTIONS.find(f => f.key === key);
+const roleLabel = (key) => (ROLES.find(r => r.key === key) || { label: key }).label;
+const signed = (n) => (n >= 0 ? "+" : "") + n;
+const cur = () => state.players[state.turn];
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const usesQueue = () => GAME.handSize > 0;
+
+/* ---------- 畫面上的用詞 ----------
+   GAME.text 有寫的句子蓋掉這裡的預設;要換用詞改 GAME.text,不要來改引擎裡的字 */
+const DEFAULT_TEXT = {
+  questionTitle: "🎴 機會命運",
+  questionName: "機會命運",
+  factionLabel: "陣營",
+  factionTitle: "陣營分配",
+  countLabel: "玩家人數(同一台裝置輪流操作)",
+  countUnit: "{n} 人",
+  nameLabel: "玩家名稱(可留空)",
+  namePlaceholder: "第 {n} 位玩家",
+  defaultName: "玩家{n}",
+  turnWho: "輪到 {name}",
+  handover: "請把裝置交給",
+  handoverReady: "我準備好了",
+  winTitle: "🏆 {name} 獲勝!"
+};
+function say(key, vars) {
+  const custom = GAME.text && typeof GAME.text[key] === "string" ? GAME.text[key] : null;
+  const tpl = custom !== null ? custom : (DEFAULT_TEXT[key] !== undefined ? DEFAULT_TEXT[key] : key);
+  return tpl.replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] !== undefined ? vars[k] : m));
+}
+
+/* ---------- 規則的預設版本 ----------
+   第二部分沒有寫某個函式時,引擎改用這裡的版本。
+   引擎一律透過 rule("名稱", ...參數) 呼叫,所以第二部分只要用 function 宣告同名函式就能取代 */
+const DEFAULT_RULES = {
+  scorePlayer(p) {
+    const sum = p.hand.reduce((s, c) => s + (c.baseScore !== undefined ? c.baseScore : (c.score || 0)), 0);
+    const total = sum + p.chanceScoreDelta + p.battleBonus;
+    const parts = [`手牌 ${sum}`];
+    if (p.chanceScoreDelta) parts.push(`${say("questionName")} ${signed(p.chanceScoreDelta)}`);
+    if (p.battleBonus) parts.push(`戰鬥 ${signed(p.battleBonus)}`);
+    return { total, detail: parts.join(",") + ` = ${total}` };
+  },
+  rankPlayers(players) {
+    return players.slice().sort((x, y) => rule("scorePlayer", y).total - rule("scorePlayer", x).total);
+  },
+  onTurnStart(p) {
+    if (GAME.dealPerTurn > 0) dealCards(p, GAME.dealPerTurn);
+  },
+  isGameOver() {
+    if (GAME.rounds > 0) return state.round > GAME.rounds;
+    return usesQueue() && state.players.every(p => p.drawQueue.length === 0);
+  },
+  canTakeTurn(p) {
+    return usesQueue() && GAME.rounds === 0 ? p.drawQueue.length > 0 : true;
+  },
+  renderCard(card) {
+    const cf = card.faction ? getFaction(card.faction) : null;
+    const score = card.baseScore !== undefined ? `<div class="score">${escapeHtml(card.baseScore)} 分</div>` : "";
+    const role = card.role ? `<div class="role">${escapeHtml(roleLabel(card.role))}</div>` : "";
+    return cardBox(`${score}<div>${escapeHtml(card.name)}</div>${role}`, cf && cf.color, card.fresh);
+  },
+  handOrder(hand) { return hand; },
+  turnStats(p) {
+    const left = usesQueue()
+      ? `已抽卡:${p.hand.length} / ${p.hand.length + p.drawQueue.filter(x => x.type === "card").length}`
+      : `手上 ${p.hand.length} 張`;
+    return [left, `${say("questionName")}加減分:${signed(p.chanceScoreDelta)}`];
+  },
+  statusLine(p) {
+    const left = usesQueue()
+      ? `還有 ${p.drawQueue.filter(x => x.type === "card").length} 張可抽`
+      : `手上 ${p.hand.length} 張`;
+    return `${getFaction(p.faction).label},${left}`;
+  },
+  ruleHint() { return ""; },
+  summaryRows(p, sc) {
+    const battleLabel = { win: "主動出擊獲勝", lose: "主動出擊失敗", "defended-win": "守住了", "defended-lose": "被擊敗" };
+    const rows = [[say("factionLabel"), getFaction(p.faction).label], ["計分", sc.detail]];
+    if (QUESTION_CARDS.length) rows.push(["答對/答錯", `${p.correctCount} / ${p.wrongCount}`]);
+    if (GAME.battlesPerPlayer > 0) rows.push(["戰鬥", battleLabel[p.battleResult] || "沒有戰鬥"]);
+    return rows;
+  },
+  validateRules() { return { errors: [], warnings: [] }; }
+};
+function rule(name, ...args) {
+  const fn = typeof window[name] === "function" ? window[name] : DEFAULT_RULES[name];
+  return fn(...args);
+}
+
+/* ---------- 卡片與牌堆 ----------
+   發到玩家手上的永遠是「複製品」(有自己的 uid),不是 CARD_POOL 裡的原物件,
+   所以規則可以放心修改手牌、產生新卡(例如合成出的化合物),不會弄壞牌庫 */
+let uidCounter = 0;
+function newCard(def) { return { ...def, uid: ++uidCounter }; }
+function newPile() {
+  const cards = [];
+  CARD_POOL.forEach(c => { for (let i = 0; i < (c.copies || 1); i++) cards.push(newCard(c)); });
+  return shuffle(cards);
+}
+function dealCards(player, n) {
+  const got = [];
+  for (let i = 0; i < n; i++) {
+    if (!state.pile.length) {
+      if (GAME.reshufflePile === false) break;
+      state.pile = newPile();
+    }
+    const c = state.pile.pop();
+    c.fresh = true;            // 這回合新拿到的牌會亮框,回合結束後取消
+    player.hand.push(c);
+    got.push(c);
+  }
+  return got;
+}
+function giveCard(player, card) { card.fresh = true; player.hand.push(card); return card; }
+function takeCard(player, card) {
+  const i = player.hand.indexOf(card);
+  if (i >= 0) player.hand.splice(i, 1);
+  return i >= 0;
+}
+function cardBox(inner, color, fresh) {
+  return `<div class="hand-card${fresh ? " fresh" : ""}" style="border-color:${color || "var(--line)"}">${inner}</div>`;
+}
+function drawQuestion() {
+  if (!QUESTION_CARDS.length) return null;
+  if (!state.qBag.length) state.qBag = shuffle(QUESTION_CARDS);
+  return state.qBag.pop();
+}
+
+function loadBest() {
+  // 格式不對就當作沒有紀錄(例如 STORAGE_KEY 和別的遊戲撞名,讀到別種資料);
+  // 不檢查的話,開始畫面會顯示 undefined,而且之後的最高分永遠不會被更新
+  try {
+    const best = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (best && Number.isFinite(best.score)) {
+      return { score: best.score, name: typeof best.name === "string" ? best.name : "" };
+    }
+  } catch (e) { /* 讀不到或壞掉,當作沒有紀錄 */ }
+  return null;
+}
+function saveBestIfNeeded(score, name) {
+  const best = loadBest();
+  if (!best || score > best.score) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ score, name })); } catch (e) {}
+  }
+}
+function showBestNote() {
+  const best = loadBest();
+  el("best-note").textContent = best ? `這台裝置的最高分:${best.score} 分${best.name ? "(" + best.name + ")" : ""}` : "";
+}
+
+/* ---------- 檢查資料 ----------
+   開始畫面載入時執行。引擎檢查它自己會讀到的東西(陣營、問答卡、GAME 的回合與抽卡設定、ACTIONS),
+   這套規則自己的欄位由第二部分的 validateRules() 檢查。
+   errors 會擋住開始鈕,warnings 只是提醒 */
+function validateEngine() {
+  const errors = [], warnings = [];
+  const isInt = (n, min) => Number.isInteger(n) && n >= min;
+  const isNum = (n) => typeof n === "number" && Number.isFinite(n);
+
+  if (!Array.isArray(FACTIONS) || FACTIONS.length === 0) {
+    errors.push("FACTIONS 至少要有一個(陣營只當隊伍用也要寫)");
+  } else {
+    const seen = new Set();
+    FACTIONS.forEach((f, i) => {
+      if (!f || !f.key || !f.label || !f.color) { errors.push(`FACTIONS 第 ${i + 1} 項要有 key、label、color`); return; }
+      if (seen.has(f.key)) errors.push(`FACTIONS 的 key「${f.key}」重複了`);
+      seen.add(f.key);
+    });
+  }
+  if (!Array.isArray(CARD_POOL) || CARD_POOL.length === 0) errors.push("CARD_POOL 至少要有一張卡");
+  if (GAME.shuffleChoices === false && Array.isArray(QUESTION_CARDS) && QUESTION_CARDS.length >= 3 && QUESTION_CARDS.every(q => q.answerIndex === QUESTION_CARDS[0].answerIndex)) {
+    warnings.push(`選項不會打亂(shuffleChoices 是 false),但每一題的正確答案都在第 ${QUESTION_CARDS[0].answerIndex + 1} 個選項,玩家很快就會發現`);
+  }
+  if (GAME.text !== undefined && (typeof GAME.text !== "object" || GAME.text === null)) errors.push("GAME.text 要是物件,例如 text: { questionName: \"歷史問答\" }");
+  else Object.keys(GAME.text || {}).forEach(k => { if (!(k in DEFAULT_TEXT)) warnings.push(`GAME.text 裡的「${k}」不是引擎認得的名稱(可能打錯字),不會有作用`); });
+  if (!Array.isArray(QUESTION_CARDS)) {
+    errors.push("QUESTION_CARDS 必須是陣列(沒有問答就寫 [])");
+  } else {
+    QUESTION_CARDS.forEach((q, i) => {
+      const n = `QUESTION_CARDS 第 ${i + 1} 題`;
+      if (typeof q.question !== "string" || !q.question.trim()) errors.push(`${n}:question 要寫題目文字`);
+      if (!Array.isArray(q.choices) || q.choices.length < 2) errors.push(`${n}:choices 至少要有 2 個選項`);
+      else if (!isInt(q.answerIndex, 0) || q.answerIndex >= q.choices.length) errors.push(`${n}:answerIndex 要是 0 到 ${q.choices.length - 1} 的整數(從 0 開始算)`);
+      ["correctBonus", "wrongPenalty"].forEach(k => {
+        if (!isNum(q[k]) || q[k] < 0) errors.push(`${n}:${k} 要是不小於 0 的數字(不能寫成字串)`);
+      });
+    });
+  }
+
+  const modes = Array.isArray(GAME.modes) ? GAME.modes : [];
+  if (!modes.length || modes.some(m => m !== "solo" && m !== "hotseat")) errors.push('GAME.modes 只能放 "solo" 和 "hotseat"');
+  if (modes.includes("hotseat") && (!isInt(GAME.minPlayers, 1) || !isInt(GAME.maxPlayers, 1) || GAME.maxPlayers < GAME.minPlayers)) {
+    errors.push("GAME.minPlayers / maxPlayers 要是整數,而且最多不能小於最少");
+  }
+  if (!isInt(GAME.actionsPerTurn, 1)) errors.push("GAME.actionsPerTurn 要是 1 以上的整數");
+  if (!isInt(GAME.rounds, 0)) errors.push("GAME.rounds 要是 0 以上的整數(0 代表不限輪數)");
+  if (!isInt(GAME.dealPerTurn, 0)) errors.push("GAME.dealPerTurn 要是 0 以上的整數(0 代表不自動發牌)");
+  if (!isInt(GAME.handSize, 0)) errors.push("GAME.handSize 要是 0 以上的整數(0 代表不用抽卡佇列)");
+  if (typeof window.isGameOver !== "function" && !usesQueue() && !(GAME.rounds > 0)) {
+    errors.push("遊戲沒有結束條件:handSize 要大於 0(抽卡佇列抽完就結束),或 rounds 要大於 0(打幾輪就結束)");
+  }
+
+  if (usesQueue() && Array.isArray(CARD_POOL) && Array.isArray(FACTIONS) && Array.isArray(QUESTION_CARDS)) {
+    if (!isInt(GAME.questionInterval, 1)) errors.push("GAME.questionInterval 要是 1 以上的整數(0 會讓整局都不出問答)");
+    modes.filter(m => m === "solo" || m === "hotseat").forEach(m => {
+      const src = typeof GAME.drawFrom === "string" ? GAME.drawFrom : (GAME.drawFrom || {})[m];
+      if (!["shared", "ownFaction", "mixed"].includes(src)) {
+        errors.push(`GAME.drawFrom 的「${m}」要是 "shared"、"ownFaction" 或 "mixed"(目前是 ${JSON.stringify(src)})`);
+        return;
+      }
+      if (src !== "shared") {
+        const empty = FACTIONS.filter(f => !CARD_POOL.some(c => c.faction === f.key)).map(f => f.label);
+        if (empty.length) errors.push(`抽卡來源「${src}」需要每個陣營都有卡,但 ${empty.join("、")} 一張都沒有(抽到這個陣營的玩家會沒牌可抽,遊戲會卡住)`);
+        if (src === "ownFaction") {
+          const small = FACTIONS.filter(f => { const n = CARD_POOL.filter(c => c.faction === f.key).length; return n > 0 && n <= GAME.handSize; }).map(f => f.label);
+          if (small.length) warnings.push(`抽卡來源是 ownFaction,而 ${small.join("、")} 的卡數不超過 handSize,抽到該陣營的人每局都會抽到整個陣營`);
+        }
+      } else {
+        const need = (m === "hotseat" ? GAME.maxPlayers : 1) * GAME.handSize;
+        if (need > CARD_POOL.length) warnings.push(`「${m}」用共用牌庫,最多需要 ${need} 張,但 CARD_POOL 只有 ${CARD_POOL.length} 張,部分玩家會抽到比較少張`);
+      }
+    });
+    if (QUESTION_CARDS.length && GAME.questionInterval > GAME.handSize) warnings.push("questionInterval 大於 handSize,整局不會出現任何問答");
+  }
+  if (usesQueue() && Array.isArray(QUESTION_CARDS) && QUESTION_CARDS.length === 0) warnings.push("QUESTION_CARDS 是空的,遊戲裡不會有問答");
+  if (GAME.dealPerTurn > 0 && Array.isArray(CARD_POOL) && GAME.reshufflePile === false && Array.isArray(FACTIONS)) {
+    const total = CARD_POOL.reduce((s, c) => s + (c.copies || 1), 0);
+    const need = GAME.dealPerTurn * Math.max(GAME.rounds, 1) * (modes.includes("hotseat") ? GAME.maxPlayers : 1);
+    if (need > total) warnings.push(`reshufflePile 是 false,但整局最多要發 ${need} 張,牌堆只有 ${total} 張,後面的回合會發不到牌`);
+  }
+
+  if (!Array.isArray(ACTIONS) || ACTIONS.length === 0) {
+    errors.push("ACTIONS 至少要有一個行動");
+  } else {
+    const keys = new Set();
+    ACTIONS.forEach((a, i) => {
+      const n = `ACTIONS 第 ${i + 1} 項`;
+      if (!a || typeof a.key !== "string" || !a.key) { errors.push(`${n}:要有字串的 key`); return; }
+      if (keys.has(a.key)) errors.push(`${n}:key「${a.key}」重複了`);
+      keys.add(a.key);
+      if (typeof a.label !== "string" && typeof a.label !== "function") errors.push(`${n}(${a.key}):label 要是字串或函式`);
+      if (typeof a.blocked !== "function") errors.push(`${n}(${a.key}):要有 blocked(player) 函式(可以做就回傳 "",不行就回傳原因)`);
+      if (typeof a.run !== "function") errors.push(`${n}(${a.key}):要有 run(player) 函式`);
+    });
+  }
+
+  // 用假玩家試跑會被引擎直接呼叫的規則函式,在開始前就抓到寫錯的規則
+  if (!errors.length) {
+    try {
+      const mk = (name) => { const pl = makePlayer(name, FACTIONS[0].key); pl.hand = CARD_POOL.slice(0, 5).map(newCard); return pl; };
+      const a = mk("測試A"), b = mk("測試B");
+      const sc = rule("scorePlayer", a);
+      if (!sc || typeof sc.total !== "number" || !Number.isFinite(sc.total) || typeof sc.detail !== "string") {
+        errors.push("scorePlayer() 要回傳 { total: 數字, detail: 文字 },目前算出來是 " + JSON.stringify(sc) + "(常見原因:卡片分數欄位寫成字串或漏寫)");
+      }
+      const ranked = rule("rankPlayers", [a, b]);
+      if (!Array.isArray(ranked) || ranked.length !== 2) errors.push("rankPlayers() 要回傳排好的玩家陣列");
+      if (typeof rule("renderCard", a.hand[0]) !== "string") errors.push("renderCard() 要回傳 HTML 字串");
+      ["ruleHint", "turnStats", "statusLine"].forEach(name => rule(name, a));
+    } catch (e) {
+      errors.push("規則函式在測試資料上執行出錯:" + e.message + "(檢查 scorePlayer、rankPlayers、renderCard、ruleHint、turnStats、statusLine;拿掉戰鬥規則時,ruleHint 裡的 canBattle 也要一起拿掉)");
+    }
+  }
+  return { errors, warnings };
+}
+
+function paintList(id, title, items) {
+  const box = el(id);
+  const shown = items.slice(0, 12);
+  box.innerHTML = items.length
+    ? `<li class="title">${escapeHtml(title)}</li>` + shown.map(x => `<li>${escapeHtml(x)}</li>`).join("") +
+      (items.length > shown.length ? `<li>…還有 ${items.length - shown.length} 項</li>` : "")
+    : "";
+  box.classList.toggle("hidden", !items.length);
+}
+function runValidation() {
+  const errors = [], warnings = [];
+  const merge = (fn) => {
+    try {
+      const r = fn() || {};
+      (r.errors || []).forEach(x => errors.push(x));
+      (r.warnings || []).forEach(x => warnings.push(x));
+    } catch (e) { errors.push("檢查程式出錯:" + e.message); }
+  };
+  merge(validateEngine);
+  merge(() => rule("validateRules"));
+  paintList("game-errors", "遊戲資料有問題,修正後才能開始:", errors);
+  paintList("game-warnings", "提醒(不影響開始,但可能不是你要的設計):", warnings);
+  el("btn-start").disabled = errors.length > 0;
+  return { errors, warnings };
+}
+
+/* ---------- 開始畫面 ---------- */
+function renderSetup() {
+  const modeLabel = { solo: "單人(對電腦)", hotseat: "多人(同一畫面輪流)" };
+  el("mode-field").classList.toggle("hidden", GAME.modes.length < 2);
+  el("mode-seg").innerHTML = GAME.modes.map(m =>
+    `<button type="button" data-mode="${m}" aria-pressed="${state.mode === m}">${modeLabel[m]}</button>`).join("");
+  el("count-field").classList.toggle("hidden", state.mode !== "hotseat");
+  const counts = [];
+  for (let n = GAME.minPlayers; n <= GAME.maxPlayers; n++) counts.push(n);
+  el("count-seg").innerHTML = counts.map(n =>
+    `<button type="button" data-count="${n}" aria-pressed="${state.playerCount === n}">${escapeHtml(say("countUnit", { n }))}</button>`).join("");
+  const n = state.mode === "hotseat" ? state.playerCount : 1;
+  const old = [...document.querySelectorAll("#name-inputs input")].map(i => i.value);
+  let html = `<label class="field"><span>${n > 1 ? escapeHtml(say("nameLabel")) : "姓名或暱稱"}</span>`;
+  for (let i = 0; i < n; i++) {
+    html += `<input type="text" data-name="${i}" placeholder="${n > 1 ? escapeHtml(say("namePlaceholder", { n: i + 1 })) : "請輸入姓名或暱稱"}" value="${escapeHtml(old[i] || "")}">`;
+  }
+  el("name-inputs").innerHTML = html + "</label>";
+}
+
+/* ---------- 分配陣營、組抽卡佇列 ---------- */
+function assignFactions(n) {
+  // 人數不超過陣營數時每人不同陣營;超過時會重複
+  const order = shuffle(FACTIONS.map(f => f.key));
+  return Array.from({ length: n }, (_, i) => order[i % order.length]);
+}
+
+/* 依 handSize / questionInterval 為每位玩家組出抽卡佇列(handSize 為 0 時不組)。
+   佇列裡每一項是 { type: "card", data } 或 { type: "question", data } */
+function buildDrawDeck() {
+  state.players.forEach(p => { p.drawQueue = []; });
+  if (!usesQueue()) return;
+  const questions = shuffle(QUESTION_CARDS);
+  let qIndex = 0;
+  const shared = shuffle(CARD_POOL);
+  state.players.forEach((p, pi) => {
+    let cards;
+    const source = typeof GAME.drawFrom === "string" ? GAME.drawFrom : GAME.drawFrom[state.mode];
+    if (source === "ownFaction") {
+      cards = shuffle(CARD_POOL.filter(c => c.faction === p.faction)).slice(0, GAME.handSize);
+    } else if (source === "mixed") {
+      const own = CARD_POOL.filter(c => c.faction === p.faction);
+      const others = shuffle(CARD_POOL.filter(c => c.faction !== p.faction)).slice(0, own.length);
+      cards = shuffle(own.concat(others)).slice(0, GAME.handSize);
+    } else {
+      cards = [];
+      for (let k = 0; k < GAME.handSize; k++) {
+        const c = shared[k * state.players.length + pi];
+        if (c) cards.push(c);
+      }
+    }
+    const queue = [];
+    cards.forEach((card, i) => {
+      queue.push({ type: "card", data: newCard(card) });
+      if ((i + 1) % GAME.questionInterval === 0 && questions.length) {
+        queue.push({ type: "question", data: questions[qIndex % questions.length] });
+        qIndex++;
+      }
+    });
+    p.drawQueue = queue;
+  });
+}
+
+async function startGame() {
+  if (runValidation().errors.length) return;
+  const n = state.mode === "hotseat" ? state.playerCount : 1;
+  const names = [...document.querySelectorAll("#name-inputs input")].map(i => i.value.trim());
+  const factions = assignFactions(n);
+  state.players = factions.map((f, i) => makePlayer(names[i] || (n > 1 ? say("defaultName", { n: i + 1 }) : "玩家"), f));
+  state.turn = 0;
+  state.busy = false;
+  state.acting = false;
+  state.handover = false;
+  state.ended = false;
+  state.round = 1;
+  state.actionsLeft = 0;
+  state.qBag = [];
+  state.pile = newPile();
+  state.startTime = Date.now();
+  buildDrawDeck();
+
+  el("screen-start").classList.add("hidden");
+  el("screen-game").classList.remove("hidden");
+  renderGame();
+
+  if (state.mode === "hotseat") {
+    const lines = state.players.map(p =>
+      `<div class="summary-row"><span>${escapeHtml(p.name)}</span><span class="faction-tag" style="background:${getFaction(p.faction).color}">${getFaction(p.faction).label}</span></div>`).join("");
+    await showInfo(`<h3>${escapeHtml(say("factionTitle"))}</h3>${lines}`, [{ label: "開始", primary: true }]);
+    await showHandover();
+  }
+  await beginTurn();
+}
+
+/* ---------- 畫面 ---------- */
+function turnInfoText() {
+  const parts = [];
+  if (GAME.rounds > 0) parts.push(`第 ${Math.min(state.round, GAME.rounds)} / ${GAME.rounds} 輪`);
+  if (GAME.actionsPerTurn > 1) parts.push(`剩 ${state.actionsLeft} 次行動`);
+  return parts.join("・");
+}
+
+function renderGame() {
+  const p = cur();
+  const f = getFaction(p.faction);
+  const sc = rule("scorePlayer", p);
+
+  // 多人模式的記分板
+  el("board").classList.toggle("hidden", state.mode !== "hotseat");
+  el("board").innerHTML = state.players.map((o, i) => `<div class="board-row ${i === state.turn ? "now" : ""}">
+      <span class="bar" style="background:${getFaction(o.faction).color}"></span>
+      <div><div>${escapeHtml(o.name)}</div><div class="meta">${escapeHtml(rule("statusLine", o))}</div></div>
+      <span class="pts">${rule("scorePlayer", o).total}</span></div>`).join("");
+
+  el("turn-who").textContent = state.mode === "hotseat" ? say("turnWho", { name: p.name }) : p.name;
+  const tag = el("faction-tag");
+  tag.textContent = f.label;
+  tag.style.background = f.color;
+
+  const [left, right] = rule("turnStats", p);
+  el("stat-turn").textContent = turnInfoText();
+  el("stat-progress").textContent = left;
+  el("stat-chance").textContent = right;
+
+  // 交接畫面開著時不畫手牌:遮罩是半透明的,先畫出來會被上一位玩家看到
+  el("hand-grid").innerHTML = state.handover ? "" : rule("handOrder", p.hand).map(card => rule("renderCard", card)).join("");
+  el("breakdown").textContent = `目前總分:${sc.detail}`;
+
+  // 行動按鈕:每個 ACTIONS 一顆;行動次數大於 1、或沒有任何行動可做時,多一顆「結束回合」
+  const locked = state.busy || state.acting || state.actionsLeft <= 0;
+  const reasons = ACTIONS.map(a => a.blocked(p));
+  let html = ACTIONS.map((a, i) => {
+    const label = typeof a.label === "function" ? a.label(p) : a.label;
+    const cls = a.primary ? "btn-primary" : a.gold ? "btn-gold" : "btn-secondary";
+    return `<button type="button" id="btn-${a.key}" class="${cls}" data-action="${escapeHtml(a.key)}" title="${escapeHtml(reasons[i])}"${locked || reasons[i] ? " disabled" : ""}>${escapeHtml(label)}</button>`;
+  }).join("");
+  if (GAME.actionsPerTurn > 1 || reasons.every(r => r)) {
+    html += `<button type="button" id="btn-end-turn" class="btn-secondary" data-end-turn="1"${state.busy || state.acting || state.actionsLeft <= 0 ? " disabled" : ""}>結束回合</button>`;
+  }
+  // 遊戲已經結束:停在最後的手牌,只留一顆「看結果」
+  if (state.ended) {
+    html = `<button type="button" id="btn-finish" class="btn-primary" data-finish="1"${state.busy ? " disabled" : ""}>看結果 ▶</button>`;
+  }
+  el("action-bar").innerHTML = html;
+  // 不能按的行動,把原因列在按鈕下方(title 只有滑鼠停留才看得到,平板和手機看不到)
+  const labels = ACTIONS.map(a => (typeof a.label === "function" ? a.label(p) : a.label));
+  el("blocked-hint").innerHTML = (state.ended || state.handover || state.actionsLeft <= 0) ? "" :
+    ACTIONS.map((a, i) => (reasons[i] && reasons[i] !== labels[i])
+      ? `<div>${escapeHtml(labels[i])}:${escapeHtml(reasons[i])}</div>` : "").join("");
+  el("turn-hint").textContent = state.ended ? "遊戲結束!看看最後的手牌,再按「看結果」。" : rule("ruleHint", p);
+}
+
+/* ---------- 通用視窗 ---------- */
+function showInfo(html, buttons) {
+  state.busy = true;
+  renderGameIfVisible();
+  return new Promise(resolve => {
+    el("info-box").innerHTML = html + `<div style="display:grid;gap:8px;margin-top:14px">` +
+      buttons.map((b, i) => `<button type="button" data-info="${i}" class="${b.primary ? "btn-primary" : b.gold ? "btn-gold" : "btn-secondary"}" style="margin:0">${escapeHtml(b.label)}</button>`).join("") + `</div>`;
+    el("info-modal").classList.remove("hidden");
+    el("info-box").querySelectorAll("[data-info]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        el("info-modal").classList.add("hidden");
+        state.busy = false;
+        renderGameIfVisible();
+        resolve(buttons[+btn.dataset.info].value);
+      });
+    });
+    const first = el("info-box").querySelector(".btn-primary") || el("info-box").querySelector("button");
+    if (first) first.focus();
+  });
+}
+function renderGameIfVisible() {
+  if (!el("screen-game").classList.contains("hidden") && state.players.length) renderGame();
+}
+async function showHandover() {
+  if (state.mode !== "hotseat") return;
+  const p = cur();
+  state.handover = true;       // 這段期間 renderGame() 不畫手牌,按下「我準備好了」才畫
+  await showInfo(`<div class="handover"><div style="color:var(--muted)">${escapeHtml(say("handover"))}</div>
+    <div class="big" style="color:${getFaction(p.faction).color}">${escapeHtml(p.name)}</div></div>`,
+    [{ label: say("handoverReady"), primary: true }]);
+  state.handover = false;
+  renderGameIfVisible();
+}
+
+/* 讓玩家從清單裡選一個。items 是 [{ label, value, gold? }],回傳選到的 value,按取消回傳 null。
+   沒有可選的項目時只會顯示取消。需要多步驟選擇(先選元素、再選目標)就連續呼叫 */
+function pickFromList(title, items, cancelLabel) {
+  const buttons = items.map(it => ({ label: it.label, value: it.value, gold: it.gold !== false }));
+  buttons.push({ label: cancelLabel || "取消", value: null });
+  return showInfo(`<h3>${escapeHtml(title)}</h3>`, buttons);
+}
+
+/* ---------- 回合流程 ----------
+   一回合 = onTurnStart(發牌等)→ 玩家做 GAME.actionsPerTurn 次行動(或按「結束回合」)→ 換人
+   每次行動做完,先檢查 isGameOver(),再看行動次數用完了沒。
+   問答視窗或任何 showInfo 視窗開著時 state.busy 為 true,行動按鈕會被鎖住,不要拿掉這個鎖定 */
+async function beginTurn() {
+  state.actionsLeft = GAME.actionsPerTurn;
+  await rule("onTurnStart", cur());
+  renderGame();
+}
+
+async function performAction(key) {
+  if (state.busy || state.acting || state.ended || state.actionsLeft <= 0) return;
+  const p = cur();
+  const act = ACTIONS.find(a => a.key === key);
+  if (!act || act.blocked(p)) return;
+  state.acting = true;
+  renderGame();
+  let result;
+  try {
+    result = await act.run(p);
+  } catch (e) {
+    console.error(e);
+    result = false;
+    state.busy = false;
+    await showInfo(`<h3>這個行動出錯了</h3><p>${escapeHtml(e.message)}</p>`, [{ label: "關閉", primary: true }]);
+  } finally {
+    state.acting = false;
+  }
+  if (result === false) { renderGame(); return; }       // 玩家取消:不扣行動次數
+  state.actionsLeft -= act.cost === undefined ? 1 : act.cost;
+  if (rule("isGameOver")) { concludeGame(); return; }
+  if (state.actionsLeft <= 0) await endTurn(true); else renderGame();
+}
+
+/* 行動做完之後遊戲結束:先停在手牌畫面(讓玩家看到最後拿到的牌),按「看結果」才進結算。
+   玩家自己按「結束回合」造成的結束不需要停,直接結算 */
+function concludeGame() {
+  state.ended = true;
+  state.actionsLeft = 0;
+  renderGame();
+}
+
+/* 預設行動:抽卡佇列的下一項。抽到卡就放進手牌,抽到問答就出題 */
+async function drawFromQueue(p) {
+  if (p.drawQueue.length === 0) return false;
+  const item = p.drawQueue.shift();
+  if (item.type === "card") {
+    item.data.fresh = true;
+    p.hand.push(item.data);
+  } else {
+    await askQuestion(item.data);
+  }
+  return true;
+}
+
+/* 預設行動:發動戰鬥。多人模式先選對象 */
+async function battleAction(p) {
+  let target = null;
+  if (state.mode === "hotseat") {
+    const options = battleTargets(p).map(o => ({ label: `${o.name}(${getFaction(o.faction).label},${rule("scorePlayer", o).total} 分)`, value: o }));
+    target = await pickFromList("要攻打誰?", options);
+    if (!target) return false;
+  }
+  p.battlesUsed++;
+  const msg = resolveBattle(p, target);
+  await showInfo(`<h3>戰鬥結果</h3><p>${escapeHtml(msg)}</p>`, [{ label: "繼續", primary: true }]);
+  return true;
+}
+
+/* ---------- 機會命運問答 ----------
+   askQuestion(q, { score: false }) 回傳 Promise<是否答對>。
+   預設答對加 correctBonus、答錯扣 wrongPenalty;score: false 時只記答對/答錯次數,不動分數
+   (適合拿來當「答對才能成功」的關卡) */
+function askQuestion(q, opts) {
+  const options = opts || {};
+  return new Promise(resolve => {
+    state.busy = true;
+    renderGame();
+    el("q-who").textContent = state.mode === "hotseat" ? `由 ${cur().name} 作答` : "";
+    el("q-text").textContent = q.question;
+    el("q-feedback").textContent = "";
+    el("q-feedback").className = "feedback";
+    const wrap = el("q-choices");
+    wrap.innerHTML = "";
+    // i 永遠是原本 choices 裡的索引,打亂的只是顯示順序,所以 answerIndex 不用改
+    const order = q.choices.map((_, i) => i);
+    const shown = GAME.shuffleChoices ? shuffle(order) : order;
+    shown.forEach(i => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.textContent = q.choices[i];
+      btn.addEventListener("click", () => answerQuestion(i, q, btn, options, resolve));
+      wrap.appendChild(btn);
+    });
+    el("question-modal").classList.remove("hidden");
+  });
+}
+
+function answerQuestion(choiceIndex, q, btnEl, options, resolve) {
+  const p = cur();
+  const scored = options.score !== false;
+  document.querySelectorAll("#q-choices .choice-btn").forEach(b => b.disabled = true);
+  const ok = choiceIndex === q.answerIndex;
+  if (ok) {
+    p.correctCount++;
+    if (scored) p.chanceScoreDelta += q.correctBonus;
+    btnEl.classList.add("correct");
+    el("q-feedback").textContent = scored ? `答對了!+${q.correctBonus} 分` : "答對了!";
+    el("q-feedback").className = "feedback good";
+  } else {
+    p.wrongCount++;
+    if (scored) p.chanceScoreDelta -= q.wrongPenalty;
+    btnEl.classList.add("wrong");
+    el("q-feedback").textContent = `答錯了${scored ? `,-${q.wrongPenalty} 分` : ""}(正確答案:${q.choices[q.answerIndex]})`;
+    el("q-feedback").className = "feedback bad";
+  }
+  setTimeout(() => {
+    el("question-modal").classList.add("hidden");
+    state.busy = false;
+    renderGame();
+    resolve(ok);
+  }, 1200);
+}
+
+/* ---------- 換人與結束 ---------- */
+async function endTurn(afterAction) {
+  const done = () => { if (afterAction) concludeGame(); else finishGame(); };
+  if (rule("isGameOver")) { done(); return; }
+  const prevTurn = state.turn;
+  const fresh = cur().hand.filter(c => c.fresh);
+  cur().hand.forEach(c => { delete c.fresh; });
+  const n = state.players.length;
+  let found = false;
+  for (let i = 0; i < n; i++) {
+    state.turn = (state.turn + 1) % n;
+    if (state.turn === 0) state.round++;
+    if (rule("canTakeTurn", cur())) { found = true; break; }   // 跳過沒事可做的玩家
+  }
+  if (!found || rule("isGameOver")) {
+    if (afterAction) { state.turn = prevTurn; fresh.forEach(c => { c.fresh = true; }); }   // 畫面留在剛剛行動的玩家
+    done();
+    return;
+  }
+  state.actionsLeft = 0;
+  renderGame();
+  if (state.mode === "hotseat") await showHandover();
+  await beginTurn();
+}
+
+function finishGame() {
+  state.acting = false;
+  state.ended = false;
+  el("screen-game").classList.add("hidden");
+  el("screen-end").classList.remove("hidden");
+  const durationSec = Math.round((Date.now() - state.startTime) / 1000);
+  const ranked = rule("rankPlayers", state.players);
+
+  let html = "";
+  ranked.forEach((p, i) => {
+    const sc = rule("scorePlayer", p);
+    html += `<h2 style="margin-top:${i ? 18 : 6}px">${ranked.length > 1 ? `第 ${i + 1} 名:` : ""}${escapeHtml(p.name)}</h2>` +
+      rule("summaryRows", p, sc).map(([k, v]) => `<div class="summary-row"><span>${escapeHtml(k)}</span><span>${escapeHtml(v)}</span></div>`).join("") +
+      `<div class="summary-row"><span>最終分數</span><span><b>${sc.total} 分</b></span></div>`;
+  });
+  el("end-title").textContent = ranked.length > 1 ? say("winTitle", { name: ranked[0].name }) : "🎉 遊戲結束!";
+  el("end-summary").innerHTML = html;
+
+  saveBestIfNeeded(rule("scorePlayer", ranked[0]).total, ranked[0].name);
+
+  /* 上傳資料:一局一筆,players 陣列裡每位玩家一項。
+     要記錄哪些欄位由使用者決定,加欄位時 gas-backend.gs 的 HEADERS 和 rowFor() 也要對應 */
+  const payload = {
+    mode: state.mode,
+    playerCount: state.players.length,
+    durationSec: durationSec,
+    players: ranked.map((p, i) => ({
+      rank: i + 1,
+      playerName: p.name,
+      faction: getFaction(p.faction).label,
+      finalScore: rule("scorePlayer", p).total,
+      correctCount: p.correctCount,
+      wrongCount: p.wrongCount,
+      battleResult: p.battleResult || "none"
+    }))
+  };
+  sendResultsToSheet(payload);
+}
+
+/* ---------- 送資料到 Google Apps Script ---------- */
+function sendResultsToSheet(payload) {
+  const statusEl = el("submit-status");
+  if (!GAS_URL || GAS_URL.indexOf("PASTE_YOUR") === 0) {
+    statusEl.textContent = "(尚未設定 Google 試算表網址,成績只顯示在畫面上)";
+    return;
+  }
+  statusEl.textContent = "成績上傳中...";
+  fetch(GAS_URL, {
+    method: "POST",
+    mode: "no-cors",
+    // no-cors 模式下瀏覽器只允許 text/plain 這類簡單的 Content-Type;後端一樣用 JSON.parse 讀內容
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    keepalive: true,               // 玩家一看到結算就關分頁,這筆成績也還是會送出去
+    body: JSON.stringify(payload)
+  }).then(() => {
+    statusEl.textContent = "成績已送出 ✅";
+  }).catch(() => {
+    statusEl.textContent = "送出失敗,請檢查網路連線";
+  });
+}
+
+/* ---------- 初始化與事件綁定 ---------- */
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.mode) { state.mode = b.dataset.mode; renderSetup(); }
+  if (b.dataset.count) { state.playerCount = +b.dataset.count; renderSetup(); }
+});
+el("action-bar").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b || b.disabled) return;
+  if (b.dataset.finish) { if (state.ended && !state.busy) finishGame(); }
+  else if (b.dataset.action) performAction(b.dataset.action);
+  else if (b.dataset.endTurn && !state.busy && !state.acting && !state.ended && state.actionsLeft > 0) endTurn();
+});
+/* 遊戲進行中重新整理、關分頁或按上一頁,整局會消失(沒有存檔),所以先讓瀏覽器跳出確認視窗。
+   視窗的文字由瀏覽器決定,改不了;開始畫面和結算畫面不會跳 */
+window.addEventListener("beforeunload", (e) => {
+  if (el("screen-game").classList.contains("hidden")) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
+el("btn-start").addEventListener("click", startGame);
+el("btn-restart").addEventListener("click", () => {
+  el("screen-end").classList.add("hidden");
+  el("screen-start").classList.remove("hidden");
+  el("submit-status").textContent = "";
+  renderSetup();
+  showBestNote();
+  runValidation();
+});
+
+if (GAME.title) {
+  el("game-title").textContent = GAME.title;
+  document.title = GAME.title;     // 瀏覽器分頁的標題也跟著 GAME.title,不用另外改 <title>
+}
+if (GAME.desc) el("game-desc").textContent = GAME.desc;
+el("count-label").textContent = say("countLabel");
+el("q-title").textContent = say("questionTitle");
+if (!GAME.modes.includes(state.mode)) state.mode = GAME.modes[0];
+renderSetup();
+showBestNote();
+runValidation();
+window.__engineReady = true;   // 之後的錯誤不再由最上面的錯誤顯示處理
+</script>
+
+</body>
+</html>

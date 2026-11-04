@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分數甜點店</title>
+<style>
+  :root {
+    --bg: #1e1f29;
+    --panel: #2a2c3a;
+    --panel-2: #1c1d27;
+    --line: #3f4158;
+    --accent: #6c8cff;
+    --good: #4caf82;
+    --bad: #e0556f;
+    --gold: #e0b34f;
+    --text: #f1f1f6;
+    --muted: #9698ab;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .shell {
+    width: 100%;
+    max-width: 720px;
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 26px 22px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 8px; }
+  h2 { font-size: 1.1rem; margin: 0 0 12px; }
+  p.desc { color: var(--muted); margin: 0 0 18px; line-height: 1.6; }
+  label.field { display: block; margin-bottom: 14px; }
+  label.field > span { display: block; color: var(--muted); font-size: .9rem; margin-bottom: 6px; }
+  input[type="text"] {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--text); font-size: 1rem; margin-bottom: 8px;
+  }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seg button { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 8px 14px; font-weight: 600; }
+  .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button {
+    cursor: pointer; border: none; border-radius: 10px; padding: 12px 18px; font-size: 1rem; font-weight: 600;
+    font-family: inherit;
+  }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--line); margin-top: 10px; width: 100%; }
+  .btn-gold { background: var(--gold); color: #2a2200; width: 100%; }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-row .btn-secondary { margin-top: 0; }
+  .faction-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: .85rem; font-weight: 700; color: #1c1d27; }
+  .turn-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .turn-head .who { font-size: 1.2rem; font-weight: 700; }
+  .stats-row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: .9rem; margin-bottom: 12px; }
+  .hand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-bottom: 14px; min-height: 90px; }
+  .hand-card { border-radius: 10px; padding: 8px 6px; font-size: .8rem; text-align: center; border: 2px solid var(--line); background: var(--panel-2); line-height: 1.4; }
+  .hand-card .score { font-weight: 700; font-size: .95rem; }
+  .hand-card .role { color: var(--muted); font-size: .72rem; margin-top: 2px; }
+  .breakdown { color: var(--muted); font-size: .85rem; margin: -4px 0 14px; }
+  .hint { color: var(--muted); font-size: .85rem; margin: 8px 0 0; text-align: center; min-height: 1.2em; }
+  .board { display: grid; gap: 6px; margin-bottom: 16px; }
+  .board-row { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+  .board-row.now { border-color: var(--gold); border-width: 2px; }
+  .board-row .bar { align-self: stretch; border-radius: 4px; }
+  .board-row .meta { color: var(--muted); font-size: .8rem; }
+  .board-row .pts { font-size: 1.3rem; font-weight: 700; }
+  .summary-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: .95rem; }
+  .submit-status { color: var(--muted); font-size: .85rem; margin-top: 14px; text-align: center; }
+  .best-note { color: var(--muted); font-size: .85rem; margin-top: 8px; text-align: center; }
+  .hidden { display: none !important; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .modal-box { background: var(--panel); border-radius: 14px; padding: 22px; max-width: 440px; width: 100%; border: 1px solid var(--gold); max-height: 90vh; overflow: auto; }
+  .modal-box h3 { margin: 0 0 6px; color: var(--gold); }
+  .choice-btn { display: block; width: 100%; text-align: left; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: .95rem; }
+  .choice-btn.correct { background: rgba(76,175,130,0.2); border-color: var(--good); }
+  .choice-btn.wrong { background: rgba(224,85,111,0.2); border-color: var(--bad); }
+  .feedback { min-height: 20px; font-size: .9rem; margin: 6px 0 4px; }
+  .feedback.good { color: var(--good); }
+  .feedback.bad { color: var(--bad); }
+  .action-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .action-bar button { margin-top: 0; width: 100%; }
+  .blocked-hint { min-height: 0; line-height: 1.6; }
+  .blocked-hint:empty { display: none; }
+  .hand-card.fresh { box-shadow: 0 0 0 3px var(--gold); }
+  .game-errors, .game-warnings { border-radius: 8px; padding: 10px 12px 10px 28px; margin: 0 0 14px; font-size: .9rem; line-height: 1.6; }
+  .game-errors { background: #3a1c28; border: 2px solid var(--bad); }
+  .game-warnings { background: #3a321c; border: 2px solid var(--gold); }
+  .game-errors .title, .game-warnings .title { list-style: none; margin-left: -16px; font-weight: 700; }
+  .game-errors .title { color: #ff9aa8; }
+  .game-warnings .title { color: var(--gold); }
+  .handover { text-align: center; }
+  .handover .big { font-size: 2rem; font-weight: 700; margin: 8px 0 16px; }
+  /* ===== 分數甜點店:粉彩甜點店主題(覆蓋上面的深色預設) ===== */
+  :root {
+    --bg: #fbeee4; --panel: #fffaf4; --panel-2: #ffffff; --line: #ecd5c6;
+    --accent: #e57a98; --good: #4f9f6c; --bad: #d4534f; --gold: #eeb24a;
+    --text: #5b3d33; --muted: #9b7f73;
+  }
+  body { background: radial-gradient(circle at 20% 0%, #fff6ee 0, #fbeee4 45%, #f6e1d3 100%); }
+  .shell { max-width: 860px; border: 3px solid #f3d3c2; box-shadow: 0 10px 0 #f0d6c8, 0 18px 30px rgba(120,70,50,.15); }
+  h1 { color: #c25b7a; }
+  .btn-secondary { color: var(--text); background: #fff; }
+  .seg button { background: #fff; }
+  .game-errors { background: #ffe8ea; } .game-errors .title { color: #b4233a; }
+  .game-warnings { background: #fff6dc; }
+  .modal-overlay { background: rgba(90,50,40,.45); }
+  .modal-box { border: 3px solid #f3b6c6; max-width: 520px; }
+  .modal-box h3 { color: #c25b7a; }
+  .board-row { background: #fff; }
+  .hand-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+  .hand-card { position: relative; background: #fff; border-width: 3px; border-radius: 14px; padding: 10px 6px 8px; box-shadow: 0 3px 0 #f0d6c8; }
+  .hand-card .role { font-size: .75rem; }
+  .hand-card.fresh { box-shadow: 0 0 0 3px var(--gold), 0 3px 0 #f0d6c8; }
+  .raw-tag { position: absolute; top: -9px; right: -6px; background: #e9a46a; color: #fff; font-size: .66rem; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+  .item-ic { font-size: 1.8rem; } .item-name { font-weight: 700; font-size: 1rem; color: #8a5bb0; }
+  .pie { display: block; margin: 0 auto 2px; } .mini .pie { display: inline-block; margin: 0; vertical-align: middle; }
+  .pie-on { fill: #f7a8bc; stroke: #b9667d; stroke-width: 1; } .pie-off { fill: #fff8f2; stroke: #d9b9a9; stroke-width: 1; }
+  .fr { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; vertical-align: middle; font-weight: 800; }
+  .fr > span:first-child { border-bottom: 2px solid currentColor; padding: 0 3px; }
+  .fr-whole { font-weight: 800; font-size: 1.25em; vertical-align: middle; margin-right: 1px; }
+  .fr-big { font-size: 1.15rem; color: #6b3f34; }
+  #frac-table { margin-bottom: 10px; }
+  .sec-title { font-weight: 700; margin: 6px 0 8px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .sec-title .frac-muted { font-weight: 400; font-size: .8rem; }
+  .timer { margin-left: auto; color: var(--bad); font-weight: 800; }
+  .orders { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .order { background: #fffdf8; border: 2px dashed #e5bfa9; border-radius: 12px; padding: 8px 6px; text-align: center; }
+  .order.make { border-color: #e999b0; } .order.left { border-color: #8fbfa0; }
+  .o-type { display: inline-block; font-size: .78rem; font-weight: 700; color: #fff; border-radius: 10px; padding: 1px 10px; }
+  .order.make .o-type { background: #e57a98; } .order.left .o-type { background: #5aa877; }
+  .o-target { font-size: 1.5rem; margin: 4px 0 2px; color: #5b3d33; }
+  .o-target small { font-size: .7rem; }
+  .o-pts { color: #e2a12f; font-size: .95rem; } .o-pts span { color: var(--muted); font-size: .75rem; margin-left: 4px; }
+  .o-desc { color: var(--muted); font-size: .72rem; }
+  .rivals { display: grid; gap: 6px; margin-bottom: 6px; }
+  .rival { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: .9rem; }
+  .rival-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .frac-mini-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 28px; }
+  .mini { display: inline-flex; align-items: center; gap: 3px; background: #fff6f0; border: 1px solid #f0d6c8; border-radius: 8px; padding: 2px 6px; font-size: .85rem; }
+  .frac-op { font-weight: 800; color: var(--accent); }
+  .frac-muted { color: var(--muted); font-size: .85rem; }
+  .frac-expr { font-size: 1.1rem; font-weight: 700; background: #fff3e8; border-radius: 8px; padding: 8px 10px; display: block; }
+  .frac-good { color: var(--good); font-weight: 700; } .frac-bad { color: var(--bad); }
+  .frac-warn { color: #b4233a; background: #ffeef0; border-radius: 8px; padding: 6px 10px; }
+  .frac-log { padding-left: 18px; line-height: 1.7; } .frac-log li { margin-bottom: 6px; }
+  .frac-check { display: flex; gap: 8px; align-items: center; color: var(--text); font-size: .92rem; margin: 6px 0 14px; }
+  @media (max-width: 560px) { .orders { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ===== 畫面一:開始畫面(選模式、人數、名字) ===== -->
+  <div id="screen-start">
+    <h1 id="game-title">⚔️ 卡牌對戰教育遊戲</h1>
+    <p class="desc" id="game-desc">每位玩家會被分配到一個陣營。輪到你時可以抽卡,抽卡途中會遇到「機會命運」問答,答對加分、答錯扣分;分數夠高還能發動戰鬥!</p>
+    <div class="field" id="mode-field">
+      <label class="field"><span>遊玩模式</span></label>
+      <div class="seg" id="mode-seg"></div>
+    </div>
+    <div class="field hidden" id="count-field" style="margin-top:14px">
+      <label class="field"><span id="count-label">玩家人數(同一台裝置輪流操作)</span></label>
+      <div class="seg" id="count-seg"></div>
+    </div>
+    <div id="name-inputs" style="margin-top:14px"></div>
+    <ul class="game-errors hidden" id="game-errors"></ul>
+    <ul class="game-warnings hidden" id="game-warnings"></ul>
+    <button class="btn-primary" id="btn-start">開始遊戲</button>
+    <div class="best-note" id="best-note"></div>
+  </div>
+
+  <!-- ===== 畫面二:遊戲進行中(輪流行動) ===== -->
+  <div id="screen-game" class="hidden">
+    <div class="board" id="board"></div>
+    <div class="turn-head">
+      <span class="who" id="turn-who"></span>
+      <span class="faction-tag" id="faction-tag"></span>
+    </div>
+    <div class="stats-row">
+      <span id="stat-turn"></span>
+      <span id="stat-progress"></span>
+      <span id="stat-chance"></span>
+    </div>
+    <div class="hand-grid" id="hand-grid"></div>
+    <div class="breakdown" id="breakdown"></div>
+    <div class="action-bar" id="action-bar"></div>
+    <div class="hint blocked-hint" id="blocked-hint"></div>
+    <p class="hint" id="turn-hint"></p>
+  </div>
+
+  <!-- ===== 畫面三:結算畫面 ===== -->
+  <div id="screen-end" class="hidden">
+    <h1 id="end-title">🎉 遊戲結束!</h1>
+    <div id="end-summary"></div>
+    <div class="submit-status" id="submit-status"></div>
+    <button class="btn-secondary" id="btn-restart">再玩一次</button>
+  </div>
+
+  <!-- ===== 機會命運問答視窗 ===== -->
+  <div id="question-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 id="q-title">🎴 機會命運</h3>
+      <p id="q-who" style="color:var(--muted);margin:0 0 6px"></p>
+      <p id="q-text"></p>
+      <div id="q-choices"></div>
+      <div class="feedback" id="q-feedback"></div>
+    </div>
+  </div>
+
+  <!-- ===== 通用視窗:換人、選戰鬥對象、戰鬥結果 ===== -->
+  <div id="info-modal" class="modal-overlay hidden">
+    <div class="modal-box" id="info-box"></div>
+  </div>
+
+</div>
+
+<!-- 程式分成三個 <script>(仍然是同一個檔案):
+     1. 錯誤顯示:下面兩段只要有語法錯誤(漏逗號、引號或括號沒成對),就在開始畫面顯示第幾行出錯
+     2. 設定與規則包:GAS_URL、STORAGE_KEY、RULES-PACK
+     3. 引擎
+   分開寫是因為同一個 <script> 裡只要有一個語法錯誤,整段都不會執行,連錯誤訊息都顯示不出來。不要合併回去。 -->
+<script>
+(function () {
+  let shown = false;
+  window.addEventListener("error", function (e) {
+    if (window.__engineReady || shown) return;      // 只處理「遊戲還沒準備好」時的第一個錯誤
+    shown = true;
+    const box = document.getElementById("game-errors");
+    const btn = document.getElementById("btn-start");
+    if (btn) btn.disabled = true;
+    if (!box) return;
+    const where = e.lineno ? `(這個檔案的第 ${e.lineno} 行附近)` : "";
+    const li = document.createElement("li");
+    li.className = "title";
+    li.textContent = `程式有錯誤,遊戲無法開始${where}:${e.message || "未知的錯誤"}。`
+      + "最常見的原因是漏了逗號、引號或括號沒有成對,請修正後重新整理。";
+    box.innerHTML = "";
+    box.appendChild(li);
+    box.classList.remove("hidden");
+  });
+})();
+</script>
+
+<script>
+/* =========================================================
+   上傳與存檔設定
+   ========================================================= */
+/* 6. Google Apps Script 上傳網址 */
+const GAS_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+/* 7. localStorage key(記錄這台裝置的歷史最高分)。多個遊戲共用網域時要改成不同名字;
+   改了計分規則(加分倍率、卡牌分數等)之後也要換一個新名字,不然舊規則的最高分會一直掛在開始畫面 */
+const STORAGE_KEY = "edu-game-fraction-dessert-best";
+
+/* ===== RULES-PACK:BEGIN =====
+   規則包:國小五年級數學《分數甜點店:搶訂單大作戰》(異分母分數加減)
+   - 每回合:抽 1 張(先手第 1 回合不抽)→ 可用 1 張道具卡(免費行動)→ 主要行動三選一(送餐/重切/點心問答)→ 手牌超過 7 張要丟
+   - 送餐:選 1 張訂單、選 2~3 張蛋糕卡(剩下訂單剛好 2 張),送出後才判斷,成功/失敗都顯示通分算式
+   - 有人達到目標分數 → 打完這一輪結算;訂單用完立刻結束;最多 12 輪
+   - 單人模式:加一位「甜點機器人」(簡單/普通),它在玩家每回合結束後接著玩一回合
+   ========================================================= */
+
+/* =========================================================
+   第一部分:資料與設定
+   ========================================================= */
+
+/* 1. 陣營:只當「每家店」的顏色用,沒有任何加成 */
+const FACTIONS = [
+  { key: "straw", label: "草莓甜點店", color: "#f08aa6" },
+  { key: "matcha", label: "抹茶甜點店", color: "#7cbf8e" },
+  { key: "lemon", label: "檸檬甜點店", color: "#e9c45a" },
+  { key: "berry", label: "藍莓甜點店", color: "#8aa6e8" }
+];
+
+/* 2. 卡片種類 */
+const ROLES = [
+  { key: "cake", label: "蛋糕卡" },
+  { key: "item", label: "道具卡" }
+];
+
+/* 3. 材料牌庫(蛋糕卡 41 張 + 道具卡 6 張)。n / d = 分子 / 分母;分母必須是 12 的因數。
+      raw: true = 還沒約分(卡面右上角印「還可以約分」) */
+const CARD_POOL = [
+  { id: "c1-2",  role: "cake", n: 1, d: 2,  name: "二分之一塊蛋糕", copies: 4 },
+  { id: "c1-3",  role: "cake", n: 1, d: 3,  name: "三分之一塊蛋糕", copies: 4 },
+  { id: "c2-3",  role: "cake", n: 2, d: 3,  name: "三分之二塊蛋糕", copies: 3 },
+  { id: "c1-4",  role: "cake", n: 1, d: 4,  name: "四分之一塊蛋糕", copies: 4 },
+  { id: "c3-4",  role: "cake", n: 3, d: 4,  name: "四分之三塊蛋糕", copies: 3 },
+  { id: "c1-6",  role: "cake", n: 1, d: 6,  name: "六分之一塊蛋糕", copies: 3 },
+  { id: "c5-6",  role: "cake", n: 5, d: 6,  name: "六分之五塊蛋糕", copies: 2 },
+  { id: "c1-12", role: "cake", n: 1, d: 12, name: "十二分之一塊蛋糕", copies: 3 },
+  { id: "c5-12", role: "cake", n: 5, d: 12, name: "十二分之五塊蛋糕", copies: 3 },
+  { id: "c7-12", role: "cake", n: 7, d: 12, name: "十二分之七塊蛋糕", copies: 2 },
+  { id: "c1-1",  role: "cake", n: 1, d: 1,  name: "一整個蛋糕", copies: 2 },
+  { id: "c2-4",  role: "cake", n: 2, d: 4,  name: "四分之二塊蛋糕", raw: true, copies: 1 },
+  { id: "c3-6",  role: "cake", n: 3, d: 6,  name: "六分之三塊蛋糕", raw: true, copies: 1 },
+  { id: "c2-6",  role: "cake", n: 2, d: 6,  name: "六分之二塊蛋糕", raw: true, copies: 1 },
+  { id: "c4-6",  role: "cake", n: 4, d: 6,  name: "六分之四塊蛋糕", raw: true, copies: 1 },
+  { id: "c2-12", role: "cake", n: 2, d: 12, name: "十二分之二塊蛋糕", raw: true, copies: 1 },
+  { id: "c3-12", role: "cake", n: 3, d: 12, name: "十二分之三塊蛋糕", raw: true, copies: 1 },
+  { id: "c8-12", role: "cake", n: 8, d: 12, name: "十二分之八塊蛋糕", raw: true, copies: 1 },
+  { id: "c9-12", role: "cake", n: 9, d: 12, name: "十二分之九塊蛋糕", raw: true, copies: 1 },
+  { id: "swapOrder", role: "item", item: "swapOrder", name: "換訂單", copies: 2 },
+  { id: "swapPlate", role: "item", item: "swapPlate", name: "交換盤", copies: 2 },
+  { id: "restock",   role: "item", item: "restock",   name: "補貨",   copies: 2 }
+];
+const ITEM_TEXT = {
+  swapOrder: "選桌上 1 張訂單放到訂單牌庫最底下,再翻 1 張新訂單補上",
+  swapPlate: "從 1 位對手手中拿 1 張卡,再從你手中選 1 張給他(不能是剛拿到的那張)",
+  restock: "從材料牌庫抽 2 張"
+};
+
+/* 4. 訂單牌庫(另外一疊,不在 CARD_POOL 裡)。type: "make" 湊出 / "left" 剩下;n/d 是目標(最簡分數或假分數);pts 得分 */
+const ORDERS = [
+  { type: "make", n: 1, d: 2,  pts: 3, copies: 1 },
+  { type: "make", n: 5, d: 12, pts: 3, copies: 1 },
+  { type: "make", n: 3, d: 2,  pts: 3, copies: 1 },
+  { type: "make", n: 2, d: 3,  pts: 2, copies: 1 },
+  { type: "make", n: 3, d: 4,  pts: 2, copies: 2 },
+  { type: "make", n: 7, d: 12, pts: 2, copies: 1 },
+  { type: "make", n: 5, d: 4,  pts: 2, copies: 2 },
+  { type: "make", n: 1, d: 1,  pts: 1, copies: 2 },
+  { type: "make", n: 5, d: 6,  pts: 1, copies: 2 },
+  { type: "make", n: 11, d: 12, pts: 1, copies: 1 },
+  { type: "left", n: 1, d: 2,  pts: 2, copies: 1 },
+  { type: "left", n: 1, d: 3,  pts: 1, copies: 1 },
+  { type: "left", n: 1, d: 4,  pts: 1, copies: 1 },
+  { type: "left", n: 1, d: 6,  pts: 1, copies: 1 },
+  { type: "left", n: 1, d: 12, pts: 1, copies: 1 },
+  { type: "left", n: 5, d: 12, pts: 1, copies: 1 }
+];
+
+/* 可調的數字 */
+const TABLE_SIZE = 4;                       // 訂單區攤開幾張
+const START_HAND = 5;                       // 開局每人幾張
+const HAND_LIMIT = 7;                       // 回合結束時手牌上限
+const THREE_PIECE_BONUS = 1;                // 用 3 張完成「湊出」的加分
+const TARGET_BY_COUNT = { 2: 9, 3: 7, 4: 6 }; // 幾家店 → 目標分數(單人對電腦算 2 家)
+const TIMER_SECONDS = 90;                   // 分組計時每回合秒數
+const BOT_NAME = "甜點機器人";
+const BOT_QUIZ_RATE = { easy: 0.6, normal: 0.85 }; // 機器人點心問答答對機率
+const BOT_EASY_MISTAKE = 0.2;               // 簡單機器人每回合「故意算錯」的機率
+
+/* 5. 點心問答:答對抽 1 張、答錯不抽並顯示解說(不計分,所以 correctBonus / wrongPenalty 填 0)
+      explain:解說;trap:常見錯誤選項(choice 要和 choices 裡某一項完全一樣)與迷思說明 */
+const QUESTION_CARDS = [
+  { id: 1, question: "1/2 + 1/3 = ?", choices: ["5/6", "2/5", "2/6", "1/6"], answerIndex: 0,
+    explain: "通分成 3/6 + 2/6 = 5/6。", trap: { choice: "2/5", text: "分子加分子、分母加分母。" } },
+  { id: 2, question: "1/4 + 1/6 = ?", choices: ["2/10", "5/12", "1/5", "7/12"], answerIndex: 1,
+    explain: "最小公分母是 12:3/12 + 2/12 = 5/12。", trap: { choice: "2/10", text: "分子、分母各自相加。" } },
+  { id: 3, question: "3/4 − 1/2 = ?", choices: ["2/2", "1/2", "1/4", "2/4"], answerIndex: 2,
+    explain: "1/2 = 2/4,3/4 − 2/4 = 1/4。", trap: { choice: "2/2", text: "分子減分子(3−1)、分母減分母(4−2)。" } },
+  { id: 4, question: "2/3 − 1/4 = ?", choices: ["1/12", "3/7", "7/12", "5/12"], answerIndex: 3,
+    explain: "通分成 8/12 − 3/12 = 5/12。", trap: { choice: "1/12", text: "只把分母改成 12,分子沒有跟著乘,算成 2/12 − 1/12。" } },
+  { id: 5, question: "6/8 約成最簡分數是多少?", choices: ["3/4", "3/8", "2/3", "6/8 已經最簡"], answerIndex: 0,
+    explain: "分子和分母同除以 2:6/8 = 3/4。", trap: { choice: "3/8", text: "只把分子除以 2,分母忘了一起除。" } },
+  { id: 6, question: "下面哪一個分數和 2/3 一樣大?", choices: ["3/4", "4/6", "2/6", "3/5"], answerIndex: 1,
+    explain: "2/3 的分子分母同乘以 2 得到 4/6。", trap: { choice: "3/4", text: "以為分子、分母都加 1 還是一樣大。" } },
+  { id: 7, question: "1/3 和 1/4 通分,最小公分母是多少?", choices: ["7", "3", "12", "24"], answerIndex: 2,
+    explain: "3 和 4 的最小公倍數是 12。", trap: { choice: "7", text: "把兩個分母相加。" } },
+  { id: 8, question: "1/6 和 3/4 通分,最小公分母是多少?", choices: ["24", "10", "6", "12"], answerIndex: 3,
+    explain: "6 和 4 的最小公倍數是 12(12 是 6 的倍數,也是 4 的倍數)。", trap: { choice: "24", text: "直接把兩個分母相乘;24 也是公分母,但不是最小的。" } },
+  { id: 9, question: "5/6 − 1/3 = ?", choices: ["1/2", "4/3", "1/3", "2/3"], answerIndex: 0,
+    explain: "1/3 = 2/6,5/6 − 2/6 = 3/6 = 1/2。", trap: { choice: "4/3", text: "分子減分子(5−1)、分母減分母(6−3)。" } },
+  { id: 10, question: "1 − 5/12 = ?", choices: ["5/12", "7/12", "4/12", "6/12"], answerIndex: 1,
+    explain: "1 = 12/12,12/12 − 5/12 = 7/12。", trap: { choice: "5/12", text: "把 1 想成 10/12(像十進位一樣湊十),10/12 − 5/12 = 5/12。" } },
+  { id: 11, question: "1/2 + 3/4 = ?", choices: ["4/6", "1又1/2", "1又1/4", "4/8"], answerIndex: 2,
+    explain: "2/4 + 3/4 = 5/4 = 1又1/4。", trap: { choice: "4/6", text: "分子、分母各自相加。" } },
+  { id: 12, question: "2/3 + 5/6 = ?", choices: ["7/9", "1又1/3", "1又1/6", "1又1/2"], answerIndex: 3,
+    explain: "4/6 + 5/6 = 9/6 = 3/2 = 1又1/2。", trap: { choice: "7/9", text: "分子、分母各自相加。" } },
+  { id: 13, question: "9/12 約成最簡分數是多少?", choices: ["3/4", "9/12 已經最簡", "3/6", "1/3"], answerIndex: 0,
+    explain: "9 和 12 的最大公因數是 3,同除以 3 得 3/4。", trap: { choice: "9/12 已經最簡", text: "沒發現 9 和 12 都是 3 的倍數。" } },
+  { id: 14, question: "下面哪一個分數最大?", choices: ["2/3", "5/6", "3/4", "7/12"], answerIndex: 1,
+    explain: "通分成 8/12、10/12、9/12、7/12,10/12(也就是 5/6)最大。", trap: { choice: "7/12", text: "以為分子分母的數字越大,分數就越大。" } },
+  { id: 15, question: "1/2 − 1/3 = ?", choices: ["0", "2/5", "1/6", "1/1"], answerIndex: 2,
+    explain: "3/6 − 2/6 = 1/6。", trap: { choice: "0", text: "看到分子都是 1,1 − 1 = 0。" } },
+  { id: 16, question: "小明吃了 1/4 個蛋糕,妹妹吃了 1/3 個蛋糕,兩人一共吃了幾個蛋糕?", choices: ["2/7", "1/12", "5/12", "7/12"], answerIndex: 3,
+    explain: "3/12 + 4/12 = 7/12。", trap: { choice: "2/7", text: "分子、分母各自相加。" } },
+  { id: 17, question: "一瓶果汁有 5/6 公升,倒出 1/4 公升,還剩多少公升?", choices: ["7/12", "4/2", "4/12", "1/2"], answerIndex: 0,
+    explain: "10/12 − 3/12 = 7/12。", trap: { choice: "4/2", text: "分子減分子(5−1)、分母減分母(6−4)。" } },
+  { id: 18, question: "把 3/4 擴分成分母是 12 的分數,分子要變成多少?", choices: ["3", "9", "11", "6"], answerIndex: 1,
+    explain: "分母乘以 3(4 → 12),分子也乘以 3:3 × 3 = 9。", trap: { choice: "11", text: "以為分母加 8,分子也加 8。" } },
+  { id: 19, question: "1/6 + 1/12 + 1/4 = ?", choices: ["3/22", "1/3", "1/2", "5/12"], answerIndex: 2,
+    explain: "2/12 + 1/12 + 3/12 = 6/12 = 1/2。", trap: { choice: "3/22", text: "分子相加、分母也相加(6+12+4)。" } },
+  { id: 20, question: "1又1/4 − 3/4 = ?", choices: ["1又1/2", "1", "1/4", "1/2"], answerIndex: 3,
+    explain: "1又1/4 = 5/4,5/4 − 3/4 = 2/4 = 1/2。", trap: { choice: "1又1/2", text: "1/4 不夠減 3/4,就倒過來算 3/4 − 1/4 = 2/4,再把 1 留著。" } },
+  { id: 21, question: "下面哪一組加起來剛好是 1?", choices: ["1/6 + 5/6", "1/2 + 1/3", "1/4 + 2/3", "5/12 + 1/2"], answerIndex: 0,
+    explain: "1/6 + 5/6 = 6/6 = 1。1/2 + 1/3 是 5/6,1/4 + 2/3 和 5/12 + 1/2 都是 11/12。", trap: { choice: "1/4 + 2/3", text: "沒有通分,用感覺估計「差不多滿了」,其實 3/12 + 8/12 = 11/12,還差 1/12。" } },
+  { id: 22, question: "2/6 + 1/3 = ?", choices: ["3/9", "2/3", "3/6", "1/3"], answerIndex: 1,
+    explain: "1/3 = 2/6,2/6 + 2/6 = 4/6 = 2/3。", trap: { choice: "3/9", text: "分子、分母各自相加。" } }
+].map(q => ({ ...q, correctBonus: 0, wrongPenalty: 0 }));
+
+/* 6. 遊戲設定 */
+const GAME = {
+  title: "🍰 分數甜點店:搶訂單大作戰",
+  desc: "每家店手上有切好的蛋糕片。桌上攤開 4 張客人的訂單:「湊出」要用 2~3 片加起來剛好等於目標,「剩下」要用 2 片大的減小的剛好等於目標。送出前電腦不會告訴你對不對,先通分再送!最先達到目標分數的店,打完這一輪就結算。",
+
+  modes: ["hotseat", "solo"],
+  defaultMode: "hotseat",
+  minPlayers: 2,
+  maxPlayers: 4,
+  defaultPlayers: 2,
+
+  actionsPerTurn: 1,     // 主要行動一次(道具卡是免費行動,不佔次數)
+  rounds: 12,            // 最多 12 輪(用來顯示「第 x / 12 輪」;結束判斷在 isGameOver)
+  dealPerTurn: 0,        // 抽牌由 onTurnStart 自己做(要支援「棄牌堆洗回來」與「先手第 1 回合不抽」)
+  reshufflePile: false,
+  handSize: 0,
+  questionInterval: 1,
+  shuffleChoices: true,
+
+  text: {
+    questionTitle: "🧁 點心問答",
+    questionName: "點心問答",
+    factionLabel: "甜點店",
+    factionTitle: "分配甜點店",
+    countLabel: "幾家店(幾人或幾隊,同一台裝置輪流操作)",
+    countUnit: "{n} 家店",
+    nameLabel: "店長或隊伍名稱(可留空)",
+    namePlaceholder: "第 {n} 家店",
+    defaultName: "第{n}店",
+    handover: "請把裝置交給",
+    handoverReady: "我準備好了,開店!"
+  }
+};
+
+/* =========================================================
+   第二部分:規則
+   ========================================================= */
+
+/* ---- 這一局的桌面狀態(引擎的 state 只放引擎的東西,規則自己的放 G) ---- */
+let G = { startTime: null, orderDeck: [], table: [], discard: [], target: 9, reached: null, doneBy: -1, itemUsed: false,
+  timerOn: false, difficulty: "normal", timer: null, timeLeft: 0, history: [] };
+
+/* ---- 分數小工具 ---- */
+const gcd = (a, b) => (b ? gcd(b, a % b) : Math.abs(a));
+const lcm = (a, b) => a / gcd(a, b) * b;
+const v12 = (c) => c.n * 12 / c.d;                  // 換成「幾個 1/12」
+const isCake = (c) => c.role === "cake";
+const isItem = (c) => c.role === "item";
+function fracText(n, d) {                          // 最簡化並寫成帶分數:15/12 → 1又1/4
+  if (n === 0) return "0";
+  const g = gcd(n, d); n /= g; d /= g;
+  if (d === 1) return String(n);
+  if (n > d) return `${Math.floor(n / d)}又${n % d}/${d}`;
+  return `${n}/${d}`;
+}
+const raw = (n, d) => (d === 1 ? String(n) : `${n}/${d}`);   // 照卡面原樣寫
+const cardText = (c) => isCake(c) ? raw(c.n, c.d) : c.name;
+const orderText = (o) => `${o.type === "make" ? "湊出" : "剩下"} ${fracText(o.n, o.d)}`;
+
+/* 算式:「1/4 + 1/2 = 1/4 + 2/4 = 3/4」;剩下訂單一律大減小。回傳 { text, value12 } */
+function calcExpr(cards, type) {
+  const list = type === "left" ? cards.slice().sort((a, b) => v12(b) - v12(a)) : cards;
+  const op = type === "left" ? " − " : " + ";
+  const L = list.reduce((m, c) => lcm(m, c.d), 1);
+  const nums = list.map(c => c.n * L / c.d);
+  const num = type === "left" ? nums[0] - nums[1] : nums.reduce((s, x) => s + x, 0);
+  const steps = [list.map(c => raw(c.n, c.d)).join(op)];
+  const conv = list.map((c, i) => raw(nums[i], L)).join(op);
+  if (conv !== steps[0]) steps.push(conv);
+  const r = raw(num, L);
+  if (list.length > 1 || r !== steps[steps.length - 1]) steps.push(num === 0 ? "0" : r);
+  const g = gcd(num, L);
+  if (num && g > 1) steps.push(raw(num / g, L / g));
+  if (num && L / g > 1 && num / g > L / g) steps.push(fracText(num, L));
+  return { text: steps.filter((s, i) => s !== steps[i - 1]).join(" = "), value12: num * 12 / L };
+}
+function orderMatches(order, cards) {
+  if (!cards.every(isCake)) return false;
+  if (order.type === "make" && (cards.length < 2 || cards.length > 3)) return false;
+  if (order.type === "left" && cards.length !== 2) return false;
+  return calcExpr(cards, order.type).value12 === v12(order);
+}
+const orderPoints = (order, cards) => order.pts + (order.type === "make" && cards.length === 3 ? THREE_PIECE_BONUS : 0);
+
+/* 找出手牌能完成的所有送餐組合 [{ order, cards, pts }] */
+function subsets(arr, k) {
+  const out = [];
+  const go = (start, pick) => {
+    if (pick.length === k) { out.push(pick.slice()); return; }
+    for (let i = start; i < arr.length; i++) { pick.push(arr[i]); go(i + 1, pick); pick.pop(); }
+  };
+  go(0, []);
+  return out;
+}
+function findCombos(hand, orders, maxSize) {
+  const cakes = hand.filter(isCake), res = [];
+  orders.forEach((o, idx) => {
+    const sizes = o.type === "left" ? [2] : [2, 3].filter(k => k <= (maxSize || 3));
+    sizes.forEach(k => subsets(cakes, k).forEach(cs => {
+      if (orderMatches(o, cs)) res.push({ order: o, idx, cards: cs, pts: orderPoints(o, cs) });
+    }));
+  });
+  return res;
+}
+/* 「屬於某個兩張組合」:和手上另一張卡相加或相減,等於任何一種訂單的目標 */
+const ALL_TARGETS = { make: new Set(ORDERS.filter(o => o.type === "make").map(v12)), left: new Set(ORDERS.filter(o => o.type === "left").map(v12)) };
+function inSomePair(card, hand) {
+  return hand.some(o => o !== card && isCake(o) && isCake(card) &&
+    (ALL_TARGETS.make.has(v12(o) + v12(card)) || ALL_TARGETS.left.has(Math.abs(v12(o) - v12(card)))));
+}
+
+/* ---- 牌庫 ---- */
+function drawMat(p, n) {
+  const got = [];
+  for (let i = 0; i < n; i++) {
+    if (!state.pile.length) {                 // 材料牌庫用完:棄牌堆洗勻變成新的牌庫
+      state.pile = shuffle(G.discard);
+      G.discard = [];
+      if (!state.pile.length) break;          // 棄牌堆也是空的:這次就不抽
+    }
+    got.push(giveCard(p, state.pile.pop()));
+  }
+  return got;
+}
+function discardCard(p, card) { takeCard(p, card); delete card.fresh; G.discard.push(card); }
+function refillOrderSlot(idx) {
+  if (G.orderDeck.length) G.table[idx] = G.orderDeck.shift();
+  else G.table.splice(idx, 1);                // 訂單牌庫空了:不再補,訂單區變少
+}
+const humans = () => state.players.filter(p => !p.isBot);
+const bot = () => state.players.find(p => p.isBot);
+const others = (p) => state.players.filter(o => o !== p);
+function addPoints(p, pts, order, cards) {
+  p.orderPts = (p.orderPts || 0) + order.pts;
+  p.bonusPts = (p.bonusPts || 0) + (pts - order.pts);
+  p.ordersDone = (p.ordersDone || []).concat([orderText(order)]);
+  if (!G.reached && scorePlayer(p).total >= G.target) G.reached = p.name;
+}
+
+/* ---- 開局 ---- */
+function setupGame() {
+  G.startTime = state.startTime;
+  G.discard = [];
+  G.reached = null;
+  G.doneBy = -1;
+  G.history = [];
+  G.difficulty = (document.querySelector("#frac-diff [aria-pressed=true]") || {}).dataset?.diff || "normal";
+  G.timerOn = state.mode === "hotseat" && !!(document.getElementById("frac-timer-on") || {}).checked;
+  if (state.mode === "solo") {
+    const used = state.players.map(p => p.faction);
+    const f = FACTIONS.find(x => !used.includes(x.key)) || FACTIONS[1];
+    const b = makePlayer(BOT_NAME + (G.difficulty === "easy" ? "(簡單)" : "(普通)"), f.key);
+    b.isBot = true;
+    state.players.push(b);
+  }
+  state.players.forEach(p => { p.orderPts = 0; p.bonusPts = 0; p.ordersDone = []; p.fails = 0; p.hand = []; });
+  G.target = TARGET_BY_COUNT[state.players.length] || 9;
+  const deck = [];
+  ORDERS.forEach(o => { for (let i = 0; i < (o.copies || 1); i++) deck.push({ ...o, oid: deck.length + 1 }); });
+  G.orderDeck = shuffle(deck);
+  G.table = G.orderDeck.splice(0, TABLE_SIZE);
+  state.players.forEach(p => { drawMat(p, START_HAND); p.hand.forEach(c => { delete c.fresh; }); });
+}
+
+/* ---- 回合開始:抽 1 張(先手第 1 回合不抽),開始計時 ---- */
+async function onTurnStart(p) {
+  if (G.startTime !== state.startTime) setupGame();
+  G.itemUsed = false;
+  G.doneBy = -1;
+  if (!(state.round === 1 && state.turn === 0)) drawMat(p, 1);
+  startTimer();
+}
+
+/* ---- 選卡視窗:點卡片切換勾選,選夠了才出現確認鈕 ---- */
+async function selectCards(cands, opt) {
+  let sel = [];
+  for (;;) {
+    const html = `<h3>${escapeHtml(opt.title)}</h3>${opt.html || ""}` +
+      `<div class="frac-mini-row">${sel.length ? sel.map(miniCard).join(opt.joiner || "") : '<span class="frac-muted">還沒選</span>'}</div>` +
+      `<p class="frac-muted">${escapeHtml(opt.note || "")}(已選 ${sel.length} 張)</p>`;
+    const buttons = cands.map(c => ({ label: `${sel.includes(c) ? "✅" : "⬜"} ${cardText(c)}${isItem(c) ? "(道具)" : isCake(c) ? " 塊" : ""}`, value: c }));
+    if (sel.length >= opt.min) buttons.unshift({ label: opt.ok, value: "__ok", primary: true });
+    if (opt.cancel !== false) buttons.push({ label: "取消", value: null });
+    const v = await showInfo(html, buttons);
+    if (v === null || v === undefined) return null;
+    if (v === "__ok") return sel;
+    if (sel.includes(v)) sel = sel.filter(x => x !== v);
+    else if (sel.length < opt.max) sel.push(v);
+    else if (opt.max === 1) sel = [v];
+  }
+}
+const showMsg = (html, label) => showInfo(html, [{ label: label || "繼續", primary: true }]);
+
+/* ---- 回合收尾:手牌超過 7 張要丟 ---- */
+async function trimHand(p) {
+  while (p.hand.length > HAND_LIMIT) {
+    const k = p.hand.length - HAND_LIMIT;
+    const c = await showInfo(`<h3>手牌超過 ${HAND_LIMIT} 張</h3><p>還要丟掉 ${k} 張,點一張丟進棄牌堆。</p>`,
+      handOrder(p.hand).map(x => ({ label: `丟掉 ${cardText(x)}${isItem(x) ? "(道具)" : ""}`, value: x })));
+    if (c) discardCard(p, c);
+  }
+}
+/* 主要行動做完都要走這裡:丟牌 → 記錄這位玩家做完了 → 單人模式換機器人 */
+async function endMain(p) {
+  stopTimer();
+  await trimHand(p);
+  G.doneBy = state.turn; G.doneRound = state.round;
+  const b = bot();
+  if (b && !(G.table.length === 0 && G.orderDeck.length === 0)) await botTurn(b);
+  return true;
+}
+
+/* ---- 道具卡 ---- */
+function itemBlocked(p, kind) {
+  if (kind === "swapOrder") return G.table.length ? "" : "訂單區沒有訂單";
+  if (kind === "swapPlate") {
+    if (!others(p).some(o => o.hand.length)) return "對手手上都沒有牌";
+    return p.hand.length - 1 >= 1 ? "" : "你手上沒有別的牌可以還給對手";
+  }
+  return "";
+}
+function itemsUsable(p) {
+  return [...new Set(p.hand.filter(isItem).map(c => c.item))].filter(k => !itemBlocked(p, k));
+}
+async function itemAction(p) {
+  const kinds = itemsUsable(p);
+  const kind = kinds.length === 1 ? kinds[0] : await pickFromList("要用哪一張道具卡?",
+    kinds.map(k => ({ label: `${CARD_POOL.find(c => c.item === k).name}:${ITEM_TEXT[k]}`, value: k })));
+  if (!kind) return false;
+  const card = p.hand.find(c => c.item === kind);
+  if (kind === "restock") {
+    discardCard(p, card);
+    const got = drawMat(p, 2);
+    await showMsg(`<h3>📦 補貨</h3><p>抽到:${got.map(c => escapeHtml(cardText(c))).join("、") || "(牌庫和棄牌堆都空了,沒抽到)"}</p>`);
+  } else if (kind === "swapOrder") {
+    const idx = await pickFromList("🔄 換訂單:選一張要換掉的訂單", G.table.map((o, i) => ({ label: `${orderText(o)}(${o.pts} 分)`, value: String(i) })));
+    if (idx === null) return false;
+    const old = G.table[+idx];
+    discardCard(p, card);
+    if (G.orderDeck.length) { G.orderDeck.push(old); G.table[+idx] = G.orderDeck.shift(); }
+    else G.table.splice(+idx, 1);
+    await showMsg(`<h3>🔄 換訂單</h3><p>「${escapeHtml(orderText(old))}」${G.table.includes(old) ? "" : G.orderDeck.includes(old) ? "放到訂單牌庫最底下" : "移出遊戲(訂單牌庫已經空了)"}。</p>`);
+  } else {
+    const target = await pickFromList("🍽️ 交換盤:要跟誰交換?", others(p).filter(o => o.hand.length).map(o => ({ label: `${o.name}(手牌 ${o.hand.map(cardText).join("、")})`, value: o })));
+    if (!target) return false;
+    const take = await pickFromList(`要拿 ${target.name} 的哪一張?`, handOrder(target.hand).map(c => ({ label: cardText(c) + (isItem(c) ? "(道具)" : ""), value: c })));
+    if (!take) return false;
+    const giveOpts = p.hand.filter(c => c !== card);
+    const give = await pickFromList(`要給 ${target.name} 哪一張?(選對方用不上的)`, handOrder(giveOpts).map(c => ({ label: cardText(c) + (isItem(c) ? "(道具)" : ""), value: c })));
+    if (!give) return false;
+    discardCard(p, card);
+    takeCard(target, take); giveCard(p, take);
+    takeCard(p, give); target.hand.push(give);
+    await showMsg(`<h3>🍽️ 交換盤</h3><p>你拿到 ${escapeHtml(cardText(take))},給了 ${escapeHtml(target.name)} ${escapeHtml(cardText(give))}。</p>`);
+  }
+  G.itemUsed = true;
+  return true;
+}
+
+/* ---- A. 送餐 ---- */
+async function serveAction(p) {
+  const idx = await pickFromList("🍰 送餐:選一張訂單", G.table.map((o, i) => ({
+    label: `${orderText(o)}(${o.pts} 分)— ${o.type === "make" ? "2~3 片加起來" : "2 片大減小"}`, value: String(i) })));
+  if (idx === null) return false;
+  const order = G.table[+idx];
+  const cards = await selectCards(handOrder(p.hand.filter(isCake)), {
+    title: `訂單:${orderText(order)}`, min: 2, max: order.type === "make" ? 3 : 2, ok: "📤 送出!",
+    joiner: order.type === "make" ? '<span class="frac-op">+</span>' : '<span class="frac-op">−</span>',
+    note: order.type === "make" ? "選 2 或 3 片蛋糕,加起來要剛好等於目標;用 3 片多加 1 分" : "選剛好 2 片,大的減小的要剛好等於目標" });
+  if (!cards) return false;
+  const res = calcExpr(cards, order.type);
+  if (res.value12 === v12(order)) {
+    const pts = orderPoints(order, cards);
+    cards.forEach(c => discardCard(p, c));
+    addPoints(p, pts, order, cards);
+    refillOrderSlot(G.table.indexOf(order));
+    p.successes = (p.successes || 0) + 1;
+    await showMsg(`<h3>✅ 送餐成功!+${pts} 分</h3><p class="frac-expr">${escapeHtml(res.text)}</p>` +
+      (pts > order.pts ? `<p>用 3 片完成「湊出」,三片加分 +${THREE_PIECE_BONUS}!</p>` : "") +
+      (G.reached === p.name ? `<p class="frac-good">${escapeHtml(p.name)} 達到目標 ${G.target} 分!把這一輪打完就結算。</p>` : ""));
+  } else {
+    p.fails = (p.fails || 0) + 1;
+    const could = G.table.filter(o => o !== order && orderMatches(o, cards)).map(orderText);
+    const drop = await showInfo(`<h3>❌ 送餐失敗</h3><p class="frac-expr">${escapeHtml(res.text)},不是 ${escapeHtml(fracText(order.n, order.d))}</p>` +
+      (order.type === "left" ? "<p class=\"frac-muted\">「剩下」一律是大的減小的。</p>" : "") +
+      (could.length ? `<p>其實這組蛋糕剛好可以做「${escapeHtml(could.join("」「"))}」。</p>` : "") +
+      `<p>訂單留在原處。從送出的蛋糕中選 1 張丟掉,其餘收回手中:</p>`,
+      cards.map(c => ({ label: `丟掉 ${cardText(c)}`, value: c })));
+    discardCard(p, drop || cards[0]);
+  }
+  return endMain(p);
+}
+
+/* ---- B. 重切 ---- */
+async function recutAction(p) {
+  const cards = await selectCards(handOrder(p.hand), { title: "🔪 重切:丟掉 1~2 張,再抽同樣張數", min: 1, max: 2, ok: "丟掉並重抽", note: "蛋糕卡或道具卡都可以丟" });
+  if (!cards) return false;
+  cards.forEach(c => discardCard(p, c));
+  const got = drawMat(p, cards.length);
+  await showMsg(`<h3>🔪 重切</h3><p>丟掉:${cards.map(cardText).map(escapeHtml).join("、")}<br>抽到:${got.map(cardText).map(escapeHtml).join("、") || "(沒有牌可抽)"}</p>`);
+  return endMain(p);
+}
+
+/* ---- C. 點心問答:答對抽 1 張;答錯不抽,顯示解說與迷思 ---- */
+function explainHtml(q, chosen) {
+  const right = q.choices[q.answerIndex];
+  let h = `<p>正確答案:<b>${escapeHtml(right)}</b></p><p>💡 ${escapeHtml(q.explain)}</p>`;
+  if (q.trap) {
+    h += chosen === q.trap.choice
+      ? `<p class="frac-warn">你選的「${escapeHtml(chosen)}」是常見的錯誤:${escapeHtml(q.trap.text)}</p>`
+      : `<p class="frac-muted">常見錯誤:選「${escapeHtml(q.trap.choice)}」的人通常是${escapeHtml(q.trap.text)}</p>`;
+  }
+  return h;
+}
+async function quizAction(p) {
+  const q = drawQuestion();
+  const ok = await askQuestion(q, { score: false });
+  if (ok) {
+    const got = drawMat(p, 1);
+    await showMsg(`<h3>🎉 答對了!</h3><p>抽 1 張:${got.map(cardText).map(escapeHtml).join("") || "(沒有牌可抽)"}</p>`);
+  } else {
+    const wrongBtn = document.querySelector("#q-choices .choice-btn.wrong");
+    await showMsg(`<h3>答錯了,這次不抽牌</h3><p>題目:${escapeHtml(q.question)}</p>` + explainHtml(q, wrongBtn ? wrongBtn.textContent : ""), "知道了");
+  }
+  return endMain(p);
+}
+
+/* ---- 甜點機器人 ---- */
+function bestCombo(hand, easy) {
+  const all = findCombos(hand, G.table, easy ? 2 : 3);
+  if (!all.length) return null;
+  if (easy) return all[Math.floor(Math.random() * all.length)];
+  all.sort((a, b) => (b.pts - a.pts) || (a.cards.length - b.cards.length) || (a.idx - b.idx));
+  return all[0];
+}
+const bestPts = (hand) => { const c = bestCombo(hand, false); return c ? c.pts : 0; };
+function pickBotDiscard(b, easy) {
+  if (easy) { const it = b.hand.find(isItem); if (it) return it; }
+  const useless = b.hand.filter(c => isCake(c) && !inSomePair(c, b.hand));
+  const pool = useless.length ? useless : b.hand.filter(isCake).length ? b.hand.filter(isCake) : b.hand;
+  return pool.slice().sort((x, y) => (y.d || 0) - (x.d || 0))[0];
+}
+/* 用迷思算出來「以為會成功」的組合(簡單難度故意算錯用) */
+function mistakeCombo(hand) {
+  const cakes = hand.filter(isCake);
+  for (const o of shuffle(G.table)) {
+    for (const [a, b] of shuffle(subsets(cakes, 2))) {
+      if (orderMatches(o, [a, b])) continue;
+      const t = o.n / o.d;
+      const [big, small] = v12(a) >= v12(b) ? [a, b] : [b, a];
+      if (o.type === "make" && Math.abs((a.n + b.n) / (a.d + b.d) - t) < 1e-9) return { order: o, cards: [a, b], why: `把分子加分子、分母加分母,算成 ${a.n + b.n}/${a.d + b.d}` };
+      if (o.type === "left" && big.d !== small.d && Math.abs((big.n - small.n) / (big.d - small.d) - t) < 1e-9) return { order: o, cards: [a, b], why: `把分子減分子、分母減分母,算成 ${big.n - small.n}/${big.d - small.d}` };
+      const L = lcm(a.d, b.d);
+      if (o.type === "make" && a.d !== b.d && Math.abs((a.n + b.n) / L - t) < 1e-9) return { order: o, cards: [a, b], why: `通分時只改分母、沒改分子,算成 ${a.n}/${L} + ${b.n}/${L}` };
+    }
+  }
+  return null;
+}
+async function botTurn(b) {
+  const easy = G.difficulty === "easy";
+  const log = [];
+  const humanP = humans()[0];
+  const got = drawMat(b, 1);
+  log.push(`抽牌:${got.length ? cardText(got[0]) : "牌庫空了,沒抽到"}`);
+  // 用道具(最多 1 張)
+  const has = (k) => b.hand.find(c => c.item === k);
+  const restock = has("restock");
+  if (restock && b.hand.length - 1 <= 3) {
+    discardCard(b, restock);
+    const g2 = drawMat(b, 2);
+    log.push(`用「補貨」抽 2 張:${g2.map(cardText).join("、") || "沒抽到"}`);
+  } else if (!easy && has("swapPlate") && humanP.hand.length) {
+    const plate = has("swapPlate");
+    const base = bestPts(b.hand.filter(c => c !== plate));
+    let best = null;
+    humanP.hand.forEach(take => {
+      const h2 = b.hand.filter(c => c !== plate).concat([take]);
+      const myCombos = findCombos(h2, G.table);
+      const free = h2.filter(c => c !== take && !myCombos.some(cb => cb.cards.includes(c)));
+      const before = findCombos(humanP.hand.filter(c => c !== take), G.table).length;
+      const safe = free.filter(g => findCombos(humanP.hand.filter(c => c !== take).concat([g]), G.table).length <= before);
+      const pool = safe.length ? safe : free.length ? free : h2.filter(c => c !== take);
+      if (!pool.length) return;
+      const give = pool.slice().sort((x, y) => (y.d || 0) - (x.d || 0))[0];
+      const pts = bestPts(h2.filter(c => c !== give));
+      if (pts > base && (!best || pts > best.pts)) best = { take, give, pts };
+    });
+    if (best) {
+      discardCard(b, plate);
+      takeCard(humanP, best.take); b.hand.push(best.take);
+      takeCard(b, best.give); giveCard(humanP, best.give);
+      log.push(`用「交換盤」拿走你的 ${cardText(best.take)},給你 ${cardText(best.give)}`);
+    }
+  }
+  if (!easy && !log.some(l => l.startsWith("用")) && has("swapOrder")) {
+    const mine = findCombos(b.hand, G.table);
+    const threat = findCombos(humanP.hand, G.table).filter(c => c.order.pts >= 2 && !mine.some(m => m.order === c.order))
+      .sort((x, y) => y.order.pts - x.order.pts)[0];
+    if (threat) {
+      const so = has("swapOrder");
+      discardCard(b, so);
+      const i = G.table.indexOf(threat.order);
+      if (G.orderDeck.length) { G.orderDeck.push(threat.order); G.table[i] = G.orderDeck.shift(); } else G.table.splice(i, 1);
+      log.push(`用「換訂單」換掉你能完成的「${orderText(threat.order)}」`);
+    }
+  }
+  // 主要行動
+  const mistake = easy && Math.random() < BOT_EASY_MISTAKE ? mistakeCombo(b.hand) : null;
+  const combo = mistake ? null : bestCombo(b.hand, easy);
+  if (mistake) {
+    b.fails = (b.fails || 0) + 1;
+    const res = calcExpr(mistake.cards, mistake.order.type);
+    log.push(`送餐「${orderText(mistake.order)}」,送出 ${mistake.cards.map(cardText).join(mistake.order.type === "make" ? " + " : " − ")} → <b class="frac-bad">失敗</b>` +
+      `<br>機器人${escapeHtml(mistake.why)},這是錯的!正確算式:<span class="frac-expr">${escapeHtml(res.text)},不是 ${escapeHtml(fracText(mistake.order.n, mistake.order.d))}</span>`);
+    const drop = mistake.cards[Math.floor(Math.random() * 2)];
+    discardCard(b, drop);
+    log.push(`丟掉送出的 ${cardText(drop)}`);
+  } else if (combo) {
+    const res = calcExpr(combo.cards, combo.order.type);
+    combo.cards.forEach(c => discardCard(b, c));
+    addPoints(b, combo.pts, combo.order, combo.cards);
+    refillOrderSlot(G.table.indexOf(combo.order));
+    log.push(`送餐「${orderText(combo.order)}」成功,+${combo.pts} 分${combo.pts > combo.order.pts ? "(含三片加分)" : ""}:<span class="frac-expr">${escapeHtml(res.text)}</span>`);
+  } else {
+    const useless = b.hand.filter(c => isCake(c) && !inSomePair(c, b.hand));
+    const junk = easy ? b.hand.filter(isItem).concat(useless) : useless;
+    if (b.hand.length > 2 && junk.length) {
+      const drop = junk.slice(0, 2);
+      drop.forEach(c => discardCard(b, c));
+      const g3 = drawMat(b, drop.length);
+      log.push(`沒有能送的組合,重切:丟掉 ${drop.map(cardText).join("、")},抽到 ${g3.map(cardText).join("、") || "(沒牌)"}`);
+    } else {
+      const q = drawQuestion();
+      const ok = Math.random() < BOT_QUIZ_RATE[G.difficulty];
+      if (ok) { b.correctCount++; drawMat(b, 1); } else b.wrongCount++;
+      log.push(`點心問答「${escapeHtml(q.question)}」→ ${ok ? "答對,抽 1 張" : `答錯,不抽。正確答案是 ${escapeHtml(q.choices[q.answerIndex])}:${escapeHtml(q.explain)}`}`);
+    }
+  }
+  while (b.hand.length > HAND_LIMIT) { const c = pickBotDiscard(b, easy); discardCard(b, c); log.push(`手牌太多,丟掉 ${cardText(c)}`); }
+  b.hand.forEach(c => { delete c.fresh; });
+  await showMsg(`<h3>🤖 ${escapeHtml(b.name)} 的回合</h3><ul class="frac-log">${log.map(l => `<li>${l}</li>`).join("")}</ul>` +
+    (G.reached === b.name ? `<p class="frac-good">${escapeHtml(b.name)} 達到目標 ${G.target} 分!</p>` : ""));
+}
+
+/* ---- 分組計時(多人模式可選) ---- */
+function stopTimer() { if (G.timer) clearInterval(G.timer); G.timer = null; paintTimer(); }
+function startTimer() {
+  stopTimer();
+  if (!G.timerOn) return;
+  G.timeLeft = TIMER_SECONDS;
+  paintTimer();
+  G.timer = setInterval(async () => {
+    if (el("screen-game").classList.contains("hidden") || state.ended) { stopTimer(); return; }
+    if (G.timeLeft > 0) G.timeLeft--;
+    paintTimer();
+    if (G.timeLeft > 0 || state.busy || state.acting) return;   // 視窗開著(正在選卡、作答)時等它做完
+    stopTimer();
+    const p = cur();
+    while (p.hand.length > HAND_LIMIT) discardCard(p, pickBotDiscard(p, false));
+    G.doneBy = state.turn; G.doneRound = state.round;
+    await showMsg(`<h3>⏰ 時間到</h3><p>${escapeHtml(p.name)} 這回合沒有送出,換下一家店。</p>`);
+    endTurn();
+  }, 1000);
+}
+function paintTimer() {
+  const t = document.getElementById("frac-timer");
+  if (t) t.textContent = G.timer ? `⏰ 剩 ${G.timeLeft} 秒` : "";
+}
+
+/* ---- 行動清單 ---- */
+const ACTIONS = [
+  { key: "item", cost: 0, label: "🎁 用道具卡(可不用)",
+    blocked: (p) => !p.hand.some(isItem) ? "手上沒有道具卡" : G.itemUsed ? "這回合已經用過道具卡了" :
+      itemsUsable(p).length ? "" : itemBlocked(p, p.hand.find(isItem).item),
+    run: (p) => itemAction(p) },
+  { key: "serve", primary: true, label: "🍰 送餐",
+    blocked: (p) => !G.table.length ? "訂單區沒有訂單了" : p.hand.filter(isCake).length < 2 ? "手上的蛋糕卡不到 2 張" : "",
+    run: (p) => serveAction(p) },
+  { key: "recut", label: "🔪 重切(丟 1~2 張再抽)",
+    blocked: (p) => (p.hand.length ? "" : "手上沒有牌"),
+    run: (p) => recutAction(p) },
+  { key: "quiz", gold: true, label: "🧁 點心問答(答對抽 1 張)",
+    blocked: () => "",
+    run: (p) => quizAction(p) }
+];
+
+/* R1. 計分:完成訂單的分數 + 三片加分 */
+function scorePlayer(p) {
+  const o = p.orderPts || 0, b = p.bonusPts || 0, n = (p.ordersDone || []).length;
+  return { total: o + b, detail: `訂單 ${n} 張 ${o} 分${b ? ` + 三片加分 ${b}` : ""} = ${o + b} 分` };
+}
+/* 同分時,完成訂單張數多的人勝 */
+function rankPlayers(players) {
+  return players.slice().sort((x, y) => (scorePlayer(y).total - scorePlayer(x).total) || ((y.ordersDone || []).length - (x.ordersDone || []).length));
+}
+/* 結束:訂單全部用完立刻結束;有人達標 / 第 12 輪時,最後一位玩家做完才結束(把這一輪打完) */
+function isGameOver() {
+  if (G.startTime !== state.startTime) return false;
+  if (!G.table.length && !G.orderDeck.length) return true;
+  const last = state.mode === "solo" ? 0 : state.players.length - 1;
+  return G.doneBy === last && G.doneRound === state.round && state.turn === last && (!!G.reached || state.round >= GAME.rounds);
+}
+function canTakeTurn(p) { return !p.isBot; }
+
+/* ---- 畫面 ---- */
+function piePath(n, d, r) {
+  if (d === 1) return `<circle cx="${r}" cy="${r}" r="${r - 1}" class="pie-on"/>`;
+  let s = "";
+  for (let i = 0; i < d; i++) {
+    const a0 = (i / d) * 2 * Math.PI - Math.PI / 2, a1 = ((i + 1) / d) * 2 * Math.PI - Math.PI / 2;
+    const x0 = r + (r - 1) * Math.cos(a0), y0 = r + (r - 1) * Math.sin(a0), x1 = r + (r - 1) * Math.cos(a1), y1 = r + (r - 1) * Math.sin(a1);
+    s += `<path d="M${r},${r} L${x0.toFixed(2)},${y0.toFixed(2)} A${r - 1},${r - 1} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" class="${i < n ? "pie-on" : "pie-off"}"/>`;
+  }
+  return s;
+}
+const pie = (c, size) => `<svg class="pie" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${piePath(c.n, c.d, size / 2)}</svg>`;
+const fracHtml = (n, d) => d === 1 ? `<span class="fr-whole">${n}</span>` : `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+function targetHtml(o) {
+  const g = gcd(o.n, o.d), n = o.n / g, d = o.d / g;
+  if (d === 1) return fracHtml(n, 1);
+  if (n > d) return `<span class="fr-whole">${Math.floor(n / d)}</span>${fracHtml(n % d, d)}`;
+  return fracHtml(n, d);
+}
+const ITEM_ICON = { swapOrder: "🔄", swapPlate: "🍽️", restock: "📦" };
+function renderCard(card) {
+  if (isItem(card)) {
+    return cardBox(`<div class="item-ic">${ITEM_ICON[card.item] || "🎁"}</div><div class="item-name">${escapeHtml(card.name)}</div><div class="role">${escapeHtml(ITEM_TEXT[card.item] || "")}</div>`, "#c9a2e8", card.fresh);
+  }
+  return cardBox(`${card.raw ? '<span class="raw-tag">還可以約分</span>' : ""}${pie(card, 54)}<div class="fr-big">${fracHtml(card.n, card.d)}</div><div class="role">塊蛋糕</div>`,
+    card.raw ? "#e9a46a" : "#f3b6c6", card.fresh);
+}
+function miniCard(c) {
+  return isCake(c) ? `<span class="mini">${pie(c, 22)}<b>${escapeHtml(cardText(c))}</b></span>` : `<span class="mini">${ITEM_ICON[c.item] || ""}<b>${escapeHtml(c.name)}</b></span>`;
+}
+function handOrder(hand) {
+  return hand.slice().sort((a, b) => (isItem(a) - isItem(b)) || ((isCake(a) ? v12(a) : 0) - (isCake(b) ? v12(b) : 0)) || ((a.d || 0) - (b.d || 0)));
+}
+function turnStats(p) {
+  return [`手牌 ${p.hand.length} 張・材料牌庫 ${(state.pile || []).length} 張`, `目標 ${G.target} 分・目前 ${scorePlayer(p).total} 分`];
+}
+function statusLine(p) {
+  return `${getFaction(p.faction).label}・手牌 ${p.hand.length} 張・完成 ${(p.ordersDone || []).length} 張`;
+}
+function ruleHint(p) {
+  const tip = "先可以用 1 張道具卡,再從「送餐 / 重切 / 點心問答」選一個。湊出:2~3 片加起來;剩下:2 片大減小;3 片湊出 +1 分。";
+  return G.reached ? `🏁 ${G.reached} 已達到 ${G.target} 分,打完這一輪就結算!` : tip;
+}
+function summaryRows(p, sc) {
+  return [
+    ["甜點店", getFaction(p.faction).label],
+    ["完成的訂單", (p.ordersDone || []).join("、") || "(沒有)"],
+    ["計分", sc.detail],
+    ["送餐失敗", `${p.fails || 0} 次`],
+    ["點心問答 答對/答錯", `${p.correctCount} / ${p.wrongCount}`]
+  ];
+}
+
+/* 桌面:訂單區、其他店的明牌、計時。引擎每次重畫行動列時跟著重畫 */
+function paintTable() {
+  const box = document.getElementById("frac-table");
+  if (!box || !state.players.length || G.startTime !== state.startTime) return;
+  const p = cur();
+  const orders = G.table.map(o => `<div class="order ${o.type}">
+      <div class="o-type">${o.type === "make" ? "湊出" : "剩下"}</div>
+      <div class="o-target">${targetHtml(o)}</div>
+      <div class="o-pts">${"★".repeat(o.pts)}<span>${o.pts} 分</span></div>
+      <div class="o-desc">${o.type === "make" ? "2~3 片加起來剛好" : "2 片大的減小的剛好"}</div></div>`).join("");
+  const rivals = others(p).map(o => `<div class="rival"><div class="rival-head"><span class="dot" style="background:${getFaction(o.faction).color}"></span>
+      ${escapeHtml(o.name)} <b>${scorePlayer(o).total} 分</b><span class="frac-muted">(明牌 ${o.hand.length} 張)</span></div>
+      <div class="frac-mini-row">${handOrder(o.hand).map(miniCard).join("") || '<span class="frac-muted">沒有牌</span>'}</div></div>`).join("");
+  box.innerHTML = `<div class="sec-title">🧾 訂單區 <span class="frac-muted">訂單牌庫還有 ${G.orderDeck.length} 張・棄牌堆 ${G.discard.length} 張</span><span id="frac-timer" class="timer"></span></div>
+    <div class="orders">${orders || '<span class="frac-muted">沒有訂單了</span>'}</div>
+    <div class="rivals">${rivals}</div>
+    <div class="sec-title">🍰 ${escapeHtml(p.name)} 的手牌</div>`;
+  paintTimer();
+}
+
+/* 開始畫面加上「機器人難度」和「分組計時」兩個選項;遊戲畫面加上桌面區 */
+(function addUi() {
+  const $ = (id) => document.getElementById(id);   // 引擎的 el() 這時還沒宣告
+  $("btn-start").insertAdjacentHTML("beforebegin", `<div id="frac-options">
+    <div id="frac-diff-field" class="field"><label class="field"><span>甜點機器人的難度</span></label>
+      <div class="seg" id="frac-diff"><button type="button" data-diff="easy" aria-pressed="false">簡單</button><button type="button" data-diff="normal" aria-pressed="true">普通</button></div></div>
+    <label id="frac-timer-field" class="field frac-check"><input type="checkbox" id="frac-timer-on"> 每回合 ${TIMER_SECONDS} 秒計時(分組上課用,時間到還沒送出就換下一家)</label></div>`);
+  $("hand-grid").insertAdjacentHTML("beforebegin", `<div id="frac-table"></div>`);
+  const sync = () => {
+    const solo = typeof state !== "undefined" && state.mode === "solo";
+    $("frac-diff-field").classList.toggle("hidden", !solo);
+    $("frac-timer-field").classList.toggle("hidden", solo);
+  };
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-diff]");
+    if (b) document.querySelectorAll("#frac-diff button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    if (e.target.closest("[data-mode]") || e.target.closest("#btn-restart")) setTimeout(sync, 0);
+  });
+  setTimeout(sync, 0);
+  new MutationObserver(paintTable).observe($("action-bar"), { childList: true });
+  // 同分並列第一時,結算標題改成一起獲勝
+  new MutationObserver(() => {
+    if (!state.players.length) return;
+    const r = rankPlayers(state.players);
+    const key = (p) => scorePlayer(p).total * 100 + (p.ordersDone || []).length;
+    const top = r.filter(p => key(p) === key(r[0]));
+    if (top.length > 1) $("end-title").textContent = `🏆 ${top.map(p => p.name).join("、")} 並列第一!`;
+  }).observe($("end-summary"), { childList: true });
+})();
+
+/* R8. 檢查這套規則的資料 */
+function validateRules() {
+  const errors = [], warnings = [];
+  CARD_POOL.forEach(c => {
+    const n = `卡片「${c.name || c.id}」`;
+    if (!Number.isInteger(c.copies || 1) || (c.copies || 1) < 1) errors.push(`${n}:copies 要是 1 以上的整數`);
+    if (c.role === "cake") {
+      if (!Number.isInteger(c.n) || !Number.isInteger(c.d) || c.n < 1 || c.d < 1) errors.push(`${n}:n、d 要是正整數(不能寫成字串)`);
+      else if (12 % c.d !== 0) errors.push(`${n}:分母 ${c.d} 不是 12 的因數`);
+      else if (!!c.raw !== (gcd(c.n, c.d) > 1)) warnings.push(`${n}:raw(還沒約分)標記和 ${c.n}/${c.d} 對不上`);
+    } else if (c.role === "item") {
+      if (!ITEM_TEXT[c.item]) errors.push(`${n}:item「${c.item}」不是 swapOrder、swapPlate、restock`);
+    } else errors.push(`${n}:role 要是 cake 或 item`);
+  });
+  ORDERS.forEach((o, i) => {
+    const n = `ORDERS 第 ${i + 1} 張`;
+    if (o.type !== "make" && o.type !== "left") errors.push(`${n}:type 要是 "make"(湊出)或 "left"(剩下)`);
+    if (!Number.isInteger(o.n) || !Number.isInteger(o.d) || o.n < 1 || o.d < 1 || 12 % (o.d / gcd(o.n, o.d)) !== 0) errors.push(`${n}:目標 n/d 要是正整數,化簡後分母是 12 的因數`);
+    if (typeof o.pts !== "number" || !Number.isFinite(o.pts)) errors.push(`${n}:pts 要是數字`);
+  });
+  QUESTION_CARDS.forEach((q, i) => {
+    const n = `QUESTION_CARDS 第 ${i + 1} 題`;
+    if (typeof q.explain !== "string" || !q.explain) errors.push(`${n}:要有 explain(答錯時顯示的解說)`);
+    if (q.trap && (!Array.isArray(q.choices) || !q.choices.includes(q.trap.choice))) errors.push(`${n}:trap.choice「${q.trap.choice}」不在選項裡`);
+    if (q.trap && Array.isArray(q.choices) && q.choices[q.answerIndex] === q.trap.choice) errors.push(`${n}:trap.choice 不能是正確答案`);
+  });
+  [2, 3, 4].forEach(k => { if (!(TARGET_BY_COUNT[k] > 0)) errors.push(`TARGET_BY_COUNT 缺少 ${k} 家店的目標分數`); });
+  const deckSize = CARD_POOL.reduce((s, c) => s + (c.copies || 1), 0);
+  if (deckSize < START_HAND * GAME.maxPlayers + 10) warnings.push(`材料牌庫只有 ${deckSize} 張,${GAME.maxPlayers} 家店開局就會抽掉大半`);
+  return { errors, warnings };
+}
+/* ===== RULES-PACK:END ===== */
+</script>
+
+<script>
+
+/* =========================================================
+   第三部分:遊戲流程(引擎)—— 通常不需要修改
+   引擎不認識任何具體規則,只負責:輪流、發牌、讓玩家做行動、換人、結算、上傳成績。
+   怎麼計分、有哪些行動、什麼時候結束,都由第二部分提供。
+   ========================================================= */
+
+/* 遊戲狀態。每位玩家的資料都在 players 陣列裡。
+   規則需要新的玩家欄位(例如籌碼、俘虜)時,在 makePlayer() 裡加。
+   要替換既有欄位(例如把 battleResult 換成勝敗場數)也可以,但搜尋整份檔案,
+   所有用到它的地方都要一起改,finishGame() 的 payload 和 gas-backend.gs 也要對應 */
+let state = {
+  mode: GAME.defaultMode,
+  playerCount: Math.min(GAME.maxPlayers, Math.max(GAME.minPlayers, GAME.defaultPlayers || GAME.minPlayers)),   // 多人模式開始畫面預設選幾人
+  players: [],
+  turn: 0,
+  busy: false,       // 問答或視窗開著時為 true,期間鎖住所有行動按鈕
+  acting: false,     // 某個行動正在執行(包含它開的視窗)時為 true
+  handover: false,   // 交接畫面開著時為 true,期間不畫手牌
+  ended: false,      // 遊戲已經結束、停在最後的手牌等玩家按「看結果」時為 true
+  startTime: null,
+  round: 1,          // 目前第幾輪(每次輪回第一位玩家就 +1)
+  actionsLeft: 0,    // 這回合還剩幾次行動
+  pile: [],          // 共用牌堆(GAME.dealPerTurn > 0 時使用)
+  qBag: []           // 問答卡的洗牌袋,抽完再洗
+};
+
+function makePlayer(name, faction) {
+  return {
+    name, faction,
+    drawQueue: [],        // 抽卡佇列(GAME.handSize > 0 時才有內容)
+    hand: [],             // 手上的牌。可以隨時增減(合成、被搶走…),請用 giveCard / takeCard
+    chanceScoreDelta: 0,
+    correctCount: 0,
+    wrongCount: 0,
+    battleBonus: 0,
+    battlesUsed: 0,
+    battleResult: null,   // null | "win" | "lose" | "defended-win" | "defended-lose"
+    flags: {}             // 規則用的旗標,例如 lostKing
+  };
+}
+
+const el = (id) => document.getElementById(id);
+const getFaction = (key) => FACTIONS.find(f => f.key === key);
+const roleLabel = (key) => (ROLES.find(r => r.key === key) || { label: key }).label;
+const signed = (n) => (n >= 0 ? "+" : "") + n;
+const cur = () => state.players[state.turn];
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const usesQueue = () => GAME.handSize > 0;
+
+/* ---------- 畫面上的用詞 ----------
+   GAME.text 有寫的句子蓋掉這裡的預設;要換用詞改 GAME.text,不要來改引擎裡的字 */
+const DEFAULT_TEXT = {
+  questionTitle: "🎴 機會命運",
+  questionName: "機會命運",
+  factionLabel: "陣營",
+  factionTitle: "陣營分配",
+  countLabel: "玩家人數(同一台裝置輪流操作)",
+  countUnit: "{n} 人",
+  nameLabel: "玩家名稱(可留空)",
+  namePlaceholder: "第 {n} 位玩家",
+  defaultName: "玩家{n}",
+  turnWho: "輪到 {name}",
+  handover: "請把裝置交給",
+  handoverReady: "我準備好了",
+  winTitle: "🏆 {name} 獲勝!"
+};
+function say(key, vars) {
+  const custom = GAME.text && typeof GAME.text[key] === "string" ? GAME.text[key] : null;
+  const tpl = custom !== null ? custom : (DEFAULT_TEXT[key] !== undefined ? DEFAULT_TEXT[key] : key);
+  return tpl.replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] !== undefined ? vars[k] : m));
+}
+
+/* ---------- 規則的預設版本 ----------
+   第二部分沒有寫某個函式時,引擎改用這裡的版本。
+   引擎一律透過 rule("名稱", ...參數) 呼叫,所以第二部分只要用 function 宣告同名函式就能取代 */
+const DEFAULT_RULES = {
+  scorePlayer(p) {
+    const sum = p.hand.reduce((s, c) => s + (c.baseScore !== undefined ? c.baseScore : (c.score || 0)), 0);
+    const total = sum + p.chanceScoreDelta + p.battleBonus;
+    const parts = [`手牌 ${sum}`];
+    if (p.chanceScoreDelta) parts.push(`${say("questionName")} ${signed(p.chanceScoreDelta)}`);
+    if (p.battleBonus) parts.push(`戰鬥 ${signed(p.battleBonus)}`);
+    return { total, detail: parts.join(",") + ` = ${total}` };
+  },
+  rankPlayers(players) {
+    return players.slice().sort((x, y) => rule("scorePlayer", y).total - rule("scorePlayer", x).total);
+  },
+  onTurnStart(p) {
+    if (GAME.dealPerTurn > 0) dealCards(p, GAME.dealPerTurn);
+  },
+  isGameOver() {
+    if (GAME.rounds > 0) return state.round > GAME.rounds;
+    return usesQueue() && state.players.every(p => p.drawQueue.length === 0);
+  },
+  canTakeTurn(p) {
+    return usesQueue() && GAME.rounds === 0 ? p.drawQueue.length > 0 : true;
+  },
+  renderCard(card) {
+    const cf = card.faction ? getFaction(card.faction) : null;
+    const score = card.baseScore !== undefined ? `<div class="score">${escapeHtml(card.baseScore)} 分</div>` : "";
+    const role = card.role ? `<div class="role">${escapeHtml(roleLabel(card.role))}</div>` : "";
+    return cardBox(`${score}<div>${escapeHtml(card.name)}</div>${role}`, cf && cf.color, card.fresh);
+  },
+  handOrder(hand) { return hand; },
+  turnStats(p) {
+    const left = usesQueue()
+      ? `已抽卡:${p.hand.length} / ${p.hand.length + p.drawQueue.filter(x => x.type === "card").length}`
+      : `手上 ${p.hand.length} 張`;
+    return [left, `${say("questionName")}加減分:${signed(p.chanceScoreDelta)}`];
+  },
+  statusLine(p) {
+    const left = usesQueue()
+      ? `還有 ${p.drawQueue.filter(x => x.type === "card").length} 張可抽`
+      : `手上 ${p.hand.length} 張`;
+    return `${getFaction(p.faction).label},${left}`;
+  },
+  ruleHint() { return ""; },
+  summaryRows(p, sc) {
+    const battleLabel = { win: "主動出擊獲勝", lose: "主動出擊失敗", "defended-win": "守住了", "defended-lose": "被擊敗" };
+    const rows = [[say("factionLabel"), getFaction(p.faction).label], ["計分", sc.detail]];
+    if (QUESTION_CARDS.length) rows.push(["答對/答錯", `${p.correctCount} / ${p.wrongCount}`]);
+    if (GAME.battlesPerPlayer > 0) rows.push(["戰鬥", battleLabel[p.battleResult] || "沒有戰鬥"]);
+    return rows;
+  },
+  validateRules() { return { errors: [], warnings: [] }; }
+};
+function rule(name, ...args) {
+  const fn = typeof window[name] === "function" ? window[name] : DEFAULT_RULES[name];
+  return fn(...args);
+}
+
+/* ---------- 卡片與牌堆 ----------
+   發到玩家手上的永遠是「複製品」(有自己的 uid),不是 CARD_POOL 裡的原物件,
+   所以規則可以放心修改手牌、產生新卡(例如合成出的化合物),不會弄壞牌庫 */
+let uidCounter = 0;
+function newCard(def) { return { ...def, uid: ++uidCounter }; }
+function newPile() {
+  const cards = [];
+  CARD_POOL.forEach(c => { for (let i = 0; i < (c.copies || 1); i++) cards.push(newCard(c)); });
+  return shuffle(cards);
+}
+function dealCards(player, n) {
+  const got = [];
+  for (let i = 0; i < n; i++) {
+    if (!state.pile.length) {
+      if (GAME.reshufflePile === false) break;
+      state.pile = newPile();
+    }
+    const c = state.pile.pop();
+    c.fresh = true;            // 這回合新拿到的牌會亮框,回合結束後取消
+    player.hand.push(c);
+    got.push(c);
+  }
+  return got;
+}
+function giveCard(player, card) { card.fresh = true; player.hand.push(card); return card; }
+function takeCard(player, card) {
+  const i = player.hand.indexOf(card);
+  if (i >= 0) player.hand.splice(i, 1);
+  return i >= 0;
+}
+function cardBox(inner, color, fresh) {
+  return `<div class="hand-card${fresh ? " fresh" : ""}" style="border-color:${color || "var(--line)"}">${inner}</div>`;
+}
+function drawQuestion() {
+  if (!QUESTION_CARDS.length) return null;
+  if (!state.qBag.length) state.qBag = shuffle(QUESTION_CARDS);
+  return state.qBag.pop();
+}
+
+function loadBest() {
+  // 格式不對就當作沒有紀錄(例如 STORAGE_KEY 和別的遊戲撞名,讀到別種資料);
+  // 不檢查的話,開始畫面會顯示 undefined,而且之後的最高分永遠不會被更新
+  try {
+    const best = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (best && Number.isFinite(best.score)) {
+      return { score: best.score, name: typeof best.name === "string" ? best.name : "" };
+    }
+  } catch (e) { /* 讀不到或壞掉,當作沒有紀錄 */ }
+  return null;
+}
+function saveBestIfNeeded(score, name) {
+  const best = loadBest();
+  if (!best || score > best.score) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ score, name })); } catch (e) {}
+  }
+}
+function showBestNote() {
+  const best = loadBest();
+  el("best-note").textContent = best ? `這台裝置的最高分:${best.score} 分${best.name ? "(" + best.name + ")" : ""}` : "";
+}
+
+/* ---------- 檢查資料 ----------
+   開始畫面載入時執行。引擎檢查它自己會讀到的東西(陣營、問答卡、GAME 的回合與抽卡設定、ACTIONS),
+   這套規則自己的欄位由第二部分的 validateRules() 檢查。
+   errors 會擋住開始鈕,warnings 只是提醒 */
+function validateEngine() {
+  const errors = [], warnings = [];
+  const isInt = (n, min) => Number.isInteger(n) && n >= min;
+  const isNum = (n) => typeof n === "number" && Number.isFinite(n);
+
+  if (!Array.isArray(FACTIONS) || FACTIONS.length === 0) {
+    errors.push("FACTIONS 至少要有一個(陣營只當隊伍用也要寫)");
+  } else {
+    const seen = new Set();
+    FACTIONS.forEach((f, i) => {
+      if (!f || !f.key || !f.label || !f.color) { errors.push(`FACTIONS 第 ${i + 1} 項要有 key、label、color`); return; }
+      if (seen.has(f.key)) errors.push(`FACTIONS 的 key「${f.key}」重複了`);
+      seen.add(f.key);
+    });
+  }
+  if (!Array.isArray(CARD_POOL) || CARD_POOL.length === 0) errors.push("CARD_POOL 至少要有一張卡");
+  if (GAME.shuffleChoices === false && Array.isArray(QUESTION_CARDS) && QUESTION_CARDS.length >= 3 && QUESTION_CARDS.every(q => q.answerIndex === QUESTION_CARDS[0].answerIndex)) {
+    warnings.push(`選項不會打亂(shuffleChoices 是 false),但每一題的正確答案都在第 ${QUESTION_CARDS[0].answerIndex + 1} 個選項,玩家很快就會發現`);
+  }
+  if (GAME.text !== undefined && (typeof GAME.text !== "object" || GAME.text === null)) errors.push("GAME.text 要是物件,例如 text: { questionName: \"歷史問答\" }");
+  else Object.keys(GAME.text || {}).forEach(k => { if (!(k in DEFAULT_TEXT)) warnings.push(`GAME.text 裡的「${k}」不是引擎認得的名稱(可能打錯字),不會有作用`); });
+  if (!Array.isArray(QUESTION_CARDS)) {
+    errors.push("QUESTION_CARDS 必須是陣列(沒有問答就寫 [])");
+  } else {
+    QUESTION_CARDS.forEach((q, i) => {
+      const n = `QUESTION_CARDS 第 ${i + 1} 題`;
+      if (typeof q.question !== "string" || !q.question.trim()) errors.push(`${n}:question 要寫題目文字`);
+      if (!Array.isArray(q.choices) || q.choices.length < 2) errors.push(`${n}:choices 至少要有 2 個選項`);
+      else if (!isInt(q.answerIndex, 0) || q.answerIndex >= q.choices.length) errors.push(`${n}:answerIndex 要是 0 到 ${q.choices.length - 1} 的整數(從 0 開始算)`);
+      ["correctBonus", "wrongPenalty"].forEach(k => {
+        if (!isNum(q[k]) || q[k] < 0) errors.push(`${n}:${k} 要是不小於 0 的數字(不能寫成字串)`);
+      });
+    });
+  }
+
+  const modes = Array.isArray(GAME.modes) ? GAME.modes : [];
+  if (!modes.length || modes.some(m => m !== "solo" && m !== "hotseat")) errors.push('GAME.modes 只能放 "solo" 和 "hotseat"');
+  if (modes.includes("hotseat") && (!isInt(GAME.minPlayers, 1) || !isInt(GAME.maxPlayers, 1) || GAME.maxPlayers < GAME.minPlayers)) {
+    errors.push("GAME.minPlayers / maxPlayers 要是整數,而且最多不能小於最少");
+  }
+  if (!isInt(GAME.actionsPerTurn, 1)) errors.push("GAME.actionsPerTurn 要是 1 以上的整數");
+  if (!isInt(GAME.rounds, 0)) errors.push("GAME.rounds 要是 0 以上的整數(0 代表不限輪數)");
+  if (!isInt(GAME.dealPerTurn, 0)) errors.push("GAME.dealPerTurn 要是 0 以上的整數(0 代表不自動發牌)");
+  if (!isInt(GAME.handSize, 0)) errors.push("GAME.handSize 要是 0 以上的整數(0 代表不用抽卡佇列)");
+  if (typeof window.isGameOver !== "function" && !usesQueue() && !(GAME.rounds > 0)) {
+    errors.push("遊戲沒有結束條件:handSize 要大於 0(抽卡佇列抽完就結束),或 rounds 要大於 0(打幾輪就結束)");
+  }
+
+  if (usesQueue() && Array.isArray(CARD_POOL) && Array.isArray(FACTIONS) && Array.isArray(QUESTION_CARDS)) {
+    if (!isInt(GAME.questionInterval, 1)) errors.push("GAME.questionInterval 要是 1 以上的整數(0 會讓整局都不出問答)");
+    modes.filter(m => m === "solo" || m === "hotseat").forEach(m => {
+      const src = typeof GAME.drawFrom === "string" ? GAME.drawFrom : (GAME.drawFrom || {})[m];
+      if (!["shared", "ownFaction", "mixed"].includes(src)) {
+        errors.push(`GAME.drawFrom 的「${m}」要是 "shared"、"ownFaction" 或 "mixed"(目前是 ${JSON.stringify(src)})`);
+        return;
+      }
+      if (src !== "shared") {
+        const empty = FACTIONS.filter(f => !CARD_POOL.some(c => c.faction === f.key)).map(f => f.label);
+        if (empty.length) errors.push(`抽卡來源「${src}」需要每個陣營都有卡,但 ${empty.join("、")} 一張都沒有(抽到這個陣營的玩家會沒牌可抽,遊戲會卡住)`);
+        if (src === "ownFaction") {
+          const small = FACTIONS.filter(f => { const n = CARD_POOL.filter(c => c.faction === f.key).length; return n > 0 && n <= GAME.handSize; }).map(f => f.label);
+          if (small.length) warnings.push(`抽卡來源是 ownFaction,而 ${small.join("、")} 的卡數不超過 handSize,抽到該陣營的人每局都會抽到整個陣營`);
+        }
+      } else {
+        const need = (m === "hotseat" ? GAME.maxPlayers : 1) * GAME.handSize;
+        if (need > CARD_POOL.length) warnings.push(`「${m}」用共用牌庫,最多需要 ${need} 張,但 CARD_POOL 只有 ${CARD_POOL.length} 張,部分玩家會抽到比較少張`);
+      }
+    });
+    if (QUESTION_CARDS.length && GAME.questionInterval > GAME.handSize) warnings.push("questionInterval 大於 handSize,整局不會出現任何問答");
+  }
+  if (usesQueue() && Array.isArray(QUESTION_CARDS) && QUESTION_CARDS.length === 0) warnings.push("QUESTION_CARDS 是空的,遊戲裡不會有問答");
+  if (GAME.dealPerTurn > 0 && Array.isArray(CARD_POOL) && GAME.reshufflePile === false && Array.isArray(FACTIONS)) {
+    const total = CARD_POOL.reduce((s, c) => s + (c.copies || 1), 0);
+    const need = GAME.dealPerTurn * Math.max(GAME.rounds, 1) * (modes.includes("hotseat") ? GAME.maxPlayers : 1);
+    if (need > total) warnings.push(`reshufflePile 是 false,但整局最多要發 ${need} 張,牌堆只有 ${total} 張,後面的回合會發不到牌`);
+  }
+
+  if (!Array.isArray(ACTIONS) || ACTIONS.length === 0) {
+    errors.push("ACTIONS 至少要有一個行動");
+  } else {
+    const keys = new Set();
+    ACTIONS.forEach((a, i) => {
+      const n = `ACTIONS 第 ${i + 1} 項`;
+      if (!a || typeof a.key !== "string" || !a.key) { errors.push(`${n}:要有字串的 key`); return; }
+      if (keys.has(a.key)) errors.push(`${n}:key「${a.key}」重複了`);
+      keys.add(a.key);
+      if (typeof a.label !== "string" && typeof a.label !== "function") errors.push(`${n}(${a.key}):label 要是字串或函式`);
+      if (typeof a.blocked !== "function") errors.push(`${n}(${a.key}):要有 blocked(player) 函式(可以做就回傳 "",不行就回傳原因)`);
+      if (typeof a.run !== "function") errors.push(`${n}(${a.key}):要有 run(player) 函式`);
+    });
+  }
+
+  // 用假玩家試跑會被引擎直接呼叫的規則函式,在開始前就抓到寫錯的規則
+  if (!errors.length) {
+    try {
+      const mk = (name) => { const pl = makePlayer(name, FACTIONS[0].key); pl.hand = CARD_POOL.slice(0, 5).map(newCard); return pl; };
+      const a = mk("測試A"), b = mk("測試B");
+      const sc = rule("scorePlayer", a);
+      if (!sc || typeof sc.total !== "number" || !Number.isFinite(sc.total) || typeof sc.detail !== "string") {
+        errors.push("scorePlayer() 要回傳 { total: 數字, detail: 文字 },目前算出來是 " + JSON.stringify(sc) + "(常見原因:卡片分數欄位寫成字串或漏寫)");
+      }
+      const ranked = rule("rankPlayers", [a, b]);
+      if (!Array.isArray(ranked) || ranked.length !== 2) errors.push("rankPlayers() 要回傳排好的玩家陣列");
+      if (typeof rule("renderCard", a.hand[0]) !== "string") errors.push("renderCard() 要回傳 HTML 字串");
+      ["ruleHint", "turnStats", "statusLine"].forEach(name => rule(name, a));
+    } catch (e) {
+      errors.push("規則函式在測試資料上執行出錯:" + e.message + "(檢查 scorePlayer、rankPlayers、renderCard、ruleHint、turnStats、statusLine;拿掉戰鬥規則時,ruleHint 裡的 canBattle 也要一起拿掉)");
+    }
+  }
+  return { errors, warnings };
+}
+
+function paintList(id, title, items) {
+  const box = el(id);
+  const shown = items.slice(0, 12);
+  box.innerHTML = items.length
+    ? `<li class="title">${escapeHtml(title)}</li>` + shown.map(x => `<li>${escapeHtml(x)}</li>`).join("") +
+      (items.length > shown.length ? `<li>…還有 ${items.length - shown.length} 項</li>` : "")
+    : "";
+  box.classList.toggle("hidden", !items.length);
+}
+function runValidation() {
+  const errors = [], warnings = [];
+  const merge = (fn) => {
+    try {
+      const r = fn() || {};
+      (r.errors || []).forEach(x => errors.push(x));
+      (r.warnings || []).forEach(x => warnings.push(x));
+    } catch (e) { errors.push("檢查程式出錯:" + e.message); }
+  };
+  merge(validateEngine);
+  merge(() => rule("validateRules"));
+  paintList("game-errors", "遊戲資料有問題,修正後才能開始:", errors);
+  paintList("game-warnings", "提醒(不影響開始,但可能不是你要的設計):", warnings);
+  el("btn-start").disabled = errors.length > 0;
+  return { errors, warnings };
+}
+
+/* ---------- 開始畫面 ---------- */
+function renderSetup() {
+  const modeLabel = { solo: "單人(對電腦)", hotseat: "多人(同一畫面輪流)" };
+  el("mode-field").classList.toggle("hidden", GAME.modes.length < 2);
+  el("mode-seg").innerHTML = GAME.modes.map(m =>
+    `<button type="button" data-mode="${m}" aria-pressed="${state.mode === m}">${modeLabel[m]}</button>`).join("");
+  el("count-field").classList.toggle("hidden", state.mode !== "hotseat");
+  const counts = [];
+  for (let n = GAME.minPlayers; n <= GAME.maxPlayers; n++) counts.push(n);
+  el("count-seg").innerHTML = counts.map(n =>
+    `<button type="button" data-count="${n}" aria-pressed="${state.playerCount === n}">${escapeHtml(say("countUnit", { n }))}</button>`).join("");
+  const n = state.mode === "hotseat" ? state.playerCount : 1;
+  const old = [...document.querySelectorAll("#name-inputs input")].map(i => i.value);
+  let html = `<label class="field"><span>${n > 1 ? escapeHtml(say("nameLabel")) : "姓名或暱稱"}</span>`;
+  for (let i = 0; i < n; i++) {
+    html += `<input type="text" data-name="${i}" placeholder="${n > 1 ? escapeHtml(say("namePlaceholder", { n: i + 1 })) : "請輸入姓名或暱稱"}" value="${escapeHtml(old[i] || "")}">`;
+  }
+  el("name-inputs").innerHTML = html + "</label>";
+}
+
+/* ---------- 分配陣營、組抽卡佇列 ---------- */
+function assignFactions(n) {
+  // 人數不超過陣營數時每人不同陣營;超過時會重複
+  const order = shuffle(FACTIONS.map(f => f.key));
+  return Array.from({ length: n }, (_, i) => order[i % order.length]);
+}
+
+/* 依 handSize / questionInterval 為每位玩家組出抽卡佇列(handSize 為 0 時不組)。
+   佇列裡每一項是 { type: "card", data } 或 { type: "question", data } */
+function buildDrawDeck() {
+  state.players.forEach(p => { p.drawQueue = []; });
+  if (!usesQueue()) return;
+  const questions = shuffle(QUESTION_CARDS);
+  let qIndex = 0;
+  const shared = shuffle(CARD_POOL);
+  state.players.forEach((p, pi) => {
+    let cards;
+    const source = typeof GAME.drawFrom === "string" ? GAME.drawFrom : GAME.drawFrom[state.mode];
+    if (source === "ownFaction") {
+      cards = shuffle(CARD_POOL.filter(c => c.faction === p.faction)).slice(0, GAME.handSize);
+    } else if (source === "mixed") {
+      const own = CARD_POOL.filter(c => c.faction === p.faction);
+      const others = shuffle(CARD_POOL.filter(c => c.faction !== p.faction)).slice(0, own.length);
+      cards = shuffle(own.concat(others)).slice(0, GAME.handSize);
+    } else {
+      cards = [];
+      for (let k = 0; k < GAME.handSize; k++) {
+        const c = shared[k * state.players.length + pi];
+        if (c) cards.push(c);
+      }
+    }
+    const queue = [];
+    cards.forEach((card, i) => {
+      queue.push({ type: "card", data: newCard(card) });
+      if ((i + 1) % GAME.questionInterval === 0 && questions.length) {
+        queue.push({ type: "question", data: questions[qIndex % questions.length] });
+        qIndex++;
+      }
+    });
+    p.drawQueue = queue;
+  });
+}
+
+async function startGame() {
+  if (runValidation().errors.length) return;
+  const n = state.mode === "hotseat" ? state.playerCount : 1;
+  const names = [...document.querySelectorAll("#name-inputs input")].map(i => i.value.trim());
+  const factions = assignFactions(n);
+  state.players = factions.map((f, i) => makePlayer(names[i] || (n > 1 ? say("defaultName", { n: i + 1 }) : "玩家"), f));
+  state.turn = 0;
+  state.busy = false;
+  state.acting = false;
+  state.handover = false;
+  state.ended = false;
+  state.round = 1;
+  state.actionsLeft = 0;
+  state.qBag = [];
+  state.pile = newPile();
+  state.startTime = Date.now();
+  buildDrawDeck();
+
+  el("screen-start").classList.add("hidden");
+  el("screen-game").classList.remove("hidden");
+  renderGame();
+
+  if (state.mode === "hotseat") {
+    const lines = state.players.map(p =>
+      `<div class="summary-row"><span>${escapeHtml(p.name)}</span><span class="faction-tag" style="background:${getFaction(p.faction).color}">${getFaction(p.faction).label}</span></div>`).join("");
+    await showInfo(`<h3>${escapeHtml(say("factionTitle"))}</h3>${lines}`, [{ label: "開始", primary: true }]);
+    await showHandover();
+  }
+  await beginTurn();
+}
+
+/* ---------- 畫面 ---------- */
+function turnInfoText() {
+  const parts = [];
+  if (GAME.rounds > 0) parts.push(`第 ${Math.min(state.round, GAME.rounds)} / ${GAME.rounds} 輪`);
+  if (GAME.actionsPerTurn > 1) parts.push(`剩 ${state.actionsLeft} 次行動`);
+  return parts.join("・");
+}
+
+function renderGame() {
+  const p = cur();
+  const f = getFaction(p.faction);
+  const sc = rule("scorePlayer", p);
+
+  // 多人模式的記分板
+  el("board").classList.toggle("hidden", state.mode !== "hotseat");
+  el("board").innerHTML = state.players.map((o, i) => `<div class="board-row ${i === state.turn ? "now" : ""}">
+      <span class="bar" style="background:${getFaction(o.faction).color}"></span>
+      <div><div>${escapeHtml(o.name)}</div><div class="meta">${escapeHtml(rule("statusLine", o))}</div></div>
+      <span class="pts">${rule("scorePlayer", o).total}</span></div>`).join("");
+
+  el("turn-who").textContent = state.mode === "hotseat" ? say("turnWho", { name: p.name }) : p.name;
+  const tag = el("faction-tag");
+  tag.textContent = f.label;
+  tag.style.background = f.color;
+
+  const [left, right] = rule("turnStats", p);
+  el("stat-turn").textContent = turnInfoText();
+  el("stat-progress").textContent = left;
+  el("stat-chance").textContent = right;
+
+  // 交接畫面開著時不畫手牌:遮罩是半透明的,先畫出來會被上一位玩家看到
+  el("hand-grid").innerHTML = state.handover ? "" : rule("handOrder", p.hand).map(card => rule("renderCard", card)).join("");
+  el("breakdown").textContent = `目前總分:${sc.detail}`;
+
+  // 行動按鈕:每個 ACTIONS 一顆;行動次數大於 1、或沒有任何行動可做時,多一顆「結束回合」
+  const locked = state.busy || state.acting || state.actionsLeft <= 0;
+  const reasons = ACTIONS.map(a => a.blocked(p));
+  let html = ACTIONS.map((a, i) => {
+    const label = typeof a.label === "function" ? a.label(p) : a.label;
+    const cls = a.primary ? "btn-primary" : a.gold ? "btn-gold" : "btn-secondary";
+    return `<button type="button" id="btn-${a.key}" class="${cls}" data-action="${escapeHtml(a.key)}" title="${escapeHtml(reasons[i])}"${locked || reasons[i] ? " disabled" : ""}>${escapeHtml(label)}</button>`;
+  }).join("");
+  if (GAME.actionsPerTurn > 1 || reasons.every(r => r)) {
+    html += `<button type="button" id="btn-end-turn" class="btn-secondary" data-end-turn="1"${state.busy || state.acting || state.actionsLeft <= 0 ? " disabled" : ""}>結束回合</button>`;
+  }
+  // 遊戲已經結束:停在最後的手牌,只留一顆「看結果」
+  if (state.ended) {
+    html = `<button type="button" id="btn-finish" class="btn-primary" data-finish="1"${state.busy ? " disabled" : ""}>看結果 ▶</button>`;
+  }
+  el("action-bar").innerHTML = html;
+  // 不能按的行動,把原因列在按鈕下方(title 只有滑鼠停留才看得到,平板和手機看不到)
+  const labels = ACTIONS.map(a => (typeof a.label === "function" ? a.label(p) : a.label));
+  el("blocked-hint").innerHTML = (state.ended || state.handover || state.actionsLeft <= 0) ? "" :
+    ACTIONS.map((a, i) => (reasons[i] && reasons[i] !== labels[i])
+      ? `<div>${escapeHtml(labels[i])}:${escapeHtml(reasons[i])}</div>` : "").join("");
+  el("turn-hint").textContent = state.ended ? "遊戲結束!看看最後的手牌,再按「看結果」。" : rule("ruleHint", p);
+}
+
+/* ---------- 通用視窗 ---------- */
+function showInfo(html, buttons) {
+  state.busy = true;
+  renderGameIfVisible();
+  return new Promise(resolve => {
+    el("info-box").innerHTML = html + `<div style="display:grid;gap:8px;margin-top:14px">` +
+      buttons.map((b, i) => `<button type="button" data-info="${i}" class="${b.primary ? "btn-primary" : b.gold ? "btn-gold" : "btn-secondary"}" style="margin:0">${escapeHtml(b.label)}</button>`).join("") + `</div>`;
+    el("info-modal").classList.remove("hidden");
+    el("info-box").querySelectorAll("[data-info]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        el("info-modal").classList.add("hidden");
+        state.busy = false;
+        renderGameIfVisible();
+        resolve(buttons[+btn.dataset.info].value);
+      });
+    });
+    const first = el("info-box").querySelector(".btn-primary") || el("info-box").querySelector("button");
+    if (first) first.focus();
+  });
+}
+function renderGameIfVisible() {
+  if (!el("screen-game").classList.contains("hidden") && state.players.length) renderGame();
+}
+async function showHandover() {
+  if (state.mode !== "hotseat") return;
+  const p = cur();
+  state.handover = true;       // 這段期間 renderGame() 不畫手牌,按下「我準備好了」才畫
+  await showInfo(`<div class="handover"><div style="color:var(--muted)">${escapeHtml(say("handover"))}</div>
+    <div class="big" style="color:${getFaction(p.faction).color}">${escapeHtml(p.name)}</div></div>`,
+    [{ label: say("handoverReady"), primary: true }]);
+  state.handover = false;
+  renderGameIfVisible();
+}
+
+/* 讓玩家從清單裡選一個。items 是 [{ label, value, gold? }],回傳選到的 value,按取消回傳 null。
+   沒有可選的項目時只會顯示取消。需要多步驟選擇(先選元素、再選目標)就連續呼叫 */
+function pickFromList(title, items, cancelLabel) {
+  const buttons = items.map(it => ({ label: it.label, value: it.value, gold: it.gold !== false }));
+  buttons.push({ label: cancelLabel || "取消", value: null });
+  return showInfo(`<h3>${escapeHtml(title)}</h3>`, buttons);
+}
+
+/* ---------- 回合流程 ----------
+   一回合 = onTurnStart(發牌等)→ 玩家做 GAME.actionsPerTurn 次行動(或按「結束回合」)→ 換人
+   每次行動做完,先檢查 isGameOver(),再看行動次數用完了沒。
+   問答視窗或任何 showInfo 視窗開著時 state.busy 為 true,行動按鈕會被鎖住,不要拿掉這個鎖定 */
+async function beginTurn() {
+  state.actionsLeft = GAME.actionsPerTurn;
+  await rule("onTurnStart", cur());
+  renderGame();
+}
+
+async function performAction(key) {
+  if (state.busy || state.acting || state.ended || state.actionsLeft <= 0) return;
+  const p = cur();
+  const act = ACTIONS.find(a => a.key === key);
+  if (!act || act.blocked(p)) return;
+  state.acting = true;
+  renderGame();
+  let result;
+  try {
+    result = await act.run(p);
+  } catch (e) {
+    console.error(e);
+    result = false;
+    state.busy = false;
+    await showInfo(`<h3>這個行動出錯了</h3><p>${escapeHtml(e.message)}</p>`, [{ label: "關閉", primary: true }]);
+  } finally {
+    state.acting = false;
+  }
+  if (result === false) { renderGame(); return; }       // 玩家取消:不扣行動次數
+  state.actionsLeft -= act.cost === undefined ? 1 : act.cost;
+  if (rule("isGameOver")) { concludeGame(); return; }
+  if (state.actionsLeft <= 0) await endTurn(true); else renderGame();
+}
+
+/* 行動做完之後遊戲結束:先停在手牌畫面(讓玩家看到最後拿到的牌),按「看結果」才進結算。
+   玩家自己按「結束回合」造成的結束不需要停,直接結算 */
+function concludeGame() {
+  state.ended = true;
+  state.actionsLeft = 0;
+  renderGame();
+}
+
+/* 預設行動:抽卡佇列的下一項。抽到卡就放進手牌,抽到問答就出題 */
+async function drawFromQueue(p) {
+  if (p.drawQueue.length === 0) return false;
+  const item = p.drawQueue.shift();
+  if (item.type === "card") {
+    item.data.fresh = true;
+    p.hand.push(item.data);
+  } else {
+    await askQuestion(item.data);
+  }
+  return true;
+}
+
+/* 預設行動:發動戰鬥。多人模式先選對象 */
+async function battleAction(p) {
+  let target = null;
+  if (state.mode === "hotseat") {
+    const options = battleTargets(p).map(o => ({ label: `${o.name}(${getFaction(o.faction).label},${rule("scorePlayer", o).total} 分)`, value: o }));
+    target = await pickFromList("要攻打誰?", options);
+    if (!target) return false;
+  }
+  p.battlesUsed++;
+  const msg = resolveBattle(p, target);
+  await showInfo(`<h3>戰鬥結果</h3><p>${escapeHtml(msg)}</p>`, [{ label: "繼續", primary: true }]);
+  return true;
+}
+
+/* ---------- 機會命運問答 ----------
+   askQuestion(q, { score: false }) 回傳 Promise<是否答對>。
+   預設答對加 correctBonus、答錯扣 wrongPenalty;score: false 時只記答對/答錯次數,不動分數
+   (適合拿來當「答對才能成功」的關卡) */
+function askQuestion(q, opts) {
+  const options = opts || {};
+  return new Promise(resolve => {
+    state.busy = true;
+    renderGame();
+    el("q-who").textContent = state.mode === "hotseat" ? `由 ${cur().name} 作答` : "";
+    el("q-text").textContent = q.question;
+    el("q-feedback").textContent = "";
+    el("q-feedback").className = "feedback";
+    const wrap = el("q-choices");
+    wrap.innerHTML = "";
+    // i 永遠是原本 choices 裡的索引,打亂的只是顯示順序,所以 answerIndex 不用改
+    const order = q.choices.map((_, i) => i);
+    const shown = GAME.shuffleChoices ? shuffle(order) : order;
+    shown.forEach(i => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.textContent = q.choices[i];
+      btn.addEventListener("click", () => answerQuestion(i, q, btn, options, resolve));
+      wrap.appendChild(btn);
+    });
+    el("question-modal").classList.remove("hidden");
+  });
+}
+
+function answerQuestion(choiceIndex, q, btnEl, options, resolve) {
+  const p = cur();
+  const scored = options.score !== false;
+  document.querySelectorAll("#q-choices .choice-btn").forEach(b => b.disabled = true);
+  const ok = choiceIndex === q.answerIndex;
+  if (ok) {
+    p.correctCount++;
+    if (scored) p.chanceScoreDelta += q.correctBonus;
+    btnEl.classList.add("correct");
+    el("q-feedback").textContent = scored ? `答對了!+${q.correctBonus} 分` : "答對了!";
+    el("q-feedback").className = "feedback good";
+  } else {
+    p.wrongCount++;
+    if (scored) p.chanceScoreDelta -= q.wrongPenalty;
+    btnEl.classList.add("wrong");
+    el("q-feedback").textContent = `答錯了${scored ? `,-${q.wrongPenalty} 分` : ""}(正確答案:${q.choices[q.answerIndex]})`;
+    el("q-feedback").className = "feedback bad";
+  }
+  setTimeout(() => {
+    el("question-modal").classList.add("hidden");
+    state.busy = false;
+    renderGame();
+    resolve(ok);
+  }, 1200);
+}
+
+/* ---------- 換人與結束 ---------- */
+async function endTurn(afterAction) {
+  const done = () => { if (afterAction) concludeGame(); else finishGame(); };
+  if (rule("isGameOver")) { done(); return; }
+  const prevTurn = state.turn;
+  const fresh = cur().hand.filter(c => c.fresh);
+  cur().hand.forEach(c => { delete c.fresh; });
+  const n = state.players.length;
+  let found = false;
+  for (let i = 0; i < n; i++) {
+    state.turn = (state.turn + 1) % n;
+    if (state.turn === 0) state.round++;
+    if (rule("canTakeTurn", cur())) { found = true; break; }   // 跳過沒事可做的玩家
+  }
+  if (!found || rule("isGameOver")) {
+    if (afterAction) { state.turn = prevTurn; fresh.forEach(c => { c.fresh = true; }); }   // 畫面留在剛剛行動的玩家
+    done();
+    return;
+  }
+  state.actionsLeft = 0;
+  renderGame();
+  if (state.mode === "hotseat") await showHandover();
+  await beginTurn();
+}
+
+function finishGame() {
+  state.acting = false;
+  state.ended = false;
+  el("screen-game").classList.add("hidden");
+  el("screen-end").classList.remove("hidden");
+  const durationSec = Math.round((Date.now() - state.startTime) / 1000);
+  const ranked = rule("rankPlayers", state.players);
+
+  let html = "";
+  ranked.forEach((p, i) => {
+    const sc = rule("scorePlayer", p);
+    html += `<h2 style="margin-top:${i ? 18 : 6}px">${ranked.length > 1 ? `第 ${i + 1} 名:` : ""}${escapeHtml(p.name)}</h2>` +
+      rule("summaryRows", p, sc).map(([k, v]) => `<div class="summary-row"><span>${escapeHtml(k)}</span><span>${escapeHtml(v)}</span></div>`).join("") +
+      `<div class="summary-row"><span>最終分數</span><span><b>${sc.total} 分</b></span></div>`;
+  });
+  el("end-title").textContent = ranked.length > 1 ? say("winTitle", { name: ranked[0].name }) : "🎉 遊戲結束!";
+  el("end-summary").innerHTML = html;
+
+  saveBestIfNeeded(rule("scorePlayer", ranked[0]).total, ranked[0].name);
+
+  /* 上傳資料:一局一筆,players 陣列裡每位玩家一項。
+     要記錄哪些欄位由使用者決定,加欄位時 gas-backend.gs 的 HEADERS 和 rowFor() 也要對應 */
+  const payload = {
+    mode: state.mode,
+    playerCount: state.players.length,
+    durationSec: durationSec,
+    players: ranked.map((p, i) => ({
+      rank: i + 1,
+      playerName: p.name,
+      faction: getFaction(p.faction).label,
+      finalScore: rule("scorePlayer", p).total,
+      correctCount: p.correctCount,
+      wrongCount: p.wrongCount,
+      battleResult: p.battleResult || "none"
+    }))
+  };
+  sendResultsToSheet(payload);
+}
+
+/* ---------- 送資料到 Google Apps Script ---------- */
+function sendResultsToSheet(payload) {
+  const statusEl = el("submit-status");
+  if (!GAS_URL || GAS_URL.indexOf("PASTE_YOUR") === 0) {
+    statusEl.textContent = "(尚未設定 Google 試算表網址,成績只顯示在畫面上)";
+    return;
+  }
+  statusEl.textContent = "成績上傳中...";
+  fetch(GAS_URL, {
+    method: "POST",
+    mode: "no-cors",
+    // no-cors 模式下瀏覽器只允許 text/plain 這類簡單的 Content-Type;後端一樣用 JSON.parse 讀內容
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    keepalive: true,               // 玩家一看到結算就關分頁,這筆成績也還是會送出去
+    body: JSON.stringify(payload)
+  }).then(() => {
+    statusEl.textContent = "成績已送出 ✅";
+  }).catch(() => {
+    statusEl.textContent = "送出失敗,請檢查網路連線";
+  });
+}
+
+/* ---------- 初始化與事件綁定 ---------- */
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.mode) { state.mode = b.dataset.mode; renderSetup(); }
+  if (b.dataset.count) { state.playerCount = +b.dataset.count; renderSetup(); }
+});
+el("action-bar").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b || b.disabled) return;
+  if (b.dataset.finish) { if (state.ended && !state.busy) finishGame(); }
+  else if (b.dataset.action) performAction(b.dataset.action);
+  else if (b.dataset.endTurn && !state.busy && !state.acting && !state.ended && state.actionsLeft > 0) endTurn();
+});
+/* 遊戲進行中重新整理、關分頁或按上一頁,整局會消失(沒有存檔),所以先讓瀏覽器跳出確認視窗。
+   視窗的文字由瀏覽器決定,改不了;開始畫面和結算畫面不會跳 */
+window.addEventListener("beforeunload", (e) => {
+  if (el("screen-game").classList.contains("hidden")) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
+el("btn-start").addEventListener("click", startGame);
+el("btn-restart").addEventListener("click", () => {
+  el("screen-end").classList.add("hidden");
+  el("screen-start").classList.remove("hidden");
+  el("submit-status").textContent = "";
+  renderSetup();
+  showBestNote();
+  runValidation();
+});
+
+if (GAME.title) {
+  el("game-title").textContent = GAME.title;
+  document.title = GAME.title;     // 瀏覽器分頁的標題也跟著 GAME.title,不用另外改 <title>
+}
+if (GAME.desc) el("game-desc").textContent = GAME.desc;
+el("count-label").textContent = say("countLabel");
+el("q-title").textContent = say("questionTitle");
+if (!GAME.modes.includes(state.mode)) state.mode = GAME.modes[0];
+renderSetup();
+showBestNote();
+runValidation();
+window.__engineReady = true;   // 之後的錯誤不再由最上面的錯誤顯示處理
+</script>
+
+</body>
+</html>

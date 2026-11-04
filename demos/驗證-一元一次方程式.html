@@ -1,0 +1,2434 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>像素探索教育遊戲範本</title>
+<style>
+  :root {
+    --bg: #181a2e;
+    --frame: #2c3050;
+    --ink: #20243c;
+    --box: #f8f8f0;
+    --box-line: #384870;
+    --accent: #e04848;
+    --good: #2f9e5a;
+    --bad: #d04050;
+    --muted: #9aa0c0;
+    --text: #eef0ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    display: flex; justify-content: center; align-items: flex-start;
+    padding: max(16px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shell { width: 100%; max-width: 760px; }
+  .hidden { display: none !important; }
+  button { font: inherit; cursor: pointer; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible { outline: 3px solid #f8d848; outline-offset: 2px; }
+
+  /* 文字框:仿掌機遊戲的白底雙框 */
+  .textbox {
+    background: var(--box); color: var(--ink);
+    border: 4px solid var(--box-line); border-radius: 8px;
+    box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px #b8c0d8;
+    padding: 12px 16px; font-weight: 700; line-height: 1.6;
+  }
+  .btn {
+    background: var(--box); color: var(--ink); border: 3px solid var(--box-line);
+    border-radius: 8px; padding: 10px 18px; font-weight: 700;
+  }
+  .btn.primary { background: var(--accent); color: #fff; border-color: #902030; }
+
+  /* 開始/結算畫面 */
+  .screen { background: var(--frame); border-radius: 14px; padding: 22px 20px; }
+  .screen h1 { margin: 0 0 6px; font-size: 1.5rem; letter-spacing: .05em; }
+  .screen p.desc { color: var(--muted); margin: 0 0 16px; line-height: 1.7; }
+  .lineup { display: block; width: 100%; image-rendering: pixelated; margin: 8px 0 16px; }
+  .screen input[type="text"] {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 3px solid var(--box-line);
+    background: var(--box); color: var(--ink); font-size: 1rem; font-weight: 700; margin-bottom: 12px;
+  }
+  .screen .btn.primary { width: 100%; font-size: 1.1rem; }
+  .best-note, .submit-status { color: var(--muted); font-size: .9rem; text-align: center; margin-top: 10px; }
+  .map-errors { background: #3a1c28; border: 2px solid var(--bad); border-radius: 8px; padding: 10px 12px 10px 28px; margin: 0 0 14px; font-size: .9rem; line-height: 1.6; }
+  .map-errors .title { list-style: none; margin-left: -16px; color: #ff9aa8; font-weight: 700; }
+  .teacher-notes { background: #23263f; border: 1px solid #454a70; border-radius: 8px; padding: 8px 12px; margin: 0 0 14px; font-size: .9rem; line-height: 1.7; }
+  .teacher-notes summary { cursor: pointer; color: var(--muted); font-weight: 700; }
+  .teacher-notes div { white-space: pre-line; margin-top: 6px; }
+  .end-story { background: #23263f; border-radius: 8px; padding: 10px 14px; margin: 0 0 12px; line-height: 1.8; white-space: pre-line; }
+  .summary-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #454a70; }
+
+  /* 遊戲畫面 */
+  .stage { position: relative; margin: 0 auto; }
+  .game-frame { position: relative; background: #000; border: 4px solid var(--frame); border-radius: 10px; overflow: hidden; }
+  #view { display: block; width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .hud {
+    position: absolute; left: 8px; top: 8px; display: flex; gap: 6px; pointer-events: none;
+  }
+  .hud span { background: rgba(248,248,240,.92); color: var(--ink); border: 2px solid var(--box-line); border-radius: 6px; padding: 2px 8px; font-size: .8rem; font-weight: 700; }
+  .toast { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); width: calc(100% - 20px); max-width: 520px; font-size: .95rem; pointer-events: none; }
+  @media (max-width: 640px) { .toast { font-size: .8rem; bottom: 6px; width: calc(100% - 12px); padding: 6px 10px !important; } }
+
+  /* 遇到角色的畫面 */
+  .encounter { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; }
+  #enc-scene { width: 100%; flex: 1; min-height: 0; image-rendering: pixelated; display: block; object-fit: cover; }
+  .enc-box { position: absolute; left: 12px; right: 12px; bottom: 12px; max-height: 62%; overflow: auto; }
+  @media (max-width: 560px) { .enc-box { position: static; margin-top: 8px; max-height: none; } }
+  .enc-box .q { margin: 0 0 8px; white-space: pre-line; }   /* 題目、對話裡的換行字元會換行 */
+  .choices { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .choices button {
+    width: 100%; text-align: left; background: transparent; border: 0; padding: 6px 8px 6px 26px;
+    font-weight: 700; color: var(--ink); border-radius: 6px; position: relative;
+  }
+  .choices button.sel { background: #e4e8f4; }
+  .choices button.sel::before { content: "▶"; position: absolute; left: 8px; }
+  .choices button:disabled { opacity: 1; cursor: default; }
+  .choices button.correct { background: #cdeedb; color: #1c6a3c; }
+  .choices button.wrong { background: #f6d2d8; color: #9a2436; }
+  .enc-box .fb { margin: 6px 0 0; padding: 6px 10px; border-radius: 6px; background: #fff4d0; font-weight: 700; }
+  .enc-box .fb.good { background: #dcf3e4; }
+  .bag-list { list-style: none; margin: 0 0 6px; padding: 0; }
+  .bag-list li { padding: 4px 0; border-bottom: 1px dashed #c8cce0; }
+  .bag-list .note { display: block; font-weight: 400; font-size: .9rem; white-space: pre-line; }
+  .bag-list .used { color: #8a90a8; }
+  .enc-more { font-size: .8rem; color: #6a7090; text-align: right; }
+
+  /* 觸控按鈕 */
+  .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .dpad { display: grid; grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(3, 54px); gap: 4px; }
+  .dpad button, .abtn { background: var(--frame); color: var(--text); border: 3px solid #4a5080; border-radius: 10px; font-size: 1.2rem; touch-action: none; }
+  .dpad button.on, .abtn.on { background: #4a5080; }
+  .btns { display: flex; align-items: center; gap: 12px; }
+  .bbtn { width: 56px; height: 56px; border-radius: 50%; font-weight: 800; font-size: 1rem; background: var(--frame); color: var(--text); border: 3px solid #4a5080; }
+  .abtn { width: 76px; height: 76px; border-radius: 50%; font-weight: 800; font-size: 1.4rem; background: var(--accent); border-color: #902030; }
+  .hint { color: var(--muted); font-size: .85rem; text-align: center; margin: 10px 0 0; }
+
+  /* 圖片預覽頁(網址加上 #sprites 時顯示) */
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+  .gallery figure { margin: 0; background: #78c850; border-radius: 8px; padding: 8px; text-align: center; }
+  .gallery canvas { width: 64px; height: 64px; image-rendering: pixelated; }
+  .gallery figcaption { color: #102010; font-size: .8rem; font-weight: 700; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ===== 畫面一:開始畫面 ===== -->
+  <div id="screen-start" class="screen">
+    <h1 id="game-title">🗺️ 像素探索大冒險</h1>
+    <p class="desc" id="game-desc">在地圖上四處探索,找出躲起來的角色,答對問題就能收服牠們。走進草叢也可能突然遇到角色喔!</p>
+    <canvas class="lineup" id="lineup" width="240" height="28"></canvas>
+    <details class="teacher-notes hidden" id="teacher-notes"><summary>給老師</summary><div id="teacher-notes-body"></div></details>
+    <ul class="map-errors hidden" id="map-errors"></ul>
+    <input type="text" id="player-name" placeholder="請輸入姓名或暱稱" maxlength="20">
+    <button class="btn primary" id="btn-start">開始冒險</button>
+    <div class="best-note" id="best-note"></div>
+  </div>
+
+  <!-- ===== 畫面二:遊戲進行中 ===== -->
+  <div id="screen-game" class="hidden">
+    <div class="stage" id="stage">
+    <div class="game-frame" id="game-frame">
+      <canvas id="view" width="240" height="160"></canvas>
+      <div class="hud"><span id="hud-creatures"></span><span id="hud-items"></span></div>
+      <div class="toast textbox hidden" id="toast"></div>
+      <div class="encounter hidden" id="encounter">
+        <canvas id="enc-scene" width="240" height="160"></canvas>
+      </div>
+    </div>
+    <!-- 問答框:寬螢幕疊在畫面下方,手機放在畫面下面 -->
+    <div class="enc-box textbox hidden" id="enc-box"></div>
+    </div>
+    <div class="controls">
+      <div class="dpad" id="dpad">
+        <span></span><button data-dir="up" aria-label="上">▲</button><span></span>
+        <button data-dir="left" aria-label="左">◀</button><span></span><button data-dir="right" aria-label="右">▶</button>
+        <span></span><button data-dir="down" aria-label="下">▼</button><span></span>
+      </div>
+      <div class="btns"><button class="bbtn" id="btn-b" aria-label="背包">B</button><button class="abtn" id="btn-a" aria-label="確定 / 調查">A</button></div>
+    </div>
+    <p class="hint">方向鍵 / WASD 移動,Enter / 空白鍵確定,B 鍵 / B 鈕打開背包</p>
+  </div>
+
+  <!-- ===== 畫面三:結算畫面 ===== -->
+  <div id="screen-end" class="screen hidden">
+    <h1 id="end-title">🎉 全部收服完成!</h1>
+    <canvas class="lineup" id="end-lineup" width="240" height="28"></canvas>
+    <div class="end-story hidden" id="end-story"></div>
+    <div class="summary-row"><span>玩家</span><span id="sum-name"></span></div>
+    <div class="summary-row" id="row-creatures"><span id="lbl-creatures">收服角色</span><span id="sum-creatures"></span></div>
+    <div class="summary-row" id="row-firsttry"><span id="lbl-firsttry">一次就答對</span><span id="sum-firsttry"></span></div>
+    <div class="summary-row"><span>答錯次數</span><span id="sum-wrong"></span></div>
+    <div class="summary-row" id="row-items"><span id="lbl-items">撿到道具</span><span id="sum-items"></span></div>
+    <div class="summary-row"><span>走了幾步</span><span id="sum-moves"></span></div>
+    <div class="summary-row"><span>花費時間</span><span id="sum-time"></span></div>
+    <div class="submit-status" id="submit-status"></div>
+    <button class="btn" id="btn-restart" style="width:100%;margin-top:14px">再玩一次</button>
+  </div>
+
+  <!-- ===== 圖片預覽頁(網址後面加 #sprites 才會出現,給製作者檢查圖用) ===== -->
+  <div id="screen-gallery" class="screen hidden">
+    <h1>圖片預覽</h1>
+    <p class="desc">每張圖放大 4 倍、畫在草地上,檢查輪廓、顏色和辨識度。</p>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+</div>
+
+<!-- 程式分成三個 <script>(仍然是同一個檔案):
+     1. 錯誤顯示:下面兩段只要有語法錯誤(漏逗號、引號或括號沒成對),就在開始畫面顯示第幾行出錯
+     2. 設定與內容包:GAS_URL、STORAGE_KEY、CONTENT-PACK
+     3. 像素圖與引擎
+   分開寫是因為同一個 <script> 裡只要有一個語法錯誤,整段都不會執行,連錯誤訊息都顯示不出來。不要合併回去。 -->
+<script>
+(function () {
+  let shown = false;
+  window.addEventListener("error", function (e) {
+    if (window.__engineReady || shown) return;      // 只處理「遊戲還沒準備好」時的第一個錯誤
+    shown = true;
+    const box = document.getElementById("map-errors");
+    const btn = document.getElementById("btn-start");
+    if (btn) btn.disabled = true;
+    if (!box) return;
+    const where = e.lineno ? `(這個檔案的第 ${e.lineno} 行附近)` : "";
+    const li = document.createElement("li");
+    li.className = "title";
+    li.textContent = `程式有錯誤,遊戲無法開始${where}:${e.message || "未知的錯誤"}。`
+      + "最常見的原因是漏了逗號、引號或括號沒有成對,請修正後重新整理。";
+    box.innerHTML = "";
+    box.appendChild(li);
+    box.classList.remove("hidden");
+  });
+})();
+</script>
+
+<script>
+/* =========================================================
+   上傳與存檔設定
+   ========================================================= */
+
+/* Google Apps Script 上傳網址 */
+const GAS_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+/* localStorage key(記錄這台裝置的最少步數)。多個遊戲共用網域時要改成不同名字;
+   地圖或角色改了之後,舊的最佳紀錄會因為地圖簽章不同而自動忽略,不用手動清 */
+const STORAGE_KEY = "edu-pixel-linear-eq";
+
+/* ===== CONTENT-PACK:BEGIN =====
+   平衡島:找回 x 的八位精靈(國中七年級數學・一元一次方程式)
+   第一部分(地圖、角色、道具、門、遊戲設定、過關條件)都在 BEGIN 和 END 這兩個標記之間。 */
+
+/* 1. 地圖 40 × 28。和設計書的對照:
+      設計書的 " (高草叢) → ,     S (起點) → @     @ (大天平) → 門 B     + 木橋     H 房子 / 塔 / 攤位
+      NPC:a 天平婆婆 → 6、b 村長 → 7、c 森林郵差 → 8、d 河谷船夫 → 9、e 飯糰攤阿姨 → !、f 天平塔守衛 → ?
+      告示牌:u → <、v → >、w → [、x(石碑)→ ]、y → ^      寶箱:k → $、m → &、n → %
+      精靈 1~5、門 X Y Z 和設計書相同 */
+const MAP = [
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  "TTT.............TTT#TT...~~..........TTT",
+  "T......HHHHH.......#T....~~.........%.TT",
+  "T......HHHHH.......#.....~~............T",
+  "T......HHHHH.......#.....~~........4...T",
+  "T........B.?.......#]....~~............T",
+  "T........==========Z===..~~............T",
+  "T................^.#..=..~~............T",
+  "T..5..........!....#..=..~~............T",
+  "T.HHH........HHH...#..===+3====........T",
+  "T.HHH........HHH...#.....~~...=........T",
+  "TT.................#T....~~...=........T",
+  "TTT.............TTT#TT...~~.9.=[.......T",
+  "TTTTT..........TTTT#TTT..~~...=......TTT",
+  "T#############################Y########T",
+  "TT...........T#TTT............=.....TTTT",
+  "T.HHH....HHH$.#T..............=......TTT",
+  "T.HHH....HHH..#...............=........T",
+  "T..6......7...#...............=........T",
+  "T.............#.>.......8.....=........T",
+  "T.....========X======================..T",
+  "T.....=.......#..................##2##.T",
+  "T.....=.......#..,,,,,,,,,,......#...#.T",
+  "T.....=<..1...#..,,,,,,,,,,......#.&.#.T",
+  "T.....@.......#..,,,,,,,,,,......#...#.T",
+  "T........~~~~.#..,,,,,,,,,,......#####.T",
+  "TTT......~~~~.#TT....................TTT",
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+];
+
+/* 2. 角色
+      精靈:greet 出場台詞、mistakes 選錯那個選項時的提示、explanation 答對後的解說、success 答對後說的話、
+            area 在哪一區(大天平還歪著時,會列出還差誰和這個地點)
+      草叢精靈用 questions:每次出現輪流出第 1、2、3 題(答錯下次換下一題) */
+const NOTE_K = "「x − 4 = 9,兩邊同加 4,x = 13。驗算:13 − 4 = 9 ✓ 減法用加法抵消。」";
+const NOTE_N = "「驗算口訣:答案要代回『原來的式子』,不是代回算到一半的式子。\n例:5 − 2(x + 1) = 1,算出 x = 1,代回原式:5 − 2 × (1 + 1) = 1 ✓」";
+
+const CREATURES = [
+  /* ---- 固定站位的精靈 ---- */
+  { id: "c1", name: "秤秤", where: "map", mark: "1", sprite: "scalebunny", area: "平衡村的池塘北邊",
+    greet: "我的耳朵要一樣重才站得穩!你懂平衡嗎?",
+    question: "【應用・判斷】天平左邊放 3 顆一樣重的蘋果和一個 50 公克砝碼,右邊放 200 公克砝碼,剛好平衡。設一顆蘋果 x 公克,可以寫成 3x + 50 = 200。哪一個做法能讓天平保持平衡,而且更接近求出 x?",
+    choices: ["只把左邊的 50 公克拿走,變成 3x = 200", "兩邊都拿走 50 公克,變成 3x = 150", "兩邊都除以 3,變成 x + 50 = 200/3", "左邊拿走 50 公克、右邊加上 50 公克,變成 3x = 250"],
+    answerIndex: 1,
+    mistakes: { "只把左邊的 50 公克拿走,變成 3x = 200": "天平只動一邊會歪掉喔!左邊拿走 50,右邊也要拿走 50。", "兩邊都除以 3,變成 x + 50 = 200/3": "兩邊同除以 3 時,左邊每一項都要除到:50 也要變成 50/3。這樣算不對,也沒有比較接近答案。", "左邊拿走 50 公克、右邊加上 50 公克,變成 3x = 250": "「移項要變號」不是「一邊減、另一邊加」!左邊拿走 50,右邊也要拿走 50。" },
+    explanation: "兩邊同減 50,天平仍平衡:3x = 150,再同除以 3 得 x = 50(驗算 3 × 50 + 50 = 200)。",
+    success: "耳朵平衡了!我跟你走!" },
+
+  { id: "c2", name: "移移", where: "map", mark: "2", sprite: "arrowfox", area: "草原東邊的柵欄口",
+    greet: "從這邊跳到那邊,我就會變身!你也會嗎?",
+    question: "【判斷】小明解 5x − 7 = 2x + 8 的過程:\n① 5x − 2x = 8 − 7\n② 3x = 1\n③ x = 1/3\n他做得對嗎?正確答案是多少?",
+    choices: ["全部都對,x = 1/3", "第①步錯了,正確答案 x = 15", "第①步錯了,正確答案 x = 5", "第①步錯了,應該是 5x + 2x = 8 + 7,x = 15/7"],
+    answerIndex: 2,
+    mistakes: { "全部都對,x = 1/3": "跳過等號就要變身:−7 過去就變 +7!", "第①步錯了,正確答案 x = 15": "算到 3x = 15 還沒完喔,兩邊要再同除以 3。", "第①步錯了,應該是 5x + 2x = 8 + 7,x = 15/7": "常數變號了,可是 2x 搬到左邊也要變號,應該是 5x − 2x。" },
+    explanation: "−7 移到右邊要變成 +7:5x − 2x = 8 + 7,3x = 15,x = 5。驗算:左 25 − 7 = 18,右 10 + 8 = 18 ✓",
+    success: "徽章在柵欄裡的寶箱,拿去開北邊的閘門吧!" },
+
+  { id: "c3", name: "夾夾", where: "map", mark: "3", sprite: "bracketcrab", area: "河谷的木橋上", floor: "+",
+    greet: "被我夾住的東西,你要一個一個放出來!",
+    question: "【計算】解 3(x − 2) = 2x + 5,x = ?",
+    choices: ["7", "−1", "11/5", "11"],
+    answerIndex: 3,
+    mistakes: { "7": "我鉗子裡的每一個都要乘到,−2 也要乘 3 變 −6!", "−1": "去括號對了,但 −6 移到右邊要變成 +6:x = 5 + 6。", "11/5": "2x 移到左邊要變號:3x − 2x,不是 3x + 2x。" },
+    explanation: "去括號:3x − 6 = 2x + 5;移項:3x − 2x = 5 + 6;x = 11。驗算:3 × 9 = 27,2 × 11 + 5 = 27 ✓",
+    success: "橋讓給你!西邊有一扇會出題的石門。" },
+
+  { id: "c4", name: "拉拉", where: "map", mark: "4", sprite: "minusocto", area: "河谷東北邊",
+    greet: "我手上的負號要分給每一個人,一個都不能漏!",
+    question: "【計算】解 10 − 2(x − 3) = 4,x = ?",
+    choices: ["0", "6", "−6", "7/2"],
+    answerIndex: 1,
+    mistakes: { "0": "負號要分給括號裡每一項:−2 乘 −3 是 +6!", "−6": "−2x = −12,兩邊同除以 −2,負負得正,x = 6。", "7/2": "不能先算 10 − 2!乘法要比減法先做,先把 −2 乘進括號。" },
+    explanation: "−2 乘進括號:10 − 2x + 6 = 4,16 − 2x = 4,−2x = −12,x = 6。驗算:10 − 2 × (6 − 3) = 10 − 6 = 4 ✓",
+    success: "謝謝你一個都沒漏!" },
+
+  { id: "c5", name: "算算", where: "map", mark: "5", sprite: "abacuschick", area: "廣場西邊的攤位前",
+    greet: "我在算車子算到頭昏了,快幫我!",
+    question: "【應用・列式】全班 37 人搭 7 輛車到市集,大車每輛坐 7 人,小車每輛坐 4 人,每輛車都剛好坐滿。設大車有 x 輛,則小車有 (7 − x) 輛。大車有幾輛?",
+    choices: ["3 輛", "4 輛", "1.5 輛", "9 輛"],
+    answerIndex: 0,
+    mistakes: { "4 輛": "x 是大車,就要乘大車的 7 人:7x。設完未知數,要一直記得它代表誰!(4 輛其實是小車)", "1.5 輛": "4(7 − x) 要乘到每一項:28 − 4x,不是 28 − x。而且車子不能是 1.5 輛,驗算時就該發現!", "9 輛": "3x = 9 還要除以 3。而且 9 輛比全部 7 輛還多,不合理!" },
+    explanation: "列式 7x + 4(7 − x) = 37,7x + 28 − 4x = 37,3x = 9,x = 3。大車 3 輛、小車 4 輛;驗算 7 × 3 + 4 × 4 = 21 + 16 = 37 ✓",
+    success: "頭不昏了!原來要先想清楚 x 是誰。" },
+
+  /* ---- 高草叢裡的精靈(每種三題輪流) ---- */
+  { id: "r1", name: "圓圓", where: "grass", sprite: "seedbunny", area: "移項草原南邊的高草叢",
+    greet: "我猜了一個數字,你幫我放回去試試看對不對!",
+    questions: [
+      { question: "【應用・驗算】下面哪一個數是 4x − 3 = 2x + 7 的解?", choices: ["2", "5/3", "5", "10"], answerIndex: 2,
+        mistakes: { "2": "把 2 代回去試試:左邊 5、右邊 11,不一樣就不是解!(−3 移項要變 +3)", "5/3": "2x 移到左邊要變號:4x − 2x,不是 4x + 2x。", "10": "2x = 10 還要除以 2。代回去:4 × 10 − 3 = 37,2 × 10 + 7 = 27,不相等。" },
+        explanation: "4x − 2x = 7 + 3,2x = 10,x = 5。代回:4 × 5 − 3 = 17,2 × 5 + 7 = 17 ✓" },
+      { question: "【計算】x ÷ 3 = 6,x = ?", choices: ["2", "9", "3", "18"], answerIndex: 3,
+        mistakes: { "2": "除法要用乘法抵消,把 2 代回去:2 ÷ 3 才不是 6!", "9": "x 是被「除以 3」,不是被「減 3」,要用乘法抵消。代回去:9 ÷ 3 = 3。", "3": "x 是被「除以 3」,不是被「加 3」。代回去:3 ÷ 3 = 1。" },
+        explanation: "x 被「除以 3」,要兩邊同「乘以 3」抵消:x = 6 × 3 = 18。驗算 18 ÷ 3 = 6 ✓" },
+      { question: "【應用・列式】天平左邊放 5 顆一樣重的糖果,右邊放 2 顆同樣的糖果和一個 12 公克砝碼,剛好平衡。一顆糖果幾公克?",
+        choices: ["12/7 公克", "4 公克", "6 公克", "12/5 公克"], answerIndex: 1,
+        mistakes: { "12/7 公克": "兩邊各拿走 2 顆糖果,天平還是平的,所以是 5x − 2x!", "6 公克": "不能只看右邊算 12 ÷ 2。左邊 5 顆要和「右邊 2 顆加 12 公克」一樣重。", "12/5 公克": "別忘了右邊也有 2 顆糖果!應該是 5x = 2x + 12。" },
+        explanation: "列式 5x = 2x + 12,兩邊同減 2x:3x = 12,x = 4。驗算:5 × 4 = 20,2 × 4 + 12 = 20 ✓" }
+    ] },
+
+  { id: "r2", name: "跳跳", where: "grass", sprite: "signcricket", area: "移項草原南邊的高草叢",
+    greet: "唧唧!看我跳過等號!",
+    questions: [
+      { question: "【計算】x − 9 = −4,x = ?", choices: ["−13", "5", "−5", "13"], answerIndex: 1,
+        mistakes: { "−13": "唧唧!跳過等號要變號,−9 跳過去就是 +9!", "−5": "符號弄反了:x = −4 + 9,不是 4 − 9。", "13": "右邊是 −4 不是 4:x = −4 + 9。" },
+        explanation: "−9 移到右邊變 +9:x = −4 + 9 = 5。驗算 5 − 9 = −4 ✓" },
+      { question: "【判斷】下面哪一個移項是正確的?",
+        choices: ["5x = 2x − 6 → 5x + 2x = −6", "3x + 4 = 10 → 3x = 10 + 4", "4x = 12 → x = 12 − 4", "7 − 2x = 1 → −2x = 1 − 7"], answerIndex: 3,
+        mistakes: { "5x = 2x − 6 → 5x + 2x = −6": "2x 搬到左邊要變號,應該是 5x − 2x = −6。", "3x + 4 = 10 → 3x = 10 + 4": "唧唧!+4 跳過去要變成 −4,應該是 3x = 10 − 4。", "4x = 12 → x = 12 − 4": "4 是乘在 x 上的係數,要兩邊同除以 4,不能用移項減掉。" },
+        explanation: "左邊的 +7 移到右邊變 −7,−2x 留在原地不變,所以 −2x = 1 − 7(再算 −2x = −6,x = 3,驗算 7 − 6 = 1 ✓)。" },
+      { question: "【計算】6x + 5 = 4x − 7,x = ?", choices: ["−1", "6", "−6", "−6/5"], answerIndex: 2,
+        mistakes: { "−1": "唧唧!+5 跳過去是 −5,右邊是 −7 − 5 = −12。", "6": "2x = −12,除以 2 時負號要留著。", "−6/5": "4x 搬到左邊要變號:6x − 4x,不是 6x + 4x。" },
+        explanation: "6x − 4x = −7 − 5,2x = −12,x = −6。驗算:左 −36 + 5 = −31,右 −24 − 7 = −31 ✓" }
+    ] },
+
+  { id: "r3", name: "點點", where: "grass", sprite: "dotbug", area: "移項草原南邊的高草叢",
+    greet: "我背上有幾個點,x 就被乘了幾次喔!",
+    questions: [
+      { question: "【計算】−3x = 18,x = ?", choices: ["6", "21", "−1/6", "−6"], answerIndex: 3,
+        mistakes: { "6": "把 6 代回去:−3 × 6 = −18,不是 18,負號要留著!", "21": "−3 是乘在 x 上的係數,不能用移項加過去,要兩邊同除以 −3。", "−1/6": "除反了!是 18 ÷ (−3),不是 −3 ÷ 18。" },
+        explanation: "兩邊同除以 −3:x = 18 ÷ (−3) = −6。驗算 −3 × (−6) = 18 ✓" },
+      { question: "【計算】2x + 3x − x = 20,x = ?", choices: ["4", "5", "16", "10/3"], answerIndex: 1,
+        mistakes: { "4": "−x 就是 −1 個 x,我背上有 1 個黑點點!合起來是 4x。", "16": "4 是乘在 x 上的係數,要兩邊同除以 4,不能用減的。", "10/3": "−x 是減掉一個 x,不是加:2 + 3 − 1 = 4。" },
+        explanation: "合併同類項:2 + 3 − 1 = 4,4x = 20,x = 5。驗算:10 + 15 − 5 = 20 ✓" },
+      { question: "【計算】x ÷ 2 + 3 = 7,x = ?", choices: ["20", "11", "8", "2"], answerIndex: 2,
+        mistakes: { "20": "+3 移到右邊要變 −3:x ÷ 2 = 7 − 3 = 4。", "11": "兩邊乘 2 時,+3 也要乘到:x + 6 = 14。", "2": "被除以 2,要乘 2 才抵消;代回去 2 ÷ 2 + 3 = 4,不是 7。" },
+        explanation: "先同減 3:x ÷ 2 = 4;再同乘 2:x = 8。驗算 8 ÷ 2 + 3 = 7 ✓" }
+    ] },
+
+  /* ---- NPC ---- */
+  { id: "n1", name: "天平婆婆", where: "map", mark: "6", sprite: "granny",
+    dialogue: ["孩子,方程式就像一座天平,等號就是天平中間那根柱子。兩邊一起加上、或一起減去同一個數,天平還是平的;兩邊一起乘上、或一起除以同一個數(不能是 0),也還是平的。這叫做『等量公理』。",
+      "最常犯的錯,就是只動一邊。你在左邊拿走 50 公克,右邊不拿,天平當然會歪。動一邊,另一邊一定要跟著動!"] },
+  { id: "n2", name: "村長", where: "map", mark: "7", sprite: "mayor",
+    dialogue: ["歡迎,小學徒!要知道 x 算得對不對,就把它『代回去』。像 2x + 1 = 7,如果 x = 3,左邊是 2 × 3 + 1 = 7,右邊也是 7,兩邊一樣,x = 3 就是解。這叫做『驗算』。",
+      "往東的銅門要用銅鑰匙才打得開。鑰匙就在我家右邊的寶箱裡,拿去吧!鑰匙插進門裡就拔不出來了,不過門也會一直開著。"] },
+  { id: "n3", name: "森林郵差", where: "map", mark: "8", sprite: "postman",
+    dialogue: ["我送信送了十幾年,最常看到大家在負號上跌倒。−3x = 12,兩邊同除以 −3,答案是 x = −4,負號不能弄丟!還有 2x + 3x − x,−x 就是 −1 個 x,合起來是 4x,不是 5x 也不是 6x。",
+      "南邊的高草叢裡常有精靈跳出來,答錯沒關係,牠們會跳回草叢,下次再出新題目。東邊柵欄口的狐狸守著『移項徽章』,要去北邊的河谷就得帶著它。"] },
+  { id: "n4", name: "河谷船夫", where: "map", mark: "9", sprite: "boatman",
+    dialogue: ["橋上那隻括號蟹最愛考『去括號』。3(x + 2),外面的 3 要乘給括號裡的『每一項』,變成 3x + 6,可不是 3x + 2 喔。",
+      "如果括號前面是負號,像 10 − 2(x − 3),要把 −2 乘進去:−2 × x = −2x,−2 × (−3) = +6,所以是 10 − 2x + 6。千萬別先算 10 − 2!乘法要比減法先做。東北角還有個寶箱,裡面有驗算的祕訣。"] },
+  { id: "n5", name: "飯糰攤阿姨", where: "map", mark: "!", sprite: "auntie",
+    dialogue: ["來來來,阿姨考你!我的飯糰一個比一杯茶貴 15 元,買 2 個飯糰加 1 杯茶,一共 105 元。",
+      "設茶一杯 x 元,飯糰就是 (x + 15) 元。2 個飯糰加 1 杯茶:2(x + 15) + x = 105,去括號 2x + 30 + x = 105,3x + 30 = 105,3x = 75,x = 25。茶 25 元、飯糰 40 元。驗算:2 × 40 + 25 = 105,對了!關鍵就是先找出『誰跟誰一樣多』。"] },
+  { id: "n6", name: "天平塔守衛", where: "map", mark: "?", sprite: "guard",
+    dialogue: ["小學徒,你好。大天平需要八位方程式精靈都回來,才會重新平衡。",
+      "還不知道差誰的話,去大天平前面看看,它會告訴你還差哪幾位、在哪裡。"] },
+
+  /* ---- 告示牌(純對話) ---- */
+  { id: "s1", name: "平衡村告示", where: "map", mark: "<", sprite: "sign",
+    dialogue: "解方程式,就是找出讓等號兩邊相等的 x。\n例一:x + 5 = 12 → 兩邊同減 5 → x = 7。\n例二:4x = 20 → 兩邊同除以 4 → x = 5。\n例三:x ÷ 3 = 6 → 兩邊同乘以 3 → x = 18。\n加和減互相抵消,乘和除互相抵消。" },
+  { id: "s2", name: "移項草原告示", where: "map", mark: ">", sprite: "sign",
+    dialogue: "移項,是等量公理的捷徑:把一項從等號一邊搬到另一邊,它的符號要改變,+ 變 −,− 變 +。\n例:2x + 7 = 15 → 2x = 15 − 7 → 2x = 8 → x = 4。\n例:5x = 2x + 9 → 5x − 2x = 9 → 3x = 9 → x = 3。\n注意:x 前面的數字(係數)是『乘』,不能用移項搬走,要兩邊同除以它。" },
+  { id: "s3", name: "括號河谷告示", where: "map", mark: "[", sprite: "sign",
+    dialogue: "有括號的方程式這樣解:\n①用分配律去括號 ②移項 ③合併 ④兩邊同除以係數。\n例:2(x − 3) = 10 → 2x − 6 = 10 → 2x = 16 → x = 8。\n驗算:2 × (8 − 3) = 2 × 5 = 10 ✓\n小提醒:− (x − 4) = − x + 4,括號前是負號,裡面每一項都變號。" },
+  { id: "s4", name: "天平石門說明", where: "map", mark: "]", sprite: "tablet",
+    dialogue: "石門會出一道有括號的方程式。答對,門就打開;答錯沒關係,石門會換一題讓你再試。\n提示:先去括號,再移項,最後別忘了把答案代回『原來的式子』驗算。" },
+  { id: "s5", name: "應用題四步驟", where: "map", mark: "^", sprite: "sign",
+    dialogue: "①設:用 x 表示一個要求的量。\n②列:找出題目裡『一樣多』的關係,寫成方程式。如果兩種東西一共 10 個,一種設 x 個,另一種就是 (10 − x) 個。\n③解:去括號、移項、同除。\n④驗:把答案放回題目裡檢查,還要看合不合理:車子、人數不能是小數,也不能比總數還多。" },
+
+  /* ---- 寶箱(純對話,第一次打開時送道具;紙條收進背包,按 B 重看) ---- */
+  { id: "box1", name: "寶箱", where: "map", mark: "$", sprite: "chest", gives: "k",
+    dialogue: ["打開寶箱……裡面有一把銅鑰匙,還夾著一張紙條:", NOTE_K, "(紙條收進背包了,按 B 可以重看)"] },
+  { id: "box2", name: "寶箱", where: "map", mark: "&", sprite: "chest", gives: "m",
+    dialogue: "打開寶箱……裡面是一枚亮晶晶的「移項徽章」!北邊的徽章閘門要出示它才會打開。" },
+  { id: "box3", name: "寶箱", where: "map", mark: "%", sprite: "chest", gives: "n",
+    dialogue: ["打開寶箱……裡面是一張「驗算紙條」:", NOTE_N, "(紙條收進背包了,按 B 可以重看)"] }
+];
+
+/* 3. 道具:全部由寶箱送出,不放在地圖上 */
+const ITEMS = [
+  { mark: "k", name: "銅鑰匙", sprite: "key", note: "紙條:" + NOTE_K },
+  { mark: "m", name: "移項徽章", sprite: "badge" },
+  { mark: "n", name: "驗算紙條", sprite: "note", note: NOTE_N }
+];
+
+/* 3.5 門。lockedText / openedText:這扇門自己的提示文字;floor:打開後那一格的地形 */
+const GATES = [
+  { mark: "X", name: "銅門", needs: "k", consume: true, sprite: "copperdoor", floor: "=",
+    lockedText: "門鎖得緊緊的。村長說鑰匙在他家旁邊的寶箱。", openedText: "銅鑰匙插進門裡,喀啦!銅門打開了。" },
+  { mark: "Y", name: "徽章閘門", needs: "m", sprite: "badgegate", floor: "=",
+    lockedText: "閘門上有個徽章形狀的凹槽。郵差說東邊柵欄口的狐狸知道徽章在哪。", openedText: "出示移項徽章,閘門打開了!" },
+  { mark: "Z", name: "天平石門", sprite: "stonegate", floor: "=",
+    questions: [
+      { question: "【計算】解 2(x + 4) = 5x − 1,x = ?", choices: ["5/3", "3", "−7/3", "−3"], answerIndex: 1,
+        mistakes: { "5/3": "2 要乘給 x 也要乘給 4,是 2x + 8。", "−7/3": "+8 移到右邊要變 −8。", "−3": "−3x = −9,除以 −3 時負負得正。" },
+        explanation: "2x + 8 = 5x − 1,8 + 1 = 5x − 2x,3x = 9,x = 3。驗算:2 × 7 = 14,15 − 1 = 14 ✓" },
+      { question: "【計算】解 4 − (2x − 6) = 2,x = ?", choices: ["−2", "−6", "4", "−4"], answerIndex: 2,
+        mistakes: { "−2": "括號前是負號,−6 要變成 +6。", "−6": "10 移到右邊要變 −10:−2x = 2 − 10。", "−4": "−2x = −8,除以 −2 負負得正。" },
+        explanation: "4 − 2x + 6 = 2,10 − 2x = 2,−2x = −8,x = 4。驗算:4 − (8 − 6) = 2 ✓" },
+      { question: "【判斷・驗算】小華解 3(2x − 1) = 4x + 5,算出 x = 1。把 x = 1 代回原式,下列哪個說法正確?",
+        choices: ["x = 1 是解,照步驟算出來的一定對,不用驗算", "x = 1 不是解;正確答案是 x = 3", "x = 1 不是解;正確答案是 x = 4/5",
+          "左邊是 3、右邊是 9,不相等,x = 1 不是解;正確答案是 x = 4"], answerIndex: 3,
+        mistakes: { "x = 1 是解,照步驟算出來的一定對,不用驗算": "代回去只要十秒,3 和 9 不一樣,馬上就知道錯了!", "x = 1 不是解;正確答案是 x = 3": "去括號要乘到每一項:3(2x − 1) = 6x − 3,不是 6x − 1。", "x = 1 不是解;正確答案是 x = 4/5": "4x 搬到左邊要變號:6x − 4x,不是 6x + 4x。" },
+        explanation: "代 x = 1:左 3 × (2 − 1) = 3,右 4 + 5 = 9,不相等。正解:6x − 3 = 4x + 5,2x = 8,x = 4;驗算 3 × 7 = 21,16 + 5 = 21 ✓。小華是把 −3 移過去沒變號才得到 1。" }
+    ] },
+  { mark: "B", name: "大天平", needsAllCreatures: true, sprite: "balance",
+    lockedText: "大天平還歪著……還差這幾位精靈:",
+    openedText: "八位精靈跳上秤盤……大天平慢慢擺正了!" }
+];
+
+/* 4. 遊戲設定 */
+const GAME = {
+  title: "⚖️ 平衡島:找回 x 的八位精靈",
+  desc: "一陣怪風把住在大天平裡的八位方程式精靈吹散到島上各處。從南邊的平衡村出發,經過移項草原、括號河谷,回到天平塔前——答對精靈的問題,邀請牠們回家,最後到大天平前讓它恢復平衡!請準備計算紙。",
+  grassEncounterRate: 0.2,   // 設計書:每走一格高草叢 1/5 的機會
+  grassPity: 9,              // 設計書:連續 8 格沒遇到,第 9 格一定遇到
+  requireAllItems: false,
+  shuffleChoices: true,
+  moveMs: 170,
+  text: {
+    startGrass: "從平衡村出發!先找村長和天平婆婆聊聊吧",
+    foundMap: "遇到了{name}!",
+    foundGrass: "草叢裡跳出了{name}!",
+    foundGate: "「{name}」出了一道題目!",
+    caught: "答對了!{name}成為你的精靈朋友 🎉",
+    missMap: "答錯了…{name}還在這裡等你,想好了再來找牠!",
+    missGrass: "答錯了…{name}跳回草叢了,下次出現會換一題。",
+    gateWrong: "答錯了…石門換了一道題,想好了再來!",
+    itemGot: "得到了「{name}」!",
+    hudCreatures: "精靈朋友 {n}/{total}",
+    hudItems: "背包 {n}/{total}",
+    bestNote: "這台裝置的最佳紀錄:{moves} 步讓大天平恢復平衡",
+    endTitle: "⚖️ 大天平恢復平衡了!",
+    labelCreatures: "精靈朋友",
+    labelItems: "道具"
+  },
+  /* 結算畫面上的結局與證書 */
+  ending: [
+    "天平塔守衛:「大天平恢復平衡了!你用等量公理讓兩邊一樣重,用移項把 x 找出來,用去括號解開精靈的結,還記得把答案放回去檢查。從今天起,你就是平衡島的『平衡小師父』!」",
+    "📜 平衡小師父證書",
+    "秤秤:兩邊要一起動,天平才不會歪!\n移移:跳過等號要變號!\n圓圓:答案要代回去驗算!\n跳跳:+ 跳過去變 −,− 跳過去變 +!\n點點:係數要用除的,負號別弄丟!\n夾夾:括號裡每一項都要乘到!\n拉拉:括號前是負號,每一項都變號!\n算算:設完未知數,記得 x 代表誰!",
+    "解方程式五步口訣:去括號 → 移項變號 → 合併 → 同除係數 → 代回驗算"
+  ],
+  teacherNotes: [
+    "單元:國中七年級數學「一元一次方程式」(A-7-2 一元一次式的化簡、A-7-3 一元一次方程式)。",
+    "學習目標:用等量公理說明解方程式的每一步;正確移項並變號、把係數化為 1;用分配律去括號(含括號前是負號);把情境問題設未知數、列式、求解;把答案代回原式驗算並判斷合理性。",
+    "課前:先教等式與解的意義、等量公理(可用實體天平示範)與分配律,並確定學生會正負數四則運算。",
+    "遊玩時:請學生準備計算紙,每題都寫出算式再選答案。巡堂時留意高草叢(移項變號)和河谷的拉拉(括號前的負號)。",
+    "玩完討論:把 C2 小明的解題過程、D3-3 小華的 x = 1 投影出來,請學生當老師找出錯在哪一步,並用天平解釋移項為什麼要變號。"
+  ]
+};
+
+const CUSTOM_SPRITES = {
+  scalebunny: {
+    palette: {"k":"#282030","c":"#f8f8f0","s":"#c8c8dc","y":"#f8d040","Y":"#c89820","w":"#ffffff","p":"#f8a0a8"},
+    rows: [
+      "................",
+      ".kkkkk....kkkkk.",
+      "kyyyyyk..kyyyyyk",
+      ".kkYkk....kkYkk.",
+      "...kck....kck...",
+      "...kck....kck...",
+      "..kkcckkkkcckk..",
+      ".kcccccccccccck.",
+      ".kccwkcccckwcsk.",
+      ".kcckkcccckkssk.",
+      ".kcpccckkccspsk.",
+      ".kccccccccssssk.",
+      "..kccccccssssk..",
+      "..kcccccsssssk..",
+      "...kcckkkkssk...",
+      "....kk....kk...."
+    ]
+  },
+  arrowfox: {
+    palette: {"k":"#282030","o":"#f08838","O":"#c05818","c":"#f8e8c8","w":"#ffffff"},
+    rows: [
+      "................",
+      "...k........k...",
+      "...kOk....kOk.k.",
+      "...kook..kookkwk",
+      "...kookkkkookkwk",
+      "...kooooooookkok",
+      "...kowkookwokkok",
+      "...kokkookkokkok",
+      "...koookkoookkOk",
+      "....kcccccck.kOk",
+      "...koocwwcookkOk",
+      "...kocwwwwcOkkOk",
+      "...koocwwcOOkkOk",
+      "...koooooOOOkkk.",
+      "....kok..kOk....",
+      "....kk....kk...."
+    ]
+  },
+  bracketcrab: {
+    palette: {"k":"#282030","r":"#e05040","R":"#a83028","w":"#ffffff"},
+    rows: [
+      "................",
+      "..kk........kk..",
+      ".krrk......krrk.",
+      "krk..........krk",
+      "krk...k..k...krk",
+      "krk..kwkkwk..krk",
+      ".krrk.k..k.krrk.",
+      "..kkkkkkkkkkkk..",
+      "..krrrrrrrrrrk..",
+      ".krrrrrrrrrrRRk.",
+      "kkrrrrkrrkrRRRkk",
+      ".krrrrrkkrRRRRk.",
+      "kkkrrrrrrRRRRkkk",
+      "..kkkkkkkkkkkk..",
+      ".k.k.k....k.k.k.",
+      "................"
+    ]
+  },
+  minusocto: {
+    palette: {"k":"#282030","m":"#a868d0","l":"#d0a8f0","M":"#7848a0","w":"#ffffff"},
+    rows: [
+      "................",
+      "....kkkkkkkk....",
+      "...kllmmmmllk...",
+      "..klmmmmmmmmlk..",
+      ".klmmmmmmmmmmlk.",
+      ".kmmmmmmmmmmmmk.",
+      ".kmmwkmmmmkwmmk.",
+      ".kmmkkmmmmkkmmk.",
+      ".kmmmmmmmmmmmMk.",
+      "..kmmmmmmmmmMk..",
+      ".kmmmmmmmmmMMMk.",
+      "kmkmkmkmmkMkMkMk",
+      "kwkmkwkmmkwkMkwk",
+      "kmk.kmk..kMk.kMk",
+      ".k...k....k...k.",
+      "................"
+    ]
+  },
+  abacuschick: {
+    palette: {"k":"#282030","W":"#a06830","r":"#e04848","y":"#f8d840","Y":"#d0a020","o":"#f08830","w":"#ffffff"},
+    rows: [
+      "..kkkkkkkkkkkk..",
+      "..kWWWWWWWWWWk..",
+      "..kWrWrWWrWrWk..",
+      "..kWWWWWWWWWWk..",
+      "...kkkkkkkkkk...",
+      "..kyyyyyyyyyyk..",
+      ".kyywkyyyykwyyk.",
+      ".kyykkyyyykkyyk.",
+      ".kyyyyyooyyyyYk.",
+      ".kyyyyyooyyyYYk.",
+      "kykyyyyyyyyYYkYk",
+      ".kkyyyyyyyYYYkk.",
+      "..kyyyyyyYYYYk..",
+      "...kyyyyYYYYk...",
+      "....kok..kok....",
+      "....kk....kk...."
+    ]
+  },
+  seedbunny: {
+    palette: {"k":"#282030","g":"#c0e868","G":"#88b840","s":"#906030","w":"#ffffff"},
+    rows: [
+      "................",
+      "...kk......kk...",
+      "..kgk......kgk..",
+      "..kgk......kgk..",
+      "..kgkkkkkkkkgk..",
+      ".kggggggggggggk.",
+      "kggggggggggggggk",
+      "kggwkggggggkwgGk",
+      "kggkkggggggkkGGk",
+      "kgsggggkkgggGsGk",
+      "kggggsggggsGGGGk",
+      "kgsgggggggGGGsGk",
+      ".kgggggggGGGGGk.",
+      "..kgggggGGGGGk..",
+      "...kkkkkkkkkk...",
+      "................"
+    ]
+  },
+  signcricket: {
+    palette: {"k":"#282030","g":"#3c9a50","G":"#286c38","l":"#a8e878","w":"#ffffff"},
+    rows: [
+      "..k..........k..",
+      "...k........k...",
+      "....k......k....",
+      "....kkkkkkkk....",
+      "...kggggggggk...",
+      "..kgwkggggkwgk..",
+      "..kgkkggggkkgk..",
+      "...kggggggggk...",
+      "..kkkkkkkkkkkk..",
+      ".klwlkggggklllk.",
+      ".kwwwkggggkwwwk.",
+      ".klwlkggggklllk.",
+      "..kllkggggkllk..",
+      "...kkkggggkkk...",
+      "..k.kkkkkkkk.k..",
+      ".k............k."
+    ]
+  },
+  dotbug: {
+    palette: {"k":"#282030","K":"#383040","r":"#e83838","R":"#a82020","w":"#ffffff"},
+    rows: [
+      "................",
+      "...k........k...",
+      "....k......k....",
+      "....kkkkkkkk....",
+      "...kKKKKKKKKk...",
+      "...kKwKKKKwKk...",
+      "..kkkkkkkkkkkk..",
+      ".krrrrrkkrrrrrk.",
+      "krrkkrrkkrrkkRRk",
+      "krrkkrrkkrrkkRRk",
+      "krrrrrrkkrrRRRRk",
+      "krkkrrrkkrRRkkRk",
+      ".krkrrrkkRRRkRk.",
+      "..krrrrkkRRRRk..",
+      "...kkkkkkkkkk...",
+      "..k.k......k.k.."
+    ]
+  },
+  granny: {
+    palette: {"k":"#282030","s":"#f8c8a0","S":"#d89870","h":"#e8e8f0","c":"#9068b8","C":"#684890","a":"#f8f8f0","p":"#584870","y":"#f8d040"},
+    rows: [
+      "......kkkk......",
+      "....kkhhhhkk....",
+      "...khhhhhhhhk...",
+      "..khhhhhhhhhhk..",
+      "..khsssssssshk..",
+      "..kssksssskssk..",
+      "..kssksssskssk..",
+      "..kssssssssssk..",
+      "...kssssssssk...",
+      "..kcccccccccck..",
+      ".kccaaaaaaaacCk.",
+      ".kscayaaaayaCSk.",
+      "..kcaaaaaaaaCk..",
+      "...kppppppppk...",
+      "....kpk..kpk....",
+      "....kkk..kkk...."
+    ]
+  },
+  mayor: {
+    palette: {"k":"#282030","s":"#f8c8a0","S":"#d89870","h":"#604030","c":"#4870c0","C":"#305090","a":"#383848","p":"#404058","y":"#f8d040"},
+    rows: [
+      "...kkkkkkkkkk...",
+      "...kaaaaaaaak...",
+      "..kaaayaayaaak..",
+      "kkkkkkkkkkkkkkkk",
+      "..khsssssssshk..",
+      "..kssksssskssk..",
+      "..kssksssskssk..",
+      "..kskkkkkkkksk..",
+      "...kssssssssk...",
+      "..kcccccccccck..",
+      ".kcccccccccccCk.",
+      ".kscccccccccCSk.",
+      "..kccccccccCCk..",
+      "...kppppppppk...",
+      "....kpk..kpk....",
+      "....kkk..kkk...."
+    ]
+  },
+  postman: {
+    palette: {"k":"#282030","s":"#f8c8a0","S":"#d89870","h":"#583020","c":"#48a058","C":"#307040","a":"#307040","p":"#404058","b":"#a06830","w":"#ffffff"},
+    rows: [
+      "................",
+      "...kkkkkkkkkk...",
+      "..kaaaaaaaaaak..",
+      "kkaaaaaaaaaaaakk",
+      "..khsssssssshk..",
+      "..kkkkksskkkkk..",
+      "..kskwksskwksk..",
+      "..kssssssssssk..",
+      "...kssssssssk...",
+      "..kcccccccccck..",
+      ".kbccccccccccCk.",
+      ".ksbccccccccCSk.",
+      "..kcbccccccCCk..",
+      "...kppppppppk...",
+      "....kpk..kpk....",
+      "....kkk..kkk...."
+    ]
+  },
+  boatman: {
+    palette: {"k":"#282030","s":"#c08850","S":"#906038","h":"#302020","c":"#405878","C":"#2c4058","a":"#e0c070","A":"#b09040","p":"#303040","o":"#8a5a28"},
+    rows: [
+      "......kkkk......",
+      "....kkaaaakk....",
+      "..kkaaaaaaaakko.",
+      "kkAAAAAAAAAAAAok",
+      "..kkkkkkkkkkkko.",
+      "..kssksssskssko.",
+      "..kssksssskssko.",
+      "..kssssssssssko.",
+      "...kssssssssk.o.",
+      "..kccccccccccko.",
+      ".kcccccccccccCo.",
+      ".kscccccccccCSo.",
+      "..kccccccccCCko.",
+      "...kppppppppk.o.",
+      "....kpk..kpk..o.",
+      "....kkk..kkk...."
+    ]
+  },
+  auntie: {
+    palette: {"k":"#282030","s":"#f8c8a0","S":"#d89870","h":"#583020","c":"#e07850","C":"#b05030","a":"#e04848","w":"#ffffff","p":"#404058","q":"#f8f8f0"},
+    rows: [
+      "................",
+      "...kkkkkkkkkk...",
+      "..kaawaaaawaak..",
+      "..kawaaaaaawak..",
+      "..khsssssssshk..",
+      "..kssksssskssk..",
+      "..kssksssskssk..",
+      "..kssssssssssk..",
+      "...kssssssssk...",
+      "..kcccccccccck..",
+      ".kccqqqqqqqqcCk.",
+      ".kscqqqqqqqqCSk.",
+      "..kcqqqqqqqqCk..",
+      "...kppppppppk...",
+      "....kpk..kpk....",
+      "....kkk..kkk...."
+    ]
+  },
+  guard: {
+    palette: {"k":"#282030","s":"#f8c8a0","S":"#d89870","h":"#a8b0c0","c":"#b8c0d0","C":"#808898","y":"#f8d040","p":"#505868","x":"#e8eef8"},
+    rows: [
+      ".....kykkyk.....",
+      "....kkkkkkkk....",
+      "...khxhhhhxhk...",
+      "..khxhhhhhhxhk..",
+      "..khhhhhhhhhhk..",
+      "..khsksssskshk..",
+      "..khsksssskshk..",
+      "..kssssssssssk..",
+      "...kssssssssk...",
+      "..kcccccccccck..",
+      ".kcxccccccccxCk.",
+      ".kscccccccccCSk.",
+      "..kccccccccCCk..",
+      "...kppppppppk...",
+      "....kpk..kpk....",
+      "....kkk..kkk...."
+    ]
+  },
+  tablet: {
+    palette: {"k":"#383840","W":"#808088","l":"#c8c8d0","z":"#00000040"},
+    rows: [
+      "................",
+      "................",
+      ".kkkkkkkkkkkkkk.",
+      ".kWWWWWWWWWWWWk.",
+      ".kWllllllllllWk.",
+      ".kWlkkkkkkkklWk.",
+      ".kWllllllllllWk.",
+      ".kWlkkkkkkkklWk.",
+      ".kWllllllllllWk.",
+      ".kWWWWWWWWWWWWk.",
+      ".kkkkkkkkkkkkkk.",
+      "......kWWk......",
+      "......kWWk......",
+      "......kWWk......",
+      ".....zzzzzz.....",
+      "................"
+    ]
+  },
+  balance: {
+    palette: {"k":"#282030","y":"#f8d040","Y":"#c09020","z":"#00000040"},
+    rows: [
+      "......kkkk......",
+      ".kkkkkkyykkkkkk.",
+      "kyyyyyyyyyyyyyyk",
+      ".kkkkkkyykkkkkk.",
+      ".k....kyyk....k.",
+      ".k....kyyk....k.",
+      "kYYk..kyyk..kYYk",
+      ".kk...kyyk...kk.",
+      "......kyyk......",
+      "......kyyk......",
+      "......kyyk......",
+      "......kyyk......",
+      "...kkkkkkkkkk...",
+      "..kYYYYYYYYYYk..",
+      "..kkkkkkkkkkkk..",
+      "..zzzzzzzzzzzz.."
+    ]
+  },
+  badge: {
+    palette: {"k":"#282030","y":"#f8d040","Y":"#c09020","w":"#ffffff","r":"#e04848","z":"#00000040"},
+    rows: [
+      "................",
+      "................",
+      "....kkkkkkkk....",
+      "...kyyyyyyyyk...",
+      "..kyyyyyyyyyyk..",
+      "..kyywwwwwwyyk..",
+      "..kyyyyyyyyyyk..",
+      "..kyywwwwwwyyk..",
+      "..kyyyyyyyyyyk..",
+      "...kYYYYYYYYk...",
+      "....kkkkkkkk....",
+      "....krrkkrrk....",
+      "...krrk..krrk...",
+      "...kkk....kkk...",
+      "................",
+      "................"
+    ]
+  },
+  note: {
+    palette: {"k":"#282030","p":"#f8f8f0","l":"#8090c0","z":"#00000040"},
+    rows: [
+      "................",
+      "................",
+      "................",
+      "..kkkkkkkkkkkk..",
+      "..kppppppppppk..",
+      "..kpllllllllpk..",
+      "..kppppppppppk..",
+      "..kpllllllllpk..",
+      "..kppppppppppk..",
+      "..kpllllllllpk..",
+      "..kppppppppppk..",
+      "..kkkkkkkkkkkk..",
+      "..zzzzzzzzzzzz..",
+      "................",
+      "................",
+      "................"
+    ]
+  },
+  copperdoor: {
+    palette: {"k":"#282030","B":"#904820","l":"#d88848","y":"#f8e070","z":"#00000040"},
+    rows: [
+      "................",
+      "..kkkkkkkkkkkk..",
+      ".kBBBBBBBBBBBBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kkkkkkkkkkkkkk.",
+      ".zzzzzzzzzzzzzz."
+    ]
+  },
+  badgegate: {
+    palette: {"k":"#282030","B":"#506078","l":"#98a8c0","y":"#f8d040","z":"#00000040"},
+    rows: [
+      "................",
+      "..kkkkkkkkkkkk..",
+      ".kBBBBBBBBBBBBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kkkkkkkkkkkkkk.",
+      ".zzzzzzzzzzzzzz."
+    ]
+  },
+  stonegate: {
+    palette: {"k":"#383840","s":"#a0a0a8","S":"#707078","L":"#d0d0d8","y":"#f8d040","z":"#00000040"},
+    rows: [
+      "................",
+      "..kkkkkkkkkkkk..",
+      ".kLLLLLLLLLLLLk.",
+      ".kLssssssssssLk.",
+      ".kLssssssssssLk.",
+      ".kLsskkkkkkssLk.",
+      ".kLssssssssssLk.",
+      ".kLsskkkkkkssLk.",
+      ".kLssssssssssLk.",
+      ".kLssssssssssLk.",
+      ".kLssssssssssLk.",
+      ".kSssssssssssSk.",
+      ".kSSSSSSSSSSSSk.",
+      ".kkkkkkkkkkkkkk.",
+      ".zzzzzzzzzzzzzz.",
+      "................"
+    ]
+  }
+};
+
+
+/* 5. 過關條件:預設就是打開終點門(大天平 B,needsAllCreatures) */
+function isWin() { return state.openedGates.includes("B"); }
+/* ===== CONTENT-PACK:END ===== */
+</script>
+
+<script>
+
+/* =========================================================
+   第二部分:像素圖 —— 角色、道具、玩家、地形
+   每張圖 16 × 16:rows 是 16 行字串,每行 16 個字元;
+   palette 把字元對應到顏色,"." 代表透明。
+   新增角色圖時照同樣格式加一個名字,再到 CREATURES 用 sprite: "名字" 指定
+   ========================================================= */
+const SPRITES = {
+  // 告示牌、寶箱:給只會說話的 NPC 用(告示牌、寶箱都做成 NPC)
+  sign: {"palette":{"k":"#503018","l":"#e0b878","d":"#8a6030","B":"#b08040","P":"#906028","z":"#00000040"},"rows":["................","................",".kkkkkkkkkkkkkk.",".kllllllllllllk.",".klddddddddlBBk.",".kllllllllllBBk.",".kldddddllllBBk.",".kllllllllllBBk.",".kBBBBBBBBBBBBk.",".kkkkkkkkkkkkkk.","......kPPk......","......kPPk......","......kPPk......","......kPPk......",".....zzzzzz.....","................"]},
+  chest: {"palette":{"k":"#402010","b":"#b06830","B":"#804818","y":"#f8d848","z":"#00000040"},"rows":["................","................","................","................","..kkkkkkkkkkkk..",".kbbbbbbbbbbbbk.",".kbBBBBBBBBBBbk.",".kkkkkkyykkkkkk.",".kbbbbkyykbbbbk.",".kbbbbbkkbbbbbk.",".kbbbbbbbbbbbbk.",".kBBBBBBBBBBBBk.",".kkkkkkkkkkkkkk.",".zzzzzzzzzzzzzz.","................","................"]},
+  // 角色:葉耳兔
+  leafbunny: {
+    palette: { "k": "#282030", "L": "#d8f070", "G": "#8cc830", "c": "#f8f0d8", "C": "#d8c8a0", "w": "#ffffff", "p": "#f8a0a8" },
+    rows: [
+      "................",
+      "..kk........kk..",
+      ".kLLk......kLLk.",
+      ".kLGGk....kGGLk.",
+      "..kLGk....kGLk..",
+      "...kkkkkkkkkk...",
+      "..kcccccccccck..",
+      ".kccwkccccwkcck.",
+      ".kcckkcccckkcck.",
+      ".kcpccckkcccpck.",
+      ".kccccccccccCCk.",
+      "..kccccccccCCk..",
+      "..kCccccccCCCk..",
+      "...kCCkkkkCCk...",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  // 角色:泡泡鰭
+  bubblefin: {
+    palette: { "k": "#282030", "b": "#58a0f0", "L": "#a8d8f8", "B": "#3070c0", "w": "#ffffff" },
+    rows: [
+      "................",
+      "......kkk.......",
+      ".....kLLbk......",
+      "......kbbk......",
+      "....kkkkkkkk....",
+      "...kLLbbbbbbk...",
+      "..kLbbbbbbbbBk..",
+      "..kLbwkbbwkbBk..",
+      ".kkbbkkbbkkbBkk.",
+      "kLkbbbbbbbbbBkBk",
+      ".kkbbbbkkbbBBkk.",
+      "..kbbbbbbbbBBk..",
+      "..kBbbbbbbBBBk..",
+      "...kBBBBBBBBk...",
+      "....kkkkkkkk....",
+      "................"
+    ]
+  },
+  // 角色:火苗雀
+  emberchick: {
+    palette: { "k": "#282030", "o": "#f89838", "O": "#d06020", "y": "#f8d848", "w": "#ffffff" },
+    rows: [
+      ".......k........",
+      "......kyk.......",
+      ".....kyok..k....",
+      ".....kook.kyk...",
+      "....kkkkkkkok...",
+      "...kooooooookk..",
+      "..kooowkoowkook.",
+      "..koookkookkoOk.",
+      "..kooooyyyooOOk.",
+      ".kkoooooyooOOkk.",
+      "kokkooooooOOkkok",
+      ".kokoooooOOOkok.",
+      "..kkOoooOOOOkk..",
+      "...kkOOOOOOkk...",
+      "....kykkkkyk....",
+      "....kk....kk...."
+    ]
+  },
+  // 角色:岩背龜
+  pebbleshell: {
+    palette: { "k": "#282030", "S": "#c8c0b0", "s": "#8c8478", "g": "#a8c070", "G": "#78904c", "w": "#ffffff" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      "......kkkkk.....",
+      ".....kSSsSSk....",
+      "....kSsSSSsSk...",
+      "...kSSSSsSSSSk..",
+      ".kkksSSSSSsSSk..",
+      "kggkkkkkkkkkkkk.",
+      "kgwkgggggggggGk.",
+      "kGggkgggggggGGk.",
+      ".kkkgGGkkkgGGk..",
+      "....kGk....kGk..",
+      "....kk.....kk...",
+      "................",
+      "................"
+    ]
+  },
+  // 角色:星光蟲
+  starbug: {
+    palette: { "k": "#282030", "Y": "#f8d030", "O": "#c89818", "y": "#f87878", "w": "#ffffff" },
+    rows: [
+      "................",
+      "...k........k...",
+      "...yk......ky...",
+      "....k......k....",
+      ".....kkkkkk.....",
+      "...kkYYYYYYkk...",
+      "..kYYYYYYYYYYk..",
+      ".kYYwkYYYYwkYYk.",
+      ".kYYkkYYYYkkYYk.",
+      ".kYYYYYkkYYYYOk.",
+      ".kOYYYYYYYYYYOk.",
+      "kkkOYYYYYYYYOkkk",
+      "..kOOYYYYYYOOk..",
+      "..kkOOOOOOOOkk..",
+      ".k..kkkkkkkk..k.",
+      "................"
+    ]
+  },
+  // 道具:藍晶石
+  gem: {
+    palette: { "k": "#282030", "c": "#58e0e8", "C": "#2898b0", "w": "#ffffff", "z": "#00000040" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      ".....kkkkkk.....",
+      "....kwcccCCk....",
+      "...kwcccccCCk...",
+      "...kkkkkkkkkk...",
+      "....kcccccCk....",
+      ".....kcccCk.....",
+      "......kcCk......",
+      ".......kk.......",
+      "................",
+      ".....zzzzzz.....",
+      "................",
+      "................",
+      "................"
+    ]
+  },
+  // 道具:紅莓果
+  berry: {
+    palette: { "k": "#282030", "r": "#e84848", "R": "#a82828", "L": "#58b040", "w": "#ffffff", "z": "#00000040" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      ".......kkk......",
+      "......kLLk......",
+      "....kkkkkkkk....",
+      "...krwrrrrrrk...",
+      "..krwrrrrrrrRk..",
+      "..krrrrrrrrrRk..",
+      "..krrrrrrrrRRk..",
+      "...krrrrrrRRk...",
+      "....kRRRRRRk....",
+      ".....kkkkkk.....",
+      "....zzzzzzzz....",
+      "................",
+      "................"
+    ]
+  },
+  // 門:木門(GATES 預設用這張)
+  door: {
+    palette: { "k": "#282030", "B": "#784820", "l": "#c88840", "y": "#f8d848", "z": "#00000040" },
+    rows: [
+      "................",
+      "..kkkkkkkkkkkk..",
+      ".kBBBBBBBBBBBBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kkkkkkkkkkkkkk.",
+      ".zzzzzzzzzzzzzz."
+    ]
+  },
+  // 道具:鑰匙(可以拿來當 ITEMS 的圖)
+  key: {
+    palette: { "k": "#282030", "y": "#f8d848", "w": "#ffffff", "z": "#00000040" },
+    rows: [
+      "................",
+      "................",
+      "....kkkk........",
+      "...kyyyyk.......",
+      "..kyywwyyk......",
+      "..kyw..wyk......",
+      "..kyy..yyk......",
+      "...kyyyyk.......",
+      "....kyyk........",
+      ".....kyk........",
+      ".....kyyk.......",
+      ".....kyk........",
+      ".....kyyk.......",
+      ".....kkkk.......",
+      "...zzzzzz.......",
+      "................"
+    ]
+  },
+  // 玩家(以下 6 張名稱不要改,引擎會用到;左右走路用 side 圖左右翻轉)
+  player_down: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrwrrrrk...",
+      "...kRRRRRRRRk...",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...kssssssssk...",
+      "....kSssssSk....",
+      "...kbbbbbbbbk...",
+      "..ksbbbbbbbbsk..",
+      "..kskbbbbbbksk..",
+      "...kkppppppkk...",
+      "....kppkkppk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  player_down_walk: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrwrrrrk...",
+      "...kRRRRRRRRk...",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...kssssssssk...",
+      "....kSssssSk....",
+      "...kbbbbbbbbk...",
+      "..ksbbbbbbbbsk..",
+      "..kskbbbbbbkkk..",
+      "...kkppppppk....",
+      "....kppkkppk....",
+      "....kkk.kpk.....",
+      "........kk......"
+    ]
+  },
+  player_up: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrrrrrrk...",
+      "...kRRRRRRRRk...",
+      "...khhhhhhhhk...",
+      "...khhhhhhhhk...",
+      "...kShhhhhhSk...",
+      "....kShhhhSk....",
+      "...kbbbbbbbbk...",
+      "..ksbbbbbbbbsk..",
+      "..kskBBBBBBksk..",
+      "...kkppppppkk...",
+      "....kppkkppk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  player_up_walk: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrrrrrrk...",
+      "...kRRRRRRRRk...",
+      "...khhhhhhhhk...",
+      "...khhhhhhhhk...",
+      "...kShhhhhhSk...",
+      "....kShhhhSk....",
+      "...kbbbbbbbbk...",
+      "..ksbbbbbbbbsk..",
+      "..kskBBBBBBkkk..",
+      "...kkppppppk....",
+      "....kppkkppk....",
+      "....kkk.kpk.....",
+      "........kk......"
+    ]
+  },
+  player_side: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrrrwrrk...",
+      "...kRRRRRRRRRk..",
+      "...khhhssssk....",
+      "...khhsssksk....",
+      "...khhssssssk...",
+      "....khSsssSk....",
+      "....kbbbbbbk....",
+      "....kbbbsbbk....",
+      "....kbBBsBBk....",
+      "....kkppppkk....",
+      ".....kppppk.....",
+      ".....kkkkkk.....",
+      "................"
+    ]
+  },
+  player_side_walk: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrrrwrrk...",
+      "...kRRRRRRRRRk..",
+      "...khhhssssk....",
+      "...khhsssksk....",
+      "...khhssssssk...",
+      "....khSsssSk....",
+      "....kbbbbbbk....",
+      "...kbbbbbsbk....",
+      "...kbBBBBsBk....",
+      "....kkppppkk....",
+      "...kppk.kppk....",
+      "...kkk...kkk....",
+      "................"
+    ]
+  }
+};
+
+/* 地形圖塊(一般不需要改)。tree / rock / fence 會疊在草地上畫 */
+const TILES = {
+  // 房子 H:最上面一排畫屋頂,下面畫牆;木橋 +
+  roof: {"palette":{"k":"#502018","r":"#c84838","R":"#902820","l":"#e07058"},"rows":["kkkkkkkkkkkkkkkk","RrrrrrrrRrrrrrrr","RrrrrrrrRrrrrrrr","RRRRRRRRRRRRRRRR","llllRlllllllRlll","rrrrRrrrrrrrRrrr","rrrrRrrrrrrrRrrr","RRRRRRRRRRRRRRRR","RlllllllRlllllll","RrrrrrrrRrrrrrrr","RrrrrrrrRrrrrrrr","RRRRRRRRRRRRRRRR","llllRlllllllRlll","rrrrRrrrrrrrRrrr","rrrrRrrrrrrrRrrr","RRRRRRRRRRRRRRRR"]},
+  wall: {"palette":{"k":"#503018","w":"#f0e0c0","W":"#c8b090","b":"#784820","g":"#88c8f0"},"rows":["bbbbbbbbbbbbbbbb","bbbbbbbbbbbbbbbb","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwkkkkkkkkkwwww","wwwkgggkgggkwwww","wwwkgggkgggkwwww","wwwkkkkkkkkkwwww","wwwkgggkgggkwwww","wwwkgggkgggkwwww","wwwkkkkkkkkkwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","WWWWWWWWWWWWWWWW","WWWWWWWWWWWWWWWW"]},
+  bridge: {
+    palette: {"k": "#583818", "p": "#c89858", "P": "#906838"},
+    rows: [
+      "kkkkkkkkkkkkkkkk",
+      "PPPPPPPPPPPPPPPP",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "PPPPPPPPPPPPPPPP",
+      "kkkkkkkkkkkkkkkk"
+    ]
+  },
+  grass0: {
+    palette: { "g": "#78c850", "d": "#58a838", "l": "#a0e070" },
+    rows: [
+      "gglggggggggggggg",
+      "gggggggggggggggg",
+      "ggggggggdgdggggg",
+      "gggggggggdgggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggl",
+      "gggdgdgggggggggg",
+      "ggggdggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "ggggggggggglgggg"
+    ]
+  },
+  grass1: {
+    palette: { "g": "#78c850", "d": "#58a838", "l": "#a0e070" },
+    rows: [
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "ggggglgggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggglg",
+      "ggggggggggggdgdg",
+      "gggggggggggggdgg",
+      "gggggggggggggglg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggddddggggg",
+      "ggggggggddgggggg",
+      "ggggglgggggggggg"
+    ]
+  },
+  grass2: {
+    palette: { "g": "#78c850", "d": "#58a838", "l": "#a0e070" },
+    rows: [
+      "gggggggggggggggg",
+      "ggggggggdgdggggg",
+      "gggggggggdgggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "ggggggggggglgggg",
+      "gggggggggggggggg",
+      "gglggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg"
+    ]
+  },
+  tallgrass: {
+    palette: { "g": "#78c850", "D": "#2f7a2c", "m": "#48a040", "L": "#90d868" },
+    rows: [
+      "mmmmmmmmmmmmmmmm",
+      "mLmmmLmmmLmmmLmm",
+      "LLmDLLmDLLmDLLmD",
+      "LLmDLLmDLLmDLLmD",
+      "mmmDmmmDmmmDmmmD",
+      "DDDDDDDDDDDDDDDD",
+      "mmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmm",
+      "mmmLmmmLmmmLmmmL",
+      "mDLLmDLLmDLLmDLL",
+      "mDLLmDLLmDLLmDLL",
+      "mDmmmDmmmDmmmDmm",
+      "DDDDDDDDDDDDDDDD",
+      "mmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmm"
+    ]
+  },
+  path: {
+    palette: { "p": "#e0c890", "d": "#c8a868", "l": "#f0e0b8" },
+    rows: [
+      "pppppppppppppppp",
+      "pppppppdpppppppp",
+      "ppppplpppppppppp",
+      "pppppdpppppppppp",
+      "pppppppppppppppp",
+      "pppppppppppppppp",
+      "lppppppppppppppp",
+      "pppdpppppppppppp",
+      "ppppppppppppplpp",
+      "pppppppppppppppp",
+      "pppppppppppppppp",
+      "ppppppppdppppppp",
+      "ppppplpdpppppppp",
+      "pppppppppppppppp",
+      "dppplppppppppppp",
+      "pppppppppppdpppp"
+    ]
+  },
+  water0: {
+    palette: { "w": "#4890e8", "l": "#90c0f8", "d": "#3478d0" },
+    rows: [
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwllllwwwwwwwwww",
+      "wdwwwwdwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwllllwww",
+      "wwwwwwwwdwwwwdww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwllllwwwwwwww",
+      "wwwdwwwwdwwwwwww",
+      "wwwwwwwwwwwwllll",
+      "dwwwwwwwwwwdwwww",
+      "wwwwwwwwwwwwwwww"
+    ]
+  },
+  water1: {
+    palette: { "w": "#4890e8", "l": "#90c0f8", "d": "#3478d0" },
+    rows: [
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwllllwwwwwwww",
+      "wwwdwwwwdwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwllllw",
+      "wwwwwwwwwwdwwwwd",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwllllwwwwww",
+      "wwwwwdwwwwdwwwww",
+      "llwwwwwwwwwwwwll",
+      "wwdwwwwwwwwwwdww",
+      "wwwwwwwwwwwwwwww"
+    ]
+  },
+  flowers: {
+    palette: { "g": "#78c850", "d": "#58a838", "r": "#f05858", "y": "#f8d838", "w": "#ffffff" },
+    rows: [
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggdgdgggggggg",
+      "ggggrgdggggggggg",
+      "gggryrgggggggggg",
+      "ggggrggggggggggg",
+      "ggggdggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggwgggg",
+      "ggggggggggwywggg",
+      "gggggggggggwgggg",
+      "ggggrggggggdgggg",
+      "gggryrgggggggggg",
+      "ggggrggggggggggg",
+      "ggggdggggggggggg",
+      "gggggggggggggggg"
+    ]
+  },
+  tree: {
+    palette: { "k": "#1c4a20", "D": "#2f7a34", "G": "#4aa044", "L": "#78c860", "T": "#8a6030", "t": "#5c3c1c", "s": "#00000033" },
+    rows: [
+      ".....kkkkkk.....",
+      "...kkDGGGGDkk...",
+      "..kDGGLLGGGGDk..",
+      ".kDGLLLGGGGGDDk.",
+      ".kDGLLGGGGGGDDk.",
+      "kDGGGGGGGGGGGDDk",
+      "kDGGGGGGGGGGDDDk",
+      "kDDGGGGGGGGDDDDk",
+      ".kDDGGGGGGDDDDk.",
+      ".kDDDDDDDDDDDDk.",
+      "..kkDDDDDDDDkk..",
+      "....kkkttkkk....",
+      "......tTTt......",
+      ".....stTTts.....",
+      "....ssttttsss...",
+      "................"
+    ]
+  },
+  rock: {
+    palette: { "k": "#404048", "G": "#a0a0a8", "L": "#d0d0d8", "D": "#707078", "s": "#00000033" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      "................",
+      "....kkkkkkk.....",
+      "...kLLGGGGGk....",
+      "..kLLGGGGGGDk...",
+      ".kLGGGGGGGDDDk..",
+      ".kGGGGGGGGDDDk..",
+      ".kGGGGGGGDDDDk..",
+      ".kDGGGGGDDDDDk..",
+      "..kDDDDDDDDDk...",
+      "...kkkkkkkkk....",
+      "..sssssssssss...",
+      "................",
+      "................"
+    ]
+  },
+  fence: {
+    palette: { "k": "#503018", "W": "#c89050", "w": "#a06c34", "L": "#e0b070" },
+    rows: [
+      "................",
+      ".kk.........kk..",
+      "kLWk.......kLWk.",
+      "kWwk.......kWwk.",
+      "kWwkkkkkkkkkWwkk",
+      "kWwLLLLLLLLLWwLL",
+      "kWwWWWWWWWWWWwWW",
+      "kWwkkkkkkkkkWwkk",
+      "kWwk.......kWwk.",
+      "kWwkkkkkkkkkWwkk",
+      "kWwLLLLLLLLLWwLL",
+      "kWwWWWWWWWWWWwWW",
+      "kWwkkkkkkkkkWwkk",
+      "kWwk.......kWwk.",
+      ".kk.........kk..",
+      "................"
+    ]
+  }
+};
+
+
+/* =========================================================
+   第三部分:遊戲引擎 —— 通常不需要修改
+   ========================================================= */
+
+const TILE = 16;
+// 視野大小:電腦和橫式螢幕是 15 × 10 格(240 × 160 像素,和 GBA 一樣);
+// 直式手機自動改成 11 × 12 格,每格才放得夠大。由 fitView() 決定,不要直接改這兩個值
+let VIEW_W = 15, VIEW_H = 10;
+const WALK = { ".": 1, ",": 1, "*": 1, "=": 1, "+": 1 };
+const BLOCK = { "T": "tree", "~": "water", "O": "rock", "#": "fence", "H": "house" };
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+const el = (id) => document.getElementById(id);
+const CREATURE_MARKS = "123456789!?$%&<>[]^:;|";      // 站在地圖上的角色(包含 NPC、告示牌、寶箱)可以用的字元
+const isCreatureMark = (ch) => typeof ch === "string" && ch.length === 1 && CREATURE_MARKS.includes(ch);
+const isLower = (ch) => ch >= "a" && ch <= "z";
+const isGateChar = (ch) => /^[A-Z]$/.test(ch) && !BLOCK[ch];     // 大寫字母,但 T(樹)、O(石頭)、H(房子)已經是地形
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+/* ---------- 畫面上的文字 ----------
+   預設文字在這裡,GAME.text 可以覆蓋其中任何一句。{name} 等會自動換成對應的內容 */
+const DEFAULT_TEXT = {
+  start: "四處走走,找出躲起來的角色吧!",
+  startGrass: "四處走走找找看!走進高草叢也可能遇到角色喔",
+  foundMap: "找到了 {name}!",
+  foundGrass: "草叢裡跳出了 {name}!",
+  foundGate: "要打開「{name}」,先回答問題!",
+  caught: "答對了!{name} 加入了隊伍 🎉",
+  missMap: "答錯了…{name} 還待在這裡,想好了再來挑戰!",
+  missGrass: "答錯了…{name} 跑回草叢裡了,再去找找看吧!",
+  gateOpened: "打開了「{name}」!",
+  gateWrong: "答錯了…「{name}」還是鎖著的,想好了再來!",
+  gateLocked: "「{name}」鎖住了,需要:{need}",
+  itemGot: "撿到了 {name}!",
+  talkDone: "{name}:我已經沒有別的話要說了。",
+  hudCreatures: "收服 {n}/{total}",
+  hudItems: "道具 {n}/{total}",
+  bestNote: "這台裝置的最佳紀錄:{moves} 步收服全部角色",
+  endTitle: "🎉 全部收服完成!",
+  labelCreatures: "收服角色",
+  labelFirstTry: "一次就答對",
+  labelItems: "撿到道具",
+  more: "按 Enter / A 鈕,或點這裡繼續 ▼",
+  gateNeedAll: "「{name}」還不能用:還差 {n} 位。",
+  bagTitle: "🎒 背包",
+  bagEmpty: "背包裡還沒有東西。",
+  usedTag: "(已經用掉了)"
+};
+const fmt = (str, vars) => String(str).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] !== undefined ? vars[k] : m));
+const say = (key, vars) => fmt(Object.assign({}, DEFAULT_TEXT, GAME.text || {})[key], vars);
+const hasQuiz = (o) => !!(o.question !== undefined || o.questions);
+const quizList = (o) => o.questions || (o.question !== undefined ? [o] : []);   // 一隻角色(或一扇門)的所有題目
+const QUIZ = () => CREATURES.filter(hasQuiz);          // 帶問題、要收服的角色(不含純對話的 NPC)
+/* 現在要出的題目:第一次出第 1 題,每答錯一次換下一題 */
+function currentQ(o) { const list = quizList(o); return list[(state.qTurn[o.id] || 0) % list.length]; }
+
+/* 遊戲狀態。需要新欄位時在這裡加,並在 resetState() 裡重置;不要改既有欄位名稱 */
+let state = {
+  grid: [], px: 0, py: 0, facing: "down", move: null, stepParity: 0, held: null,
+  caughtCreatures: [], collectedItems: [], openedGates: [], usedItems: [], talked: [], attempts: {}, qTurn: {}, wrongCount: 0, grassSteps: 0,
+  moveCount: 0, startTime: null, playerName: "", busy: false, running: false
+};
+
+/* ---------- 像素圖編譯 ---------- */
+const GFX = {};  // 名稱 → canvas
+function compileSprite(def, flip) {
+  const c = document.createElement("canvas");
+  c.width = TILE; c.height = TILE;
+  const ctx = c.getContext("2d");
+  def.rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch === "." || !def.palette[ch]) continue;
+      ctx.fillStyle = def.palette[ch];
+      ctx.fillRect(flip ? TILE - 1 - x : x, y, 1, 1);
+    }
+  });
+  return c;
+}
+function loadGraphics() {
+  if (typeof CUSTOM_SPRITES === "object") Object.assign(SPRITES, CUSTOM_SPRITES);   // 內容包新畫的圖
+  Object.entries(SPRITES).forEach(([name, def]) => {
+    GFX[name] = compileSprite(def, false);
+    GFX[name + ":flip"] = compileSprite(def, true);
+  });
+  Object.entries(TILES).forEach(([name, def]) => { GFX["tile:" + name] = compileSprite(def, false); });
+  // 使用者上傳的圖(data URI)
+  const jobs = CREATURES.concat(ITEMS).concat(GATES.map(g => ({ ...g, id: "gate:" + g.mark }))).filter(o => o.image).map(o => new Promise(res => {
+    const img = new Image();
+    img.onload = () => { GFX["img:" + (o.id || o.mark)] = img; res(); };
+    img.onerror = res;
+    img.src = o.image;
+  }));
+  return Promise.all(jobs);
+}
+/* 角色或道具要畫的圖(canvas 或 Image) */
+function gfxOf(obj) {
+  if (obj.image) return GFX["img:" + (obj.id || obj.mark)] || null;
+  return GFX[obj.sprite] || null;
+}
+function drawObj(ctx, obj, x, y, size) {
+  const g = gfxOf(obj);
+  if (!g) return;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(g, x, y, size, size);
+}
+
+/* ---------- 地圖資料檢查 ----------
+   開始畫面會自動執行;有錯誤時列在紅框裡並停用開始按鈕。
+   改了地圖、角色、道具或圖片之後,一定要確認沒有紅框 */
+function validateSprite(name, def, errors) {
+  if (!def || !Array.isArray(def.rows) || !def.palette) { errors.push(`圖片「${name}」格式不對,要有 palette 和 rows`); return; }
+  if (def.rows.length !== 16) errors.push(`圖片「${name}」有 ${def.rows.length} 行,要剛好 16 行`);
+  def.rows.forEach((row, i) => {
+    if (row.length !== 16) errors.push(`圖片「${name}」第 ${i + 1} 行有 ${row.length} 個字元,要剛好 16 個`);
+    const bad = [...new Set(row.split("").filter(ch => ch !== "." && !def.palette[ch]))];
+    if (bad.length) errors.push(`圖片「${name}」第 ${i + 1} 行用了 palette 沒定義的字元:${bad.join(" ")}`);
+  });
+}
+function validateMap() {
+  const errors = [];
+  if (!MAP.length) return ["MAP 是空的"];
+  const H = MAP.length, W = MAP[0].length;
+  const pos = (x, y) => `第 ${y + 1} 列第 ${x + 1} 格`;
+  MAP.forEach((row, y) => { if (row.length !== W) errors.push(`MAP 第 ${y + 1} 列有 ${row.length} 個字元,第 1 列有 ${W} 個,每一列要一樣長`); });
+
+  let start = null, starts = 0;
+  const marks = {};
+  MAP.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (ch === "@") { starts++; start = [x, y]; return; }
+    if (WALK[ch] || BLOCK[ch]) return;
+    if (isCreatureMark(ch) || isLower(ch) || isGateChar(ch)) { (marks[ch] = marks[ch] || []).push([x, y]); return; }
+    errors.push(`${pos(x, y)}的字元「${ch}」不是地圖代碼`);
+  }));
+  if (starts !== 1) errors.push(`地圖上要剛好有一個起點 @,目前有 ${starts} 個`);
+
+  const checkQuestion = (who, owner) => {
+    if (owner.questions !== undefined && (!Array.isArray(owner.questions) || !owner.questions.length)) { errors.push(`${who}的 questions 要是至少有一題的陣列`); return; }
+    quizList(owner).forEach((o, i) => {
+      const w = owner.questions ? `${who}第 ${i + 1} 題` : who;
+      if (typeof o.question !== "string" || !o.question.trim()) errors.push(`${w}的 question 要是文字`);
+      if (!Array.isArray(o.choices) || o.choices.length < 2) { errors.push(`${w}至少要有 2 個選項`); return; }
+      if (!(Number.isInteger(o.answerIndex) && o.answerIndex >= 0 && o.answerIndex < o.choices.length)) { errors.push(`${w}的 answerIndex (${o.answerIndex}) 不是有效的選項位置`); return; }
+      Object.keys(o.mistakes || {}).forEach(k => {
+        if (!o.choices.includes(k)) errors.push(`${w}的 mistakes「${k}」不是任何一個選項的文字(要和 choices 裡的字一模一樣)`);
+        else if (k === o.choices[o.answerIndex]) errors.push(`${w}的 mistakes 把正確答案「${k}」寫成了錯誤`);
+      });
+    });
+  };
+  const floorOk = (who, o) => { if (o.floor !== undefined && !WALK[o.floor]) errors.push(`${who}的 floor「${o.floor}」要是走得過去的地形(. , * = +)`); };
+  const hasText = (v) => (typeof v === "string" && v.trim() !== "") || (Array.isArray(v) && v.length > 0 && v.every(x => typeof x === "string"));
+  const itemMarks = new Set(ITEMS.map(i => i.mark));
+  const givenItems = new Set(CREATURES.filter(c => c.gives).map(c => c.gives));
+
+  const ids = new Set();
+  CREATURES.forEach(cr => {
+    const who = `角色「${cr.name}」`;
+    if (ids.has(cr.id)) errors.push(`角色 id「${cr.id}」重複了`);
+    ids.add(cr.id);
+    if (cr.where !== "map" && cr.where !== "grass") errors.push(`${who}的 where 要填 "map" 或 "grass"`);
+    if (cr.where === "map") {
+      if (!isCreatureMark(String(cr.mark))) errors.push(`地圖角色「${cr.name}」的 mark「${cr.mark}」不能用,要填 1~9 或 ${CREATURE_MARKS.slice(9).split("").join(" ")} 其中一個(小寫字母是道具)`);
+      const n = (marks[cr.mark] || []).length;
+      if (n === 0) errors.push(`地圖角色「${cr.name}」(mark ${cr.mark})沒有放在 MAP 上,這樣永遠無法過關`);
+      if (n > 1) errors.push(`mark ${cr.mark} 在 MAP 上出現了 ${n} 次,每隻角色只能放一格`);
+    }
+    floorOk(who, cr);
+    if (hasQuiz(cr)) checkQuestion(who, cr);
+    else {
+      if (cr.where === "grass") errors.push(`草叢角色「${cr.name}」一定要有問題(question、choices、answerIndex)`);
+      if (!hasText(cr.dialogue)) errors.push(`${who}沒有問題的話,要有 dialogue(對話文字,或文字陣列)`);
+    }
+    if (cr.stays && cr.where !== "map") errors.push(`${who}:stays 只能用在 where: "map" 的角色`);
+    if (cr.gives !== undefined && !itemMarks.has(cr.gives)) errors.push(`${who}的 gives「${cr.gives}」不在 ITEMS 裡`);
+  });
+
+  ITEMS.forEach(it => {
+    if (!isLower(String(it.mark))) errors.push(`道具「${it.name}」的 mark 要填小寫英文字母`);
+    const n = (marks[it.mark] || []).length;
+    if (n === 0 && !givenItems.has(it.mark)) errors.push(`道具「${it.name}」(mark ${it.mark})沒有放在 MAP 上,也沒有任何角色把它當作 gives 送出${GAME.requireAllItems ? ",這樣永遠無法過關" : ""}`);
+    if (n > 1) errors.push(`mark ${it.mark} 在 MAP 上出現了 ${n} 次,每個道具只能放一格`);
+  });
+
+  const gateMarks = new Set();
+  GATES.forEach(g => {
+    const who = `門「${g.name || g.mark}」`;
+    if (!isGateChar(String(g.mark))) errors.push(`${who}的 mark 要填大寫英文字母(T、O 不能用)`);
+    if (gateMarks.has(g.mark)) errors.push(`門的 mark「${g.mark}」重複了`);
+    gateMarks.add(g.mark);
+    if (typeof g.name !== "string" || !g.name.trim()) errors.push(`mark 是 ${g.mark} 的門要有 name`);
+    if ((marks[g.mark] || []).length === 0) errors.push(`${who}(mark ${g.mark})沒有放在 MAP 上`);
+    [].concat(g.needs || []).forEach(m => { if (!itemMarks.has(m)) errors.push(`${who}的 needs「${m}」不在 ITEMS 裡`); });
+    if (hasQuiz(g)) checkQuestion(who, g);
+    floorOk(who, g);
+    if (g.needsAllCreatures && !QUIZ().length) errors.push(`${who}設了 needsAllCreatures,但沒有任何帶題目的角色`);
+  });
+  const consumed = {};
+  GATES.filter(g => g.consume).forEach(g => [].concat(g.needs || []).forEach(m => { consumed[m] = (consumed[m] || 0) + 1; }));
+  Object.entries(consumed).forEach(([m, n]) => { if (n > 1) errors.push(`道具「${itemName(m)}」會被 ${n} 扇設了 consume 的門用掉,但它只有一個`); });
+  // 會被用掉的道具如果還有別扇門需要:玩家先開了會用掉它的那扇,另一扇就永遠打不開(卡死)
+  Object.keys(consumed).forEach(m => {
+    const others = GATES.filter(g => !g.consume && [].concat(g.needs || []).includes(m));
+    if (others.length) errors.push(`道具「${itemName(m)}」開門時會被用掉,但「${others.map(g => g.name).join("、")}」也需要它:玩家先開了會用掉它的門,這扇就永遠打不開。拿掉 consume,或給這扇門另一個道具`);
+  });
+
+  Object.keys(marks).forEach(m => {
+    const known = isCreatureMark(m) ? CREATURES.some(c => c.where === "map" && String(c.mark) === m) : isGateChar(m) ? gateMarks.has(m) : ITEMS.some(i => i.mark === m);
+    if (!known) errors.push(`MAP 上的「${m}」(${pos(...marks[m][0])})在 ${isCreatureMark(m) ? "CREATURES" : isGateChar(m) ? "GATES" : "ITEMS"} 裡找不到` +
+      (isLower(m) && CREATURES.some(c => c.mark === m) ? "。小寫字母只能放道具,角色、NPC、告示牌、寶箱的 mark 請改用 1~9 或符號" : ""));
+  });
+
+  // 圖片
+  CREATURES.concat(ITEMS).concat(GATES).forEach(o => {
+    if (o.image) {
+      if (!String(o.image).startsWith("data:image/")) errors.push(`「${o.name}」的 image 要用 data URI(data:image/...),不能填網址`);
+    } else {
+      const sp = o.sprite || (GATES.includes(o) ? "door" : undefined);
+      if (!SPRITES[sp]) errors.push(`「${o.name}」的 sprite「${sp}」在 SPRITES 裡找不到`);
+    }
+  });
+  Object.entries(SPRITES).forEach(([n, d]) => validateSprite(n, d, errors));
+
+  // 過關條件一開始就成立 = 玩家一動就過關(常見原因:沒有任何帶問題的角色,也沒有道具)
+  try {
+    const keep = { c: state.caughtCreatures, i: state.collectedItems, g: state.openedGates, u: state.usedItems, t: state.talked };
+    state.caughtCreatures = []; state.collectedItems = []; state.openedGates = []; state.usedItems = []; state.talked = [];
+    const instantWin = isWin();
+    Object.assign(state, { caughtCreatures: keep.c, collectedItems: keep.i, openedGates: keep.g, usedItems: keep.u, talked: keep.t });
+    if (instantWin) errors.push("過關條件在遊戲一開始就成立了(是不是沒有任何帶問題的角色、也沒有道具?)。至少放一隻帶問題的角色或一個道具,或自己改寫 isWin()");
+  } catch (e) { errors.push("isWin() 執行出錯:" + e.message); }
+
+  // 從起點走得到每一隻地圖角色、每一個道具、每一扇門;有草叢角色時要走得到高草叢。
+  // 門要一輪一輪模擬:拿得到需要的道具(包含角色送的),門才算能打開,打開後後面的區域才算走得到
+  if (!errors.length) {
+    // cleared:答對之後會消失的地圖角色(有題目、沒設 stays)。碰得到牠,牠那一格之後就能通過,
+    // 所以「角色擋在路上,答對才讓路」的地圖是可以過關的;NPC 和 stays 的角色永遠擋路
+    const open = new Set(), got = new Set(), cleared = new Set(), catchable = new Set();
+    const allCaught = () => QUIZ().every(c => catchable.has(c.id));
+    let seen = null;
+    const walkable = (ch) => WALK[ch] || ch === "@" || isLower(ch) || (isGateChar(ch) && open.has(ch)) || (isCreatureMark(ch) && cleared.has(ch));
+    const flood = () => {
+      const sn = MAP.map(r => [...r].map(() => false));
+      const q = [start]; sn[start[1]][start[0]] = true;
+      while (q.length) {
+        const [x, y] = q.shift();
+        Object.values(DIRS).forEach(([dx, dy]) => {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H || sn[ny][nx] || !walkable(MAP[ny][nx])) return;
+          sn[ny][nx] = true; q.push([nx, ny]);
+        });
+      }
+      return sn;
+    };
+    const touch = (x, y) => Object.values(DIRS).some(([dx, dy]) => seen[y + dy] && seen[y + dy][x + dx]);
+    const grassReach = () => MAP.some((row, y) => [...row].some((ch, x) => ch === "," && seen[y][x]));
+    const creatureReach = (cr) => cr.where === "grass" ? grassReach() : (marks[cr.mark] || []).some(([x, y]) => touch(x, y));
+    for (let round = 0; round < 60; round++) {
+      seen = flood();
+      let changed = false;
+      ITEMS.forEach(it => {
+        const at = marks[it.mark];
+        if (!got.has(it.mark) && at && seen[at[0][1]][at[0][0]]) { got.add(it.mark); changed = true; }
+      });
+      CREATURES.forEach(cr => { if (cr.gives && !got.has(cr.gives) && creatureReach(cr)) { got.add(cr.gives); changed = true; } });
+      CREATURES.forEach(cr => {
+        const m = String(cr.mark);
+        if (cr.where === "map" && hasQuiz(cr) && !cr.stays && !cleared.has(m) && creatureReach(cr)) { cleared.add(m); changed = true; }
+        if (hasQuiz(cr) && !catchable.has(cr.id) && creatureReach(cr)) { catchable.add(cr.id); changed = true; }
+      });
+      GATES.forEach(g => {
+        if (open.has(g.mark)) return;
+        if ((marks[g.mark] || []).some(([x, y]) => touch(x, y)) && [].concat(g.needs || []).every(m => got.has(m)) && (!g.needsAllCreatures || allCaught())) { open.add(g.mark); changed = true; }
+      });
+      if (!changed) break;
+    }
+    GATES.forEach(g => {
+      if (open.has(g.mark)) return;
+      const [x, y] = marks[g.mark][0];
+      const missing = [].concat(g.needs || []).filter(m => !got.has(m)).map(itemName);
+      if (!touch(x, y)) errors.push(`門「${g.name}」在 ${pos(x, y)},旁邊沒有走得到的格子(可能被別的門擋住),永遠打不開`);
+      else if (missing.length) errors.push(`門「${g.name}」永遠打不開:需要的道具「${missing.join("、")}」拿不到(可能放在這扇門後面)`);
+      else if (g.needsAllCreatures) errors.push(`門「${g.name}」要收服全部角色才打得開,但有角色走不到(可能在這扇門後面)`);
+    });
+    CREATURES.filter(c => c.where === "map").forEach(cr => {
+      const [x, y] = marks[cr.mark][0];
+      if (!touch(x, y)) errors.push(`地圖角色「${cr.name}」在 ${pos(x, y)},旁邊沒有走得到的格子,這樣永遠無法過關`);
+    });
+    ITEMS.forEach(it => {
+      const at = marks[it.mark];
+      if (at && !seen[at[0][1]][at[0][0]]) errors.push(`道具「${it.name}」在 ${pos(at[0][0], at[0][1])},被擋住走不到${GAME.requireAllItems ? ",這樣永遠無法過關" : ""}`);
+      if (!at && !got.has(it.mark)) errors.push(`道具「${it.name}」只由角色送出,但送它的角色走不到(或不會被收服)`);
+    });
+    if (CREATURES.some(c => c.where === "grass") && !grassReach()) errors.push(`有草叢角色,但地圖上沒有走得到的高草叢「,」,這樣永遠無法過關`);
+  }
+  return errors;
+}
+function showMapErrors() {
+  const errors = validateMap();
+  const box = el("map-errors");
+  box.innerHTML = errors.length ? `<li class="title">遊戲資料有問題,修正後才能開始:</li>` + errors.map(e => `<li>${escapeHtml(e)}</li>`).join("") : "";
+  box.classList.toggle("hidden", !errors.length);
+  el("btn-start").disabled = errors.length > 0;
+  return errors;
+}
+
+/* ---------- 地圖查詢 ---------- */
+const mapW = () => state.grid[0].length;
+const mapH = () => state.grid.length;
+const cell = (x, y) => (y >= 0 && y < mapH() && x >= 0 && x < mapW()) ? state.grid[y][x] : "T";
+/* 角色、門那一格底下要畫的地形(floor,預設草地) */
+function floorOf(ch) {
+  if (WALK[ch] || BLOCK[ch]) return ch;
+  const o = isCreatureMark(ch) ? CREATURES.find(c => c.where === "map" && String(c.mark) === ch) : isGateChar(ch) ? GATES.find(g => g.mark === ch) : null;
+  return (o && o.floor) || ".";
+}
+function creatureAt(x, y) {
+  const ch = cell(x, y);
+  if (!isCreatureMark(ch)) return null;
+  return CREATURES.find(c => c.where === "map" && String(c.mark) === ch && (!state.caughtCreatures.includes(c.id) || c.stays)) || null;
+}
+
+/* ---------- 門與道具 ---------- */
+const itemName = (mark) => (ITEMS.find(i => i.mark === mark) || { name: mark }).name;
+const hasItem = (mark) => state.collectedItems.includes(mark) && !state.usedItems.includes(mark);
+function gateAt(x, y) {
+  const ch = cell(x, y);
+  return isGateChar(ch) ? (GATES.find(g => g.mark === ch) || null) : null;
+}
+/* 門在畫面和問答裡用的物件(有自己的 id、圖) */
+const gateObj = (g) => ({ ...g, id: "gate:" + g.mark, kind: "gate", gate: g, sprite: g.sprite || "door" });
+function giveItem(mark) {
+  if (!state.collectedItems.includes(mark)) state.collectedItems.push(mark);
+  toast(say("itemGot", { name: itemName(mark) }));
+  renderHud();
+}
+function openGate(g, quiet) {
+  state.grid.forEach((row, y) => row.forEach((ch, x) => { if (ch === g.mark) state.grid[y][x] = g.floor || "."; }));
+  if (!state.openedGates.includes(g.mark)) state.openedGates.push(g.mark);
+  if (g.consume) [].concat(g.needs || []).forEach(m => { if (!state.usedItems.includes(m)) state.usedItems.push(m); });
+  if (!quiet) { toast(g.openedText || say("gateOpened", { name: g.name })); checkWinCondition(); }
+}
+/* 這扇門還缺什麼:{ items: [道具 mark], creatures: [還沒收服的角色] } */
+function gateMissing(g) {
+  return { items: [].concat(g.needs || []).filter(m => !hasItem(m)),
+           creatures: g.needsAllCreatures ? QUIZ().filter(c => !state.caughtCreatures.includes(c.id)) : [] };
+}
+function touchGate(g) {
+  if (state.busy) return;
+  const miss = gateMissing(g);
+  if (miss.items.length) { toast(g.lockedText || say("gateLocked", { name: g.name, need: miss.items.map(itemName).join("、") })); return; }
+  if (miss.creatures.length) {     // 終點:列出還差誰、在哪裡
+    openPanel(`<p class="q">${escapeHtml(g.lockedText || say("gateNeedAll", { name: g.name, n: miss.creatures.length }))}</p><ul class="bag-list">` +
+      miss.creatures.map(c => `<li>${escapeHtml(c.name + (c.area ? "——" + c.area : ""))}</li>`).join("") + `</ul>`);
+    return;
+  }
+  if (hasQuiz(g)) { startEncounter(gateObj(g), "gate"); return; }
+  openGate(g);
+}
+function canWalk(x, y) {
+  const ch = cell(x, y);
+  return !!(WALK[ch] || isLower(ch));
+}
+const remainingGrass = () => CREATURES.filter(c => c.where === "grass" && !state.caughtCreatures.includes(c.id));
+
+/* ---------- 繪圖 ---------- */
+const view = el("view"), vctx = view.getContext("2d");
+let clock = 0;
+function grassVariant(x, y) { return "grass" + ((x * 7 + y * 13 + ((x * y) % 5)) % 3); }
+function drawTile(ctx, x, y, sx, sy) {
+  const ch = floorOf(cell(x, y));
+  if (ch === "H") { ctx.drawImage(GFX["tile:" + (cell(x, y - 1) === "H" ? "wall" : "roof")], sx, sy); return; }
+  if (ch === "~") {
+    ctx.drawImage(GFX["tile:water" + (Math.floor(clock / 600) % 2)], sx, sy);
+    // 岸邊:旁邊不是水的那一側畫淺色水花
+    ctx.fillStyle = "#c8e4ff";
+    if (cell(x, y - 1) !== "~") ctx.fillRect(sx, sy, TILE, 2);
+    if (cell(x, y + 1) !== "~") ctx.fillRect(sx, sy + TILE - 2, TILE, 2);
+    if (cell(x - 1, y) !== "~") ctx.fillRect(sx, sy, 2, TILE);
+    if (cell(x + 1, y) !== "~") ctx.fillRect(sx + TILE - 2, sy, 2, TILE);
+    return;
+  }
+  const base = ch === "," ? "tallgrass" : ch === "=" ? "path" : ch === "*" ? "flowers" : ch === "+" ? "bridge" : grassVariant(x, y);
+  ctx.drawImage(GFX["tile:" + base], sx, sy);
+  if (BLOCK[ch] && BLOCK[ch] !== "water") ctx.drawImage(GFX["tile:" + BLOCK[ch]], sx, sy);
+}
+function playerFrame() {
+  const walking = state.move && state.move.t < 0.6;
+  const flip = state.stepParity === 1;
+  switch (state.facing) {
+    case "up": return walking ? GFX["player_up_walk" + (flip ? ":flip" : "")] : GFX["player_up"];
+    case "left": return walking ? GFX["player_side_walk:flip"] : GFX["player_side:flip"];
+    case "right": return walking ? GFX["player_side_walk"] : GFX["player_side"];
+    default: return walking ? GFX["player_down_walk" + (flip ? ":flip" : "")] : GFX["player_down"];
+  }
+}
+function playerPixel() {
+  if (!state.move) return [state.px * TILE, state.py * TILE];
+  const m = state.move, t = Math.min(1, m.t);
+  return [(m.fx + (m.tx - m.fx) * t) * TILE, (m.fy + (m.ty - m.fy) * t) * TILE];
+}
+function draw() {
+  const [ppx, ppy] = playerPixel();
+  const W = mapW() * TILE, H = mapH() * TILE;
+  const vw = VIEW_W * TILE, vh = VIEW_H * TILE;
+  let camX = Math.round(ppx + TILE / 2 - vw / 2), camY = Math.round(ppy + TILE / 2 - vh / 2);
+  camX = W <= vw ? Math.round((W - vw) / 2) : Math.max(0, Math.min(W - vw, camX));
+  camY = H <= vh ? Math.round((H - vh) / 2) : Math.max(0, Math.min(H - vh, camY));
+
+  vctx.fillStyle = "#000"; vctx.fillRect(0, 0, vw, vh);
+  const x0 = Math.floor(camX / TILE), y0 = Math.floor(camY / TILE);
+  for (let y = y0; y <= y0 + VIEW_H; y++) {
+    for (let x = x0; x <= x0 + VIEW_W; x++) {
+      if (x < 0 || y < 0 || x >= mapW() || y >= mapH()) continue;
+      const sx = x * TILE - camX, sy = y * TILE - camY;
+      drawTile(vctx, x, y, sx, sy);
+      const ch = cell(x, y);
+      if (isLower(ch)) { const it = ITEMS.find(i => i.mark === ch); if (it) drawObj(vctx, it, sx, sy, TILE); }
+      const gt = gateAt(x, y);
+      if (gt) drawObj(vctx, gateObj(gt), sx, sy, TILE);
+      const cr = creatureAt(x, y);
+      if (cr) drawObj(vctx, cr, sx, sy - (Math.floor(clock / 450 + x) % 2), TILE);
+    }
+  }
+  const px = Math.round(ppx - camX), py = Math.round(ppy - camY);
+  vctx.drawImage(playerFrame(), px, py - 2);
+  // 站在高草叢裡時,草蓋住下半身
+  const tx = Math.round(ppx / TILE), ty = Math.round(ppy / TILE);
+  if (cell(tx, ty) === ",") vctx.drawImage(GFX["tile:tallgrass"], 0, 10, TILE, 6, tx * TILE - camX, ty * TILE - camY + 10, TILE, 6);
+}
+function renderHud() {
+  const total = QUIZ().length;
+  el("hud-creatures").textContent = say("hudCreatures", { n: state.caughtCreatures.length, total });
+  el("hud-creatures").classList.toggle("hidden", total === 0);
+  el("hud-items").textContent = say("hudItems", { n: state.collectedItems.length, total: ITEMS.length });
+  el("hud-items").classList.toggle("hidden", ITEMS.length === 0);
+}
+let toastTimer = null;
+function toast(text) {
+  const t = el("toast");
+  t.textContent = text; t.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add("hidden"), Math.max(1600, String(text).length * 110));   // 長的句子停久一點
+}
+
+/* ---------- 移動 ---------- */
+function tryStep(dir) {
+  state.facing = dir;
+  const [dx, dy] = DIRS[dir];
+  const nx = state.px + dx, ny = state.py + dy;
+  const cr = creatureAt(nx, ny);
+  if (cr) { state.held = null; startEncounter(cr, "map"); return; }
+  const gt = gateAt(nx, ny);
+  if (gt) { state.held = null; touchGate(gt); return; }
+  if (!canWalk(nx, ny)) return;          // 撞到牆只轉方向
+  state.move = { fx: state.px, fy: state.py, tx: nx, ty: ny, t: 0 };
+  state.stepParity ^= 1;
+  state.moveCount++;
+}
+function onArrive() {
+  const ch = cell(state.px, state.py);
+  if (isLower(ch)) {
+    const it = ITEMS.find(i => i.mark === ch);
+    if (it && !state.collectedItems.includes(it.mark)) {
+      state.grid[state.py][state.px] = ".";
+      giveItem(it.mark);
+      if (checkWinCondition()) return;
+    }
+  }
+  if (ch === "," && remainingGrass().length) {
+    state.grassSteps++;
+    if (Math.random() < GAME.grassEncounterRate || state.grassSteps >= GAME.grassPity) {
+      state.grassSteps = 0;
+      const pool = remainingGrass();
+      state.held = null;
+      startEncounter(pool[Math.floor(Math.random() * pool.length)], "grass");
+    }
+  }
+}
+function interact() {
+  const [dx, dy] = DIRS[state.facing];
+  const cr = creatureAt(state.px + dx, state.py + dy);
+  if (cr) { startEncounter(cr, "map"); return; }
+  const gt = gateAt(state.px + dx, state.py + dy);
+  if (gt) touchGate(gt);
+}
+let last = 0;
+function loop(ts) {
+  if (!state.running) return;
+  const dt = last ? Math.min(50, ts - last) : 16;
+  last = ts; clock += dt;
+  if (state.move) {
+    state.move.t += dt / GAME.moveMs;
+    if (state.move.t >= 1) {
+      state.px = state.move.tx; state.py = state.move.ty; state.move = null;
+      onArrive();
+    }
+  }
+  // 過關的那一刻 state.running 已經是 false;不擋的話,按著方向鍵會再多走一格,步數多算一步
+  if (state.running && !state.move && !state.busy && state.held) tryStep(state.held);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 遇到角色 ----------
+   state.busy 為 true 時,移動整個鎖住;不要拿掉這個鎖定 */
+const enc = { creature: null, source: null, phase: null, sel: 0, order: [], anim: 0, pending: null };
+function drawEncounterScene() {
+  const c = el("enc-scene"), ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  const grass = enc.source === "grass";
+  // 畫布大小跟著視野(電腦 240 × 160、直式手機 176 × 192),位置都用比例算
+  const W = c.width, H = c.height;
+  // 背景:天空與地面色帶
+  const bands = grass ? ["#b8e8f8", "#a0d8f0", "#88c8e8"] : ["#d8f0c8", "#c0e4b0", "#a8d898"];
+  const bandH = Math.round(H * 0.34 / 3);
+  bands.forEach((col, i) => { ctx.fillStyle = col; ctx.fillRect(0, i * bandH, W, bandH); });
+  const groundY = bandH * 3;
+  ctx.fillStyle = grass ? "#70c050" : "#88c860"; ctx.fillRect(0, groundY, W, H - groundY);
+  ctx.fillStyle = grass ? "#58a840" : "#70b050";
+  for (let x = 0; x < W; x += 8) ctx.fillRect(x + ((x / 8) % 2) * 3, groundY + 6 + ((x * 7) % 9), 3, 2);
+  // 角色站的平台
+  const slide = Math.max(0, 1 - enc.anim);
+  const cx = Math.round(W * 0.7) + slide * W * 0.4;
+  const py = Math.round(H * 0.49);
+  ctx.fillStyle = grass ? "#4c9838" : "#5ea848";
+  ctx.beginPath(); ctx.ellipse(cx, py, 40, 11, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = grass ? "#62b04a" : "#78c060";
+  ctx.beginPath(); ctx.ellipse(cx, py - 2, 36, 8, 0, 0, Math.PI * 2); ctx.fill();
+  drawObj(ctx, enc.creature, Math.round(cx - 32), py - 64, 64);
+}
+function animateEncounter() {
+  enc.anim = 0;
+  const t0 = performance.now();
+  const step = () => {
+    // 用 performance.now() 而不是 requestAnimationFrame 給的時間:headless 截圖時兩個時鐘對不上,角色會一直停在畫面外
+    if (enc.anim >= 1) return;
+    enc.anim = Math.min(1, (performance.now() - t0) / 380);
+    drawEncounterScene();
+    if (enc.anim < 1 && enc.phase) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  // 背景分頁或 headless 截圖時 requestAnimationFrame 可能不跑,角色會停在畫面外;時間到了直接畫最後一格
+  setTimeout(() => { if (enc.phase && enc.creature && enc.anim < 1) { enc.anim = 1; drawEncounterScene(); } }, 500);
+}
+/* 只會說話:沒有問題的 NPC,或是答對後仍站在地圖上(stays)的角色 */
+function talkLines(cr, done) {
+  const raw = done && !cr.dialogue ? say("talkDone", { name: cr.name }) : cr.dialogue;
+  const lines = [].concat(raw);
+  lines[0] = (done && !cr.dialogue ? "" : cr.name + ":") + lines[0];
+  return lines.map(l => `<p class="q" style="margin:0 0 6px">${escapeHtml(l)}</p>`).join("");
+}
+function startEncounter(creature, source) {
+  if (state.busy) return;
+  state.busy = true; state.held = null; clearPadHighlight();
+  const done = state.caughtCreatures.includes(creature.id);
+  const talk = source !== "gate" && (!hasQuiz(creature) || (creature.stays && done));
+  Object.assign(enc, { creature, source, phase: talk ? "talk" : "intro", sel: 0, pending: null });
+  el("encounter").classList.remove("hidden");
+  el("enc-box").classList.remove("hidden");
+  document.querySelector(".hud").classList.add("hidden");
+  animateEncounter();
+  if (talk) {
+    el("enc-box").innerHTML = talkLines(creature, done) + `<div class="enc-more">${escapeHtml(say("more"))}</div>`;
+    // 純對話的 NPC:第一次講完話才送道具(有問題的角色在答對時就已經送了)
+    if (!hasQuiz(creature) && !state.talked.includes(creature.id)) {
+      state.talked.push(creature.id);
+      if (creature.gives && !state.collectedItems.includes(creature.gives)) enc.pending = creature.gives;
+    }
+    return;
+  }
+  const line = say(source === "grass" ? "foundGrass" : source === "gate" ? "foundGate" : "foundMap", { name: creature.name });
+  const greet = creature.greet ? `<p class="q">${escapeHtml(creature.name + ":" + creature.greet)}</p>` : "";
+  el("enc-box").innerHTML = `<p class="q">${escapeHtml(line)}</p>${greet}<div class="enc-more">${escapeHtml(say("more"))}</div>`;
+}
+/* 不是遇到角色的對話框(背包、還差誰的清單):沿用問答框,按確定關掉 */
+function openPanel(html) {
+  if (state.busy || !state.running) return;
+  state.busy = true; state.held = null; clearPadHighlight();
+  Object.assign(enc, { creature: null, source: "panel", phase: "talk", sel: 0, pending: null });
+  el("enc-box").innerHTML = html + `<div class="enc-more">${escapeHtml(say("more"))}</div>`;
+  el("enc-box").classList.remove("hidden");
+  el("enc-box").scrollTop = 0;
+}
+function openBag() {
+  const list = ITEMS.filter(i => state.collectedItems.includes(i.mark));
+  const used = (i) => state.usedItems.includes(i.mark);
+  openPanel(`<p class="q">${escapeHtml(say("bagTitle"))}</p>` + (list.length
+    ? `<ul class="bag-list">` + list.map(i => `<li class="${used(i) ? "used" : ""}">${escapeHtml(i.name)}${used(i) ? escapeHtml(say("usedTag")) : ""}${i.note ? `<span class="note">${escapeHtml(i.note)}</span>` : ""}</li>`).join("") + `</ul>`
+    : `<p class="q">${escapeHtml(say("bagEmpty"))}</p>`));
+}
+function showQuestion() {
+  enc.phase = "question";
+  const q = enc.q = currentQ(enc.creature);
+  const order = q.choices.map((_, i) => i);
+  enc.order = GAME.shuffleChoices ? shuffle(order) : order;   // 存原本的索引,answerIndex 不用改
+  enc.sel = 0;
+  el("enc-box").innerHTML = `<p class="q">${escapeHtml(q.question)}</p><ul class="choices">` +
+    enc.order.map((ci, k) => `<li><button type="button" data-k="${k}">${escapeHtml(q.choices[ci])}</button></li>`).join("") + `</ul>`;
+  el("enc-box").querySelectorAll("[data-k]").forEach(b => b.addEventListener("click", (e) => { e.stopPropagation(); answer(+b.dataset.k); }));
+  highlightChoice();
+}
+function highlightChoice() {
+  el("enc-box").querySelectorAll("[data-k]").forEach((b, k) => b.classList.toggle("sel", k === enc.sel));
+}
+function answer(k) {
+  if (enc.phase !== "question") return;
+  enc.phase = "result";
+  const cr = enc.creature, q = enc.q;
+  const isGate = enc.source === "gate";
+  const chosen = enc.order[k];
+  state.attempts[cr.id] = (state.attempts[cr.id] || 0) + 1;
+  const box = el("enc-box");
+  const buttons = box.querySelectorAll("[data-k]");
+  // 只留下選的那個:回饋才不會被擠出框外,答錯時也不會洩漏正確答案
+  buttons.forEach((b, i) => { b.disabled = true; if (i !== k) b.parentElement.classList.add("hidden"); });
+  let msg, fb = "";
+  if (chosen === q.answerIndex) {
+    buttons[k].classList.add("correct");
+    if (isGate) {
+      openGate(cr.gate, true);
+      msg = cr.gate.openedText || say("gateOpened", { name: cr.name });
+    } else {
+      state.caughtCreatures.push(cr.id);
+      if (cr.where === "map" && !cr.stays) {
+        state.grid.forEach((row, y) => row.forEach((ch, x) => { if (ch === String(cr.mark)) state.grid[y][x] = cr.floor || "."; }));
+      }
+      if (cr.gives && !state.collectedItems.includes(cr.gives)) enc.pending = cr.gives;
+      msg = cr.success || say("caught", { name: cr.name });
+    }
+    if (q.explanation) fb = `<p class="fb good">📖 ${escapeHtml(q.explanation)}</p>`;
+  } else {
+    buttons[k].classList.add("wrong");
+    state.wrongCount++;
+    state.qTurn[cr.id] = (state.qTurn[cr.id] || 0) + 1;      // 有好幾題時,下次換下一題
+    msg = isGate ? say("gateWrong", { name: cr.name }) : say(cr.where === "map" ? "missMap" : "missGrass", { name: cr.name });
+    const tip = (q.mistakes && q.mistakes[q.choices[chosen]]) || q.hint;   // 常見錯誤:指出選這個選項背後的迷思
+    if (tip) fb = `<p class="fb">💡 ${escapeHtml(tip)}</p>`;
+  }
+  box.insertAdjacentHTML("beforeend", `<p class="q" style="margin:8px 0 0">${escapeHtml(msg)}</p>${fb}<div class="enc-more">${escapeHtml(say("more"))}</div>`);
+  box.scrollTop = box.scrollHeight;
+  renderHud();
+}
+function closeEncounter() {
+  enc.phase = null;
+  el("encounter").classList.add("hidden");
+  el("enc-box").classList.add("hidden");
+  document.querySelector(".hud").classList.remove("hidden");
+  state.busy = false;
+  if (enc.pending) { const p = enc.pending; enc.pending = null; giveItem(p); }
+  checkWinCondition();
+}
+function encounterConfirm() {
+  if (enc.phase === "intro") showQuestion();
+  else if (enc.phase === "question") answer(enc.sel);
+  else if (enc.phase === "result" || enc.phase === "talk") closeEncounter();
+}
+
+/* ---------- 過關與結算 ---------- */
+function checkWinCondition() {
+  if (state.running && isWin()) {
+    state.running = false;
+    setTimeout(finishGame, 300);
+    return true;
+  }
+  return false;
+}
+
+function drawLineup(canvasId, silhouette) {
+  const c = el(canvasId), ctx = c.getContext("2d");
+  const list = QUIZ();
+  c.classList.toggle("hidden", list.length === 0);
+  if (!list.length) return;
+  const n = list.length, gap = 4, size = 24;
+  c.width = Math.max(240, n * (size + gap)); c.height = size + 4;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, c.width, c.height);
+  const x0 = Math.round((c.width - n * (size + gap) + gap) / 2);
+  list.forEach((cr, i) => {
+    const x = x0 + i * (size + gap);
+    if (!silhouette) { drawObj(ctx, cr, x, 2, size); return; }
+    const tmp = document.createElement("canvas"); tmp.width = size; tmp.height = size;
+    const t = tmp.getContext("2d"); t.imageSmoothingEnabled = false;
+    drawObj(t, cr, 0, 0, size);
+    t.globalCompositeOperation = "source-in"; t.fillStyle = "#0c0e1c"; t.fillRect(0, 0, size, size);
+    ctx.drawImage(tmp, x, 2);
+  });
+}
+function finishGame() {
+  const durationSec = Math.round((Date.now() - state.startTime) / 1000);
+  el("screen-game").classList.add("hidden");
+  el("screen-end").classList.remove("hidden");
+  drawLineup("end-lineup", false);
+  const quiz = QUIZ();
+  const firstTry = quiz.filter(c => state.attempts[c.id] === 1).length;
+  el("end-title").textContent = say("endTitle");
+  const ending = [].concat(GAME.ending || []).join("\n\n");
+  el("end-story").textContent = ending;
+  el("end-story").classList.toggle("hidden", !ending);
+  el("lbl-creatures").textContent = say("labelCreatures");
+  el("lbl-firsttry").textContent = say("labelFirstTry");
+  el("lbl-items").textContent = say("labelItems");
+  ["row-creatures", "row-firsttry"].forEach(id => el(id).classList.toggle("hidden", quiz.length === 0));
+  el("row-items").classList.toggle("hidden", ITEMS.length === 0);
+  el("sum-name").textContent = state.playerName;
+  el("sum-creatures").textContent = `${state.caughtCreatures.length} / ${quiz.length}`;
+  el("sum-firsttry").textContent = `${firstTry} / ${quiz.length}`;
+  el("sum-wrong").textContent = state.wrongCount;
+  el("sum-items").textContent = `${state.collectedItems.length} / ${ITEMS.length}`;
+  el("sum-moves").textContent = state.moveCount;
+  el("sum-time").textContent = durationSec + " 秒";
+  saveBestIfNeeded(state.moveCount);
+
+  /* 上傳的欄位由使用者決定;加欄位時 gas-backend.gs 的 HEADERS 和 rowFor() 也要對應 */
+  const payload = {
+    playerName: state.playerName,
+    creaturesCaught: state.caughtCreatures.length,
+    firstTryCount: firstTry,
+    wrongCount: state.wrongCount,
+    itemsCollected: state.collectedItems.length,
+    moveCount: state.moveCount,
+    durationSec: durationSec
+  };
+  sendResultsToSheet(payload);
+}
+function sendResultsToSheet(payload) {
+  const statusEl = el("submit-status");
+  if (!GAS_URL || GAS_URL.indexOf("PASTE_YOUR") === 0) {
+    statusEl.textContent = "(尚未設定 Google 試算表網址,成績只顯示在畫面上)";
+    return;
+  }
+  statusEl.textContent = "成績上傳中...";
+  // no-cors 模式下瀏覽器只允許 text/plain 這類簡單的 Content-Type;後端一樣用 JSON.parse 讀內容。
+  // keepalive:玩家一看到結算就關分頁,這筆成績也還是會送出去
+  fetch(GAS_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, keepalive: true, body: JSON.stringify(payload) })
+    .then(() => { statusEl.textContent = "成績已送出 ✅"; })
+    .catch(() => { statusEl.textContent = "送出失敗,請檢查網路連線"; });
+}
+/* 地圖簽章:最佳紀錄是「這張地圖、這組角色」下的步數。
+   學員改了地圖或角色之後簽章會變,舊紀錄就不算數,避免開始畫面掛著打不到(或太容易打到)的舊步數 */
+function bestSignature() {
+  const raw = MAP.join("/") + "|" + CREATURES.map(c => `${c.id}:${c.where}:${c.mark === undefined ? "" : c.mark}:${hasQuiz(c) ? "q" : "n"}${c.stays ? "s" : ""}${c.gives || ""}`).join(",") +
+    "|" + GATES.map(g => `${g.mark}:${[].concat(g.needs || []).join("+")}${hasQuiz(g) ? "q" : ""}${g.consume ? "c" : ""}${g.needsAllCreatures ? "a" : ""}`).join(",");
+  let h = 5381;
+  for (let i = 0; i < raw.length; i++) h = ((h * 33) ^ raw.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+function loadBest() {
+  // 格式不對、或簽章和目前的地圖不同,都當作沒有紀錄
+  // (不檢查的話,STORAGE_KEY 撞名時會顯示 undefined,而且之後的最佳紀錄永遠不會被更新)
+  try {
+    const best = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (best && Number.isFinite(best.moves) && best.sig === bestSignature()) return best;
+  } catch (e) { /* 讀不到或壞掉,當作沒有紀錄 */ }
+  return null;
+}
+function saveBestIfNeeded(moves) {
+  const best = loadBest();
+  if (!best || moves < best.moves) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ moves, sig: bestSignature() })); } catch (e) {}
+  }
+}
+function showBestNote() {
+  const best = loadBest();
+  el("best-note").textContent = best ? say("bestNote", { moves: best.moves }) : "";
+}
+
+/* ---------- 開始遊戲 ---------- */
+function resetState() {
+  state.grid = MAP.map(row => row.split(""));
+  state.grid.forEach((row, y) => row.forEach((ch, x) => { if (ch === "@") { state.px = x; state.py = y; row[x] = "."; } }));
+  Object.assign(state, { facing: "down", move: null, stepParity: 0, held: null, caughtCreatures: [], collectedItems: [], openedGates: [], usedItems: [], talked: [],
+    attempts: {}, qTurn: {}, wrongCount: 0, grassSteps: 0, moveCount: 0, busy: false });
+}
+function startGame() {
+  if (showMapErrors().length) return;
+  state.playerName = el("player-name").value.trim() || "玩家";
+  resetState();
+  state.startTime = Date.now();
+  el("screen-start").classList.add("hidden");
+  el("screen-game").classList.remove("hidden");
+  fitView();
+  renderHud();
+  state.running = true; last = 0;
+  requestAnimationFrame(loop);
+  const hasGrass = CREATURES.some(c => c.where === "grass");
+  toast(say(hasGrass ? "startGrass" : "start"));
+}
+
+/* 畫面縮放:盡量用整數倍放大,像素才會整齊 */
+function fitView() {
+  const frame = el("stage");
+  const portrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
+  const w = portrait ? 11 : 15, h = portrait ? 12 : 10;
+  if (w !== VIEW_W || h !== VIEW_H) {
+    VIEW_W = w; VIEW_H = h;
+    view.width = VIEW_W * TILE; view.height = VIEW_H * TILE;
+    el("enc-scene").width = view.width; el("enc-scene").height = view.height;
+    vctx.imageSmoothingEnabled = false;
+    el("stage").classList.toggle("portrait", portrait);
+  }
+  const pw = VIEW_W * TILE, ph = VIEW_H * TILE;
+  const avail = el("screen-game").parentElement.clientWidth;
+  const maxH = window.innerHeight - 250;
+  const scale = Math.floor(Math.min(avail / pw, maxH / ph));
+  if (scale >= 2) frame.style.width = (pw * Math.min(scale, 3) + 8) + "px";
+  else frame.style.width = "100%";
+  if (state.running) draw();
+}
+
+/* ---------- 操作 ---------- */
+const KEY_DIR = { arrowup: "up", w: "up", arrowdown: "down", s: "down", arrowleft: "left", a: "left", arrowright: "right", d: "right" };
+function gameVisible() { return !el("screen-game").classList.contains("hidden"); }
+document.addEventListener("keydown", (e) => {
+  if (!gameVisible()) return;
+  const key = e.key.toLowerCase();
+  const dir = KEY_DIR[key];
+  const confirm = key === "enter" || key === " " || key === "z";
+  if (dir || confirm) e.preventDefault();
+  if (enc.phase) {
+    if (dir && enc.phase === "question") {
+      const n = enc.order.length;
+      if (dir === "up" || dir === "left") enc.sel = (enc.sel + n - 1) % n;
+      if (dir === "down" || dir === "right") enc.sel = (enc.sel + 1) % n;
+      highlightChoice();
+    }
+    if (confirm && !e.repeat) encounterConfirm();
+    return;
+  }
+  if (dir) state.held = dir;
+  if (confirm && !e.repeat && !state.busy) interact();
+  if (key === "b" && !e.repeat) openBag();
+});
+document.addEventListener("keyup", (e) => {
+  const dir = KEY_DIR[e.key.toLowerCase()];
+  if (dir && state.held === dir) state.held = null;
+});
+window.addEventListener("blur", () => { state.held = null; clearPadHighlight(); });
+function clearPadHighlight() { document.querySelectorAll("#dpad button").forEach(b => b.classList.remove("on")); }
+document.querySelectorAll("#dpad button").forEach(b => {
+  const on = (e) => { e.preventDefault(); if (enc.phase) { if (enc.phase === "question") { const n = enc.order.length; enc.sel = (enc.sel + (b.dataset.dir === "up" || b.dataset.dir === "left" ? n - 1 : 1)) % n; highlightChoice(); } return; } state.held = b.dataset.dir; b.classList.add("on"); };
+  const off = () => { if (state.held === b.dataset.dir) state.held = null; b.classList.remove("on"); };
+  b.addEventListener("pointerdown", on);
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, off));
+});
+el("btn-b").addEventListener("click", () => { if (enc.phase) encounterConfirm(); else openBag(); });
+el("btn-a").addEventListener("click", () => { if (enc.phase) encounterConfirm(); else if (!state.busy) interact(); });
+el("enc-box").addEventListener("click", () => { if (enc.phase === "intro" || enc.phase === "result" || enc.phase === "talk") encounterConfirm(); });
+/* 遊戲進行中重新整理、關分頁或按上一頁,進度會消失(沒有存檔),所以先讓瀏覽器跳出確認視窗。
+   視窗的文字由瀏覽器決定,改不了;開始畫面和結算畫面不會跳 */
+window.addEventListener("beforeunload", (e) => {
+  if (!gameVisible() || !state.running) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
+el("btn-start").addEventListener("click", startGame);
+el("player-name").addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
+el("btn-restart").addEventListener("click", () => {
+  el("screen-end").classList.add("hidden");
+  el("screen-start").classList.remove("hidden");
+  el("submit-status").textContent = "";
+  showBestNote();
+});
+window.addEventListener("resize", () => { if (gameVisible()) fitView(); });
+
+/* ---------- 圖片預覽頁(網址加上 #sprites) ---------- */
+function showGallery() {
+  ["screen-start", "screen-game", "screen-end"].forEach(id => el(id).classList.add("hidden"));
+  el("screen-gallery").classList.remove("hidden");
+  const items = [];
+  CREATURES.forEach(c => items.push([`角色:${c.name}`, gfxOf(c)]));
+  ITEMS.forEach(i => items.push([`道具:${i.name}`, gfxOf(i)]));
+  GATES.forEach(g => items.push([`門:${g.name}`, gfxOf(gateObj(g))]));
+  Object.keys(SPRITES).forEach(n => items.push([n, GFX[n]]));
+  Object.keys(TILES).forEach(n => items.push([`地形:${n}`, GFX["tile:" + n]]));
+  el("gallery").innerHTML = items.map((_, i) => `<figure><canvas width="16" height="16" data-g="${i}"></canvas><figcaption>${escapeHtml(items[i][0])}</figcaption></figure>`).join("");
+  el("gallery").querySelectorAll("canvas").forEach(cv => {
+    const g = items[+cv.dataset.g][1];
+    const ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false;
+    if (g) ctx.drawImage(g, 0, 0, 16, 16);
+  });
+}
+
+/* ---------- 初始化 ---------- */
+if (GAME.title) {
+  el("game-title").textContent = GAME.title;
+  document.title = GAME.title;     // 瀏覽器分頁的標題也跟著 GAME.title,不用另外改 <title>
+}
+if (GAME.desc) el("game-desc").textContent = GAME.desc;
+if (GAME.teacherNotes) {
+  el("teacher-notes-body").textContent = [].concat(GAME.teacherNotes).join("\n\n");
+  el("teacher-notes").classList.remove("hidden");
+}
+window.__engineReady = true;   // 之後的錯誤不再由最上面的錯誤顯示處理
+loadGraphics().then(() => {
+  if (location.hash === "#sprites") { showGallery(); return; }
+  drawLineup("lineup", true);
+  showBestNote();
+  showMapErrors();
+});
+</script>
+</body>
+</html>

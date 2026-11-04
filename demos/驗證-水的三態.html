@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>像素探索教育遊戲範本</title>
+<style>
+  :root {
+    --bg: #181a2e;
+    --frame: #2c3050;
+    --ink: #20243c;
+    --box: #f8f8f0;
+    --box-line: #384870;
+    --accent: #e04848;
+    --good: #2f9e5a;
+    --bad: #d04050;
+    --muted: #9aa0c0;
+    --text: #eef0ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    display: flex; justify-content: center; align-items: flex-start;
+    padding: max(16px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shell { width: 100%; max-width: 760px; }
+  .hidden { display: none !important; }
+  button { font: inherit; cursor: pointer; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible { outline: 3px solid #f8d848; outline-offset: 2px; }
+
+  /* 文字框:仿掌機遊戲的白底雙框 */
+  .textbox {
+    background: var(--box); color: var(--ink);
+    border: 4px solid var(--box-line); border-radius: 8px;
+    box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px #b8c0d8;
+    padding: 12px 16px; font-weight: 700; line-height: 1.6;
+  }
+  .btn {
+    background: var(--box); color: var(--ink); border: 3px solid var(--box-line);
+    border-radius: 8px; padding: 10px 18px; font-weight: 700;
+  }
+  .btn.primary { background: var(--accent); color: #fff; border-color: #902030; }
+
+  /* 開始/結算畫面 */
+  .screen { background: var(--frame); border-radius: 14px; padding: 22px 20px; }
+  .screen h1 { margin: 0 0 6px; font-size: 1.5rem; letter-spacing: .05em; }
+  .screen p.desc { color: var(--muted); margin: 0 0 16px; line-height: 1.7; }
+  .lineup { display: block; width: 100%; image-rendering: pixelated; margin: 8px 0 16px; }
+  .screen input[type="text"] {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 3px solid var(--box-line);
+    background: var(--box); color: var(--ink); font-size: 1rem; font-weight: 700; margin-bottom: 12px;
+  }
+  .screen .btn.primary { width: 100%; font-size: 1.1rem; }
+  .best-note, .submit-status { color: var(--muted); font-size: .9rem; text-align: center; margin-top: 10px; }
+  .map-errors { background: #3a1c28; border: 2px solid var(--bad); border-radius: 8px; padding: 10px 12px 10px 28px; margin: 0 0 14px; font-size: .9rem; line-height: 1.6; }
+  .map-errors .title { list-style: none; margin-left: -16px; color: #ff9aa8; font-weight: 700; }
+  .teacher-notes { background: #23263f; border: 1px solid #454a70; border-radius: 8px; padding: 8px 12px; margin: 0 0 14px; font-size: .9rem; line-height: 1.7; }
+  .teacher-notes summary { cursor: pointer; color: var(--muted); font-weight: 700; }
+  .teacher-notes div { white-space: pre-line; margin-top: 6px; }
+  .end-story { background: #23263f; border-radius: 8px; padding: 10px 14px; margin: 0 0 12px; line-height: 1.8; white-space: pre-line; }
+  .summary-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #454a70; }
+
+  /* 遊戲畫面 */
+  .stage { position: relative; margin: 0 auto; }
+  .game-frame { position: relative; background: #000; border: 4px solid var(--frame); border-radius: 10px; overflow: hidden; }
+  #view { display: block; width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .hud {
+    position: absolute; left: 8px; top: 8px; display: flex; gap: 6px; pointer-events: none;
+  }
+  .hud span { background: rgba(248,248,240,.92); color: var(--ink); border: 2px solid var(--box-line); border-radius: 6px; padding: 2px 8px; font-size: .8rem; font-weight: 700; }
+  .toast { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); width: calc(100% - 20px); max-width: 520px; font-size: .95rem; pointer-events: none; }
+  @media (max-width: 640px) { .toast { font-size: .8rem; bottom: 6px; width: calc(100% - 12px); padding: 6px 10px !important; } }
+
+  /* 遇到角色的畫面 */
+  .encounter { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; }
+  #enc-scene { width: 100%; flex: 1; min-height: 0; image-rendering: pixelated; display: block; object-fit: cover; }
+  .enc-box { position: absolute; left: 12px; right: 12px; bottom: 12px; max-height: 62%; overflow: auto; }
+  @media (max-width: 560px) { .enc-box { position: static; margin-top: 8px; max-height: none; } }
+  .enc-box .q { margin: 0 0 8px; white-space: pre-line; }   /* 題目、對話裡的換行字元會換行 */
+  .choices { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .choices button {
+    width: 100%; text-align: left; background: transparent; border: 0; padding: 6px 8px 6px 26px;
+    font-weight: 700; color: var(--ink); border-radius: 6px; position: relative;
+  }
+  .choices button.sel { background: #e4e8f4; }
+  .choices button.sel::before { content: "▶"; position: absolute; left: 8px; }
+  .choices button:disabled { opacity: 1; cursor: default; }
+  .choices button.correct { background: #cdeedb; color: #1c6a3c; }
+  .choices button.wrong { background: #f6d2d8; color: #9a2436; }
+  .enc-box .fb { margin: 6px 0 0; padding: 6px 10px; border-radius: 6px; background: #fff4d0; font-weight: 700; }
+  .enc-box .fb.good { background: #dcf3e4; }
+  .bag-list { list-style: none; margin: 0 0 6px; padding: 0; }
+  .bag-list li { padding: 4px 0; border-bottom: 1px dashed #c8cce0; }
+  .bag-list .note { display: block; font-weight: 400; font-size: .9rem; white-space: pre-line; }
+  .bag-list .used { color: #8a90a8; }
+  .enc-more { font-size: .8rem; color: #6a7090; text-align: right; }
+
+  /* 觸控按鈕 */
+  .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .dpad { display: grid; grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(3, 54px); gap: 4px; }
+  .dpad button, .abtn { background: var(--frame); color: var(--text); border: 3px solid #4a5080; border-radius: 10px; font-size: 1.2rem; touch-action: none; }
+  .dpad button.on, .abtn.on { background: #4a5080; }
+  .btns { display: flex; align-items: center; gap: 12px; }
+  .bbtn { width: 56px; height: 56px; border-radius: 50%; font-weight: 800; font-size: 1rem; background: var(--frame); color: var(--text); border: 3px solid #4a5080; }
+  .abtn { width: 76px; height: 76px; border-radius: 50%; font-weight: 800; font-size: 1.4rem; background: var(--accent); border-color: #902030; }
+  .hint { color: var(--muted); font-size: .85rem; text-align: center; margin: 10px 0 0; }
+
+  /* 圖片預覽頁(網址加上 #sprites 時顯示) */
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+  .gallery figure { margin: 0; background: #78c850; border-radius: 8px; padding: 8px; text-align: center; }
+  .gallery canvas { width: 64px; height: 64px; image-rendering: pixelated; }
+  .gallery figcaption { color: #102010; font-size: .8rem; font-weight: 700; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ===== 畫面一:開始畫面 ===== -->
+  <div id="screen-start" class="screen">
+    <h1 id="game-title">🗺️ 像素探索大冒險</h1>
+    <p class="desc" id="game-desc">在地圖上四處探索,找出躲起來的角色,答對問題就能收服牠們。走進草叢也可能突然遇到角色喔!</p>
+    <canvas class="lineup" id="lineup" width="240" height="28"></canvas>
+    <details class="teacher-notes hidden" id="teacher-notes"><summary>給老師</summary><div id="teacher-notes-body"></div></details>
+    <ul class="map-errors hidden" id="map-errors"></ul>
+    <input type="text" id="player-name" placeholder="請輸入姓名或暱稱" maxlength="20">
+    <button class="btn primary" id="btn-start">開始冒險</button>
+    <div class="best-note" id="best-note"></div>
+  </div>
+
+  <!-- ===== 畫面二:遊戲進行中 ===== -->
+  <div id="screen-game" class="hidden">
+    <div class="stage" id="stage">
+    <div class="game-frame" id="game-frame">
+      <canvas id="view" width="240" height="160"></canvas>
+      <div class="hud"><span id="hud-creatures"></span><span id="hud-items"></span></div>
+      <div class="toast textbox hidden" id="toast"></div>
+      <div class="encounter hidden" id="encounter">
+        <canvas id="enc-scene" width="240" height="160"></canvas>
+      </div>
+    </div>
+    <!-- 問答框:寬螢幕疊在畫面下方,手機放在畫面下面 -->
+    <div class="enc-box textbox hidden" id="enc-box"></div>
+    </div>
+    <div class="controls">
+      <div class="dpad" id="dpad">
+        <span></span><button data-dir="up" aria-label="上">▲</button><span></span>
+        <button data-dir="left" aria-label="左">◀</button><span></span><button data-dir="right" aria-label="右">▶</button>
+        <span></span><button data-dir="down" aria-label="下">▼</button><span></span>
+      </div>
+      <div class="btns"><button class="bbtn" id="btn-b" aria-label="背包">B</button><button class="abtn" id="btn-a" aria-label="確定 / 調查">A</button></div>
+    </div>
+    <p class="hint">方向鍵 / WASD 移動,Enter / 空白鍵確定,B 鍵 / B 鈕打開背包</p>
+  </div>
+
+  <!-- ===== 畫面三:結算畫面 ===== -->
+  <div id="screen-end" class="screen hidden">
+    <h1 id="end-title">🎉 全部收服完成!</h1>
+    <canvas class="lineup" id="end-lineup" width="240" height="28"></canvas>
+    <div class="end-story hidden" id="end-story"></div>
+    <div class="summary-row"><span>玩家</span><span id="sum-name"></span></div>
+    <div class="summary-row" id="row-creatures"><span id="lbl-creatures">收服角色</span><span id="sum-creatures"></span></div>
+    <div class="summary-row" id="row-firsttry"><span id="lbl-firsttry">一次就答對</span><span id="sum-firsttry"></span></div>
+    <div class="summary-row"><span>答錯次數</span><span id="sum-wrong"></span></div>
+    <div class="summary-row" id="row-items"><span id="lbl-items">撿到道具</span><span id="sum-items"></span></div>
+    <div class="summary-row"><span>走了幾步</span><span id="sum-moves"></span></div>
+    <div class="summary-row"><span>花費時間</span><span id="sum-time"></span></div>
+    <div class="submit-status" id="submit-status"></div>
+    <button class="btn" id="btn-restart" style="width:100%;margin-top:14px">再玩一次</button>
+  </div>
+
+  <!-- ===== 圖片預覽頁(網址後面加 #sprites 才會出現,給製作者檢查圖用) ===== -->
+  <div id="screen-gallery" class="screen hidden">
+    <h1>圖片預覽</h1>
+    <p class="desc">每張圖放大 4 倍、畫在草地上,檢查輪廓、顏色和辨識度。</p>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+</div>
+
+<!-- 程式分成三個 <script>(仍然是同一個檔案):
+     1. 錯誤顯示:下面兩段只要有語法錯誤(漏逗號、引號或括號沒成對),就在開始畫面顯示第幾行出錯
+     2. 設定與內容包:GAS_URL、STORAGE_KEY、CONTENT-PACK
+     3. 像素圖與引擎
+   分開寫是因為同一個 <script> 裡只要有一個語法錯誤,整段都不會執行,連錯誤訊息都顯示不出來。不要合併回去。 -->
+<script>
+(function () {
+  let shown = false;
+  window.addEventListener("error", function (e) {
+    if (window.__engineReady || shown) return;      // 只處理「遊戲還沒準備好」時的第一個錯誤
+    shown = true;
+    const box = document.getElementById("map-errors");
+    const btn = document.getElementById("btn-start");
+    if (btn) btn.disabled = true;
+    if (!box) return;
+    const where = e.lineno ? `(這個檔案的第 ${e.lineno} 行附近)` : "";
+    const li = document.createElement("li");
+    li.className = "title";
+    li.textContent = `程式有錯誤,遊戲無法開始${where}:${e.message || "未知的錯誤"}。`
+      + "最常見的原因是漏了逗號、引號或括號沒有成對,請修正後重新整理。";
+    box.innerHTML = "";
+    box.appendChild(li);
+    box.classList.remove("hidden");
+  });
+})();
+</script>
+
+<script>
+/* =========================================================
+   上傳與存檔設定
+   ========================================================= */
+
+/* Google Apps Script 上傳網址 */
+const GAS_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+/* localStorage key(記錄這台裝置的最少步數)。多個遊戲共用網域時要改成不同名字;
+   地圖或角色改了之後,舊的最佳紀錄會因為地圖簽章不同而自動忽略,不用手動清 */
+const STORAGE_KEY = "edu-pixel-water-states";
+
+/* ===== CONTENT-PACK:BEGIN =====
+   《三態之泉:水精靈回家記》國小四年級 自然 水的三態變化
+   (依教師設計書改寫;設計書代號寫在註解裡,方便老師對照)
+
+   地圖代碼對照(設計書 → 這個檔案):
+     "  高草叢 → ,      ^ 火山岩 → O      # 石牆 → #(木柵欄圖)      S 起點 → @
+     H 房子 → H                         * 三態之泉 → Z(終點門,needsAllCreatures)
+     C1~C6 → 1~6      N1~N3 → 7~9      N4 → !   N5 → $   N6 → %
+     B1~B5 告示牌 → & | ? : ;             K1、K2 寶箱 → < >
+     D1 木柵門 → D    D2 冰牆 → E       D3 霧之門 → F(第一題)、G(第二題) */
+
+const MAP = [
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  "TT......~~~....OOO.#..T..............T.T",
+  "T.......~Z~....OO..#......~~~~~~~~~~~..T",
+  "T.OOO....=......T..#......~~~~~~~~~~~..T",
+  "T.OOO....=....6....#..3...~~~~~~~~~~~..T",
+  "T.OOO....=..T......#......~~~~~~~~~~~..T",
+  "T........=.*.......#T.....~~~~~~~~~~~..T",
+  "TT.......=.........#..............T....T",
+  "T..*.....=.......%.#.......*...........T",
+  "T........=========GF===========......4.T",
+  "T....5......;......#....:.....=........T",
+  "TT................T#..........=$.......T",
+  "T....*T............#..........=........T",
+  "T#############################E########T",
+  "TT................T#..........=........T",
+  "T.HHHH...=..HHHH...#....T.....=!.......T",
+  "T.HHHH...=..HHHH...#..........=.....T..T",
+  "T........=...8.....#..........=....*...T",
+  "T.<......=......2..#......T...=........T",
+  "T........=.........#.9........=........T",
+  "T==================D===========........T",
+  "T...&....=.....*...#.|.................T",
+  "T.....7..=.........#....,,,,,,,,,,.....T",
+  "T........=...~~~~..#...?,,,,,,,,,,.....T",
+  "T..@.....=..1~~~~..#....,,,,,,,,,,...>.T",
+  "T......*.=...~~~~..#....,,,,,,,,,,.....T",
+  "TT................T#................*.TT",
+  "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+];
+
+/* mistakes 寫的是設計書「最可能選的錯誤選項」和要對學生說的話。
+   設計書裡 NPC「主動開口」引擎沒有,改成開場提示叫玩家先找露珠奶奶 */
+const CREATURES = [
+  /* ---- 帶問題的水精靈(全部答對後,三態之泉才會冒泡) ---- */
+  { id: "C1", name: "冰冰柱", where: "map", mark: "1", sprite: "icicle", area: "露珠村的池塘邊",
+    greet: "滴答!我快要被晒軟了啦!",
+    question: "太陽出來了,照在我身上暖暖的。我這根冰柱會慢慢變成什麼?這個變化叫什麼?",
+    choices: ["變成更硬的冰,叫凝固", "變成水,叫凝固", "變成水,叫熔化", "直接變成白霧,叫沸騰"], answerIndex: 2,
+    explanation: "冰受熱變成水,叫熔化(露珠村告示牌)。",
+    // 迷思(最可能選「變成水,叫凝固」):記得冰和水會互變,但把熔化、凝固的名字弄反
+    mistakes: { "變成水,叫凝固": "冰受熱變成水是『熔化』,水遇冷變成冰才是『凝固』,方向剛好相反喔!" },
+    success: "滴答~原來我是在熔化呀!我跟你走!" },
+  { id: "C2", name: "霜霜", where: "map", mark: "2", sprite: "frosty", area: "露珠村的刨冰店旁",
+    greet: "冷冷的最舒服了~你也覺得嗎?",
+    question: "阿凍叔想把一個裝得滿滿的玻璃水瓶,蓋緊蓋子放進冷凍庫。隔天最可能發生什麼事?",
+    choices: ["水結成冰,體積變大,瓶子可能被撐破", "水結成冰,體積變小,瓶子上面空出一截", "水變成水蒸氣跑掉,瓶子變空了", "什麼都不會變,冷凍庫只會讓水變冰涼"], answerIndex: 0,
+    explanation: "冷凍庫讓水凝固成冰,水結成冰後體積變大,裝太滿的玻璃瓶會被撐破(阿凍叔)。",
+    // 迷思(最可能選「體積變小」):覺得冰比較硬、比較「緊」,所以體積會變小
+    mistakes: { "水結成冰,體積變小,瓶子上面空出一截": "阿凍叔說過,水結成冰會『長大』,所以裝水做冰的瓶子不能裝太滿。" },
+    success: "你真懂冰!那我們一起去找泉水吧~" },
+  { id: "W1", name: "冰丸兔", where: "grass", sprite: "icebunny", area: "晾衣草原的高草叢",
+    greet: "噗噗!我的耳朵冰冰的,要摸摸看嗎?", success: "噗噗!答對了,我跟你做朋友!" , questions: [
+    { question: "下面哪一個是水的『氣態』?", choices: ["冰塊", "白白的霧", "雪花", "看不見的水蒸氣"], answerIndex: 3,
+      explanation: "水的氣態是水蒸氣,它是看不見的(露珠奶奶)。冰塊、雪花是固態。",
+      // 迷思(最可能選白霧):以為「白白的、飄在空中」的就是氣體
+      mistakes: { "白白的霧": "看得見的白霧其實是小水滴;真正的水蒸氣是看不見的,到冷泉湖你會看得更清楚!" } },
+    { question: "冬天早上,池塘表面結了一層薄冰。到了中午太陽很大,薄冰不見了,池塘裡的水變多了一點。中午發生的是什麼變化?",
+      choices: ["凝固", "蒸發", "熔化", "凝結"], answerIndex: 2,
+      explanation: "冰受熱變成水、留在池塘裡,池塘水才會變多,這是熔化。",
+      // 迷思(最可能選蒸發):看到「冰不見了」就以為是蒸發掉了
+      mistakes: { "蒸發": "冰變成水留在池塘裡是『熔化』;蒸發是水變成看不見的水蒸氣飛走,池塘水會變少才對。" } },
+    { question: "想把果汁做成冰棒,要怎麼做才會變成冰棒?", choices: ["用電風扇一直吹", "放進冷凍庫", "放在大太陽下晒", "放進電鍋加熱"], answerIndex: 1,
+      explanation: "水遇冷才會凝固成冰,要降到大約 0°C 以下,冷凍庫做得到。",
+      // 迷思(最可能選電風扇):吹風會覺得涼涼的,就以為吹久了會結冰
+      mistakes: { "用電風扇一直吹": "電風扇只能讓水蒸發得快一點;要結冰,得讓溫度降到 0°C 左右以下,要靠冷凍庫。" } }
+  ] },
+  { id: "W2", name: "晾晾雀", where: "grass", sprite: "sparrow", area: "晾衣草原的高草叢",
+    greet: "啾啾!今天太陽好、風也好,最適合晒衣服啦!", success: "啾啾!你是晒衣服高手,我跟你走!" , questions: [
+    { question: "媽媽洗了兩條一樣濕的毛巾。一條攤開晾在有太陽、有風的陽台;另一條揉成一團,放在陰暗的浴室。哪一條會先乾?",
+      choices: ["陽台上攤開的那一條", "浴室裡揉成一團的那一條", "兩條一樣快", "兩條都不會乾"], answerIndex: 0,
+      explanation: "溫度高、有風、攤開(和空氣接觸面積大)三個條件都讓蒸發變快(晾衣小祕訣告示牌)。",
+      // 迷思(最可能選一樣快):以為兩條毛巾的水一樣多,乾的時間就一樣
+      mistakes: { "兩條一樣快": "水一樣多,乾的快慢還是會不同;溫度、風和攤開的面積,都會影響蒸發快慢。" } },
+    { question: "下過雨後,操場上有一個『很大但很淺』的水窪,和一個『很小但很深』的水坑,兩個裝的水一樣多。太陽出來後,哪一個先乾?",
+      choices: ["很小很深的水坑", "很大很淺的水窪", "一樣快", "都不會乾,要等人來掃"], answerIndex: 1,
+      explanation: "大而淺的水窪和空氣接觸的面積大,蒸發比較快,就像把衣服攤開。",
+      // 迷思(最可能選小而深):看起來比較小的,就以為會比較快不見
+      mistakes: { "很小很深的水坑": "要看水面和空氣接觸的面積:大而淺的水窪就像攤開的衣服,所以蒸發得比較快。" } },
+    { question: "放學淋雨,球鞋濕透了。想讓球鞋快點乾,哪個方法最好?",
+      choices: ["收進鞋櫃最裡面", "裝進塑膠袋綁緊", "放進冰箱冷藏", "拿到有太陽、通風的地方,把鞋口打開"], answerIndex: 3,
+      explanation: "溫度高、有風、讓濕的地方多接觸空氣,水蒸發得最快。",
+      // 迷思(最可能選收進鞋櫃):以為東西收起來放著,自己就會乾
+      mistakes: { "收進鞋櫃最裡面": "陰暗、不通風的地方,水蒸發得很慢;要讓鞋子晒太陽、吹風、打開來。" } }
+  ] },
+  { id: "W3", name: "窪窪蛙", where: "grass", sprite: "frog", area: "晾衣草原的高草叢",
+    greet: "呱!我的水窪又變小了,好奇怪喔!", success: "呱呱!原來水是蒸發走了!我跟你做朋友!" , questions: [
+    { question: "濕衣服晾乾以後,衣服裡的水大部分到哪裡去了?",
+      choices: ["大部分滴到地上了", "變成冰,藏在衣服裡", "變成看不見的水蒸氣,跑到空氣中", "被衣服吸進去,還在衣服裡"], answerIndex: 2,
+      explanation: "衣服裡的水蒸發成看不見的水蒸氣,跑到空氣中(晴晴阿姨)。",
+      // 迷思(最可能選滴到地上):只看到衣服滴水,以為水都是滴走的
+      mistakes: { "大部分滴到地上了": "滴下來的只有一點點;衣服不滴水以後還會繼續變乾,那是水蒸發成水蒸氣飛走了。" } },
+    { question: "把一盤水放在室內的窗台上,在盤子內側畫一條線,標出水面的位置。三天後,水面比線低了。盤子沒有破,也沒有人碰過。水少掉的原因是什麼?",
+      choices: ["水被盤子吸進去了", "水蒸發成水蒸氣,跑到空氣中", "水凝固成冰了", "水熔化了"], answerIndex: 1,
+      explanation: "平常的溫度水也會從水面慢慢蒸發,盤子不會吸水。",
+      // 迷思(最可能選被盤子吸走):以為水不見了,一定是被旁邊的東西吸走
+      mistakes: { "水被盤子吸進去了": "盤子不會吸水;水是從水面一點一點蒸發走的,不用加熱也會發生。" } },
+    { question: "下面四件事,哪一件的變化和其他三件『不一樣』?",
+      choices: ["濕頭髮慢慢變乾", "冰淇淋在手上變軟、滴下來", "地上的水窪不見了", "水彩畫上的水乾了"], answerIndex: 1,
+      explanation: "濕頭髮、水窪、水彩都是水蒸發成水蒸氣;冰淇淋是固體受熱變成液體,是熔化。",
+      // 迷思(最可能選水彩):以為水彩乾了、顏料變硬,是「凝固」
+      mistakes: { "水彩畫上的水乾了": "水彩乾掉是裡面的水蒸發走了,不是凝固;冰淇淋從固體變成液體,才是熔化。" } }
+  ] },
+  { id: "C3", name: "霧霧鏡", where: "map", mark: "3", sprite: "mirror", area: "冷泉湖畔西邊",
+    greet: "我的臉霧霧的,看不清楚你啦~",
+    question: "洗完熱水澡,浴室的鏡子變得霧霧的,用手一摸是濕的。鏡子上的水是從哪裡來的?",
+    choices: ["鏡子裡面滲出來的水", "熱水產生的水蒸氣,碰到比較冷的鏡子,凝結成小水滴", "空氣中的冰熔化了", "鏡子的玻璃熔化了"], answerIndex: 1,
+    explanation: "熱水蒸發出的水蒸氣遇到冷鏡子,凝結成小水滴(冷泉湖小知識告示牌)。",
+    // 迷思(最可能選從鏡子裡滲出來):東西表面有水,就以為是從東西裡面跑出來的
+    mistakes: { "鏡子裡面滲出來的水": "鏡子不會出水;水是空氣中的水蒸氣碰到冷冷的鏡子,凝結成小水滴。" },
+    success: "霧散了!我看清楚你了,我們做朋友吧!" },
+  { id: "C4", name: "冰杯杯", where: "map", mark: "4", sprite: "icecup", area: "冷泉湖畔東邊",
+    greet: "哎呀,我又流汗了……真的是我在流汗嗎?",
+    question: "我做了一個實驗:一杯加冰塊的水、一杯常溫的水,外面都先擦乾,放一會兒。哪一杯外面會冒出小水珠?為什麼?",
+    choices: ["兩杯都會,而且一樣多", "常溫那杯,因為裡面的水比較多", "冰水那杯,因為杯子裡的水從杯壁滲出來", "冰水那杯,因為空氣中的水蒸氣碰到冰冷的杯子,凝結成小水珠"], answerIndex: 3,
+    explanation: "關鍵是「冷」:空氣中的水蒸氣碰到冰杯才凝結(冰茶伯)。",
+    // 迷思(最可能選從杯壁滲出來):以為杯外的水是從杯子裡漏出來、滲出來的
+    mistakes: { "冰水那杯,因為杯子裡的水從杯壁滲出來": "常溫那杯也裝著水,卻沒有水珠;差別只有冷不冷,所以水珠是空氣中的水蒸氣凝結來的。" },
+    success: "原來我不是在流汗!謝謝你,我跟你走~" },
+  { id: "C5", name: "噗噗龍", where: "map", mark: "5", sprite: "teapotdragon", area: "茶壺山西南邊",
+    greet: "噗——!我很厲害吧,會噴白煙喔!",
+    question: "仔細看我的壺嘴:緊貼著壺嘴的那一小段是『透明』的,看起來什麼都沒有;再往外一點,才變成一團『白煙』。哪一段有水蒸氣?白煙又是什麼?",
+    choices: ["透明那段是水蒸氣;白煙是水蒸氣遇冷凝結成的小水滴", "透明那段什麼都沒有;白煙才是水蒸氣", "兩段都是水蒸氣,只是白煙那段比較濃", "兩段都是燒焦冒出來的煙"], answerIndex: 0,
+    explanation: "水蒸氣看不見,所以透明那段才是水蒸氣;它碰到冷空氣凝結成小水滴,才變成看得見的白煙(壺婆婆)。",
+    // 迷思(最可能選白煙才是水蒸氣):看到白煙就以為是水蒸氣,看不見的地方就以為什麼都沒有
+    mistakes: { "透明那段什麼都沒有;白煙才是水蒸氣": "水蒸氣是看不見的,看得見的白煙已經變成小水滴了。" },
+    success: "噗噗!原來我噴的是小水滴!帶我回泉邊吧!" },
+  { id: "C6", name: "咕嘟", where: "map", mark: "6", sprite: "bubble", area: "茶壺山山頂附近",
+    greet: "咕嘟咕嘟!我最喜歡熱呼呼的地方!",
+    question: "蒸發和沸騰,都是水變成水蒸氣。下面哪一句說出了它們的不同?",
+    choices: ["蒸發要加熱到大約 100°C;沸騰在平常溫度就會發生", "蒸發只在水面慢慢發生,平常溫度就會;沸騰要加熱到大約 100°C,水裡面冒出大泡泡", "蒸發會冒大泡泡;沸騰不會", "兩個完全一樣,只是名字不同"], answerIndex: 1,
+    explanation: "晾衣服不用煮滾也會乾(蒸發),燒開水到 100°C 才會冒大泡泡(沸騰)。",
+    // 迷思(最可能選蒸發要 100°C):以為「水要變成水蒸氣,一定要加熱到很燙」
+    mistakes: { "蒸發要加熱到大約 100°C;沸騰在平常溫度就會發生": "晒衣服不用煮滾也會乾,所以平常溫度就會蒸發;要大約 100°C、冒大泡泡的才是沸騰。" },
+    success: "咕嘟!你全都懂了!泉水就在山頂,一起走吧!" },
+
+  /* ---- NPC(只說話) ---- */
+  { id: "N1", name: "露珠奶奶", where: "map", mark: "7", sprite: "grandma", dialogue: [
+    "小探險家,早安!三態之泉好幾天不冒泡了,水精靈們都跑散啦。",
+    "水有三種樣子喔:硬硬的冰是『固態』,會流動的水是『液態』,看不見的水蒸氣是『氣態』。",
+    "水精靈很愛問問題。答對了,牠們就願意跟你做朋友。一共有 9 位,要全部找回來喔!",
+    "東邊的木門鎖住了,鑰匙放在村子西邊的寶箱裡。"] },
+  { id: "N2", name: "阿凍叔", where: "map", mark: "8", sprite: "icecreamman", dialogue: [
+    "我的刨冰店天天做冰!把水倒進盒子,放進冷凍庫,水就凝固成冰。",
+    "告訴你一個祕密:水結成冰以後,體積會變大!所以裝得滿滿的玻璃水瓶不能放進冷凍庫,會被撐破喔。",
+    "冰塊放在桌上,一下子就熔化成一灘水。不管是冰還是水,都是同樣的水,只是樣子變了。"] },
+  { id: "N3", name: "晴晴阿姨", where: "map", mark: "9", sprite: "laundryaunt", dialogue: [
+    "歡迎來到晾衣草原!濕衣服晾乾了,衣服裡的水跑去哪裡了呢?",
+    "它變成看不見的水蒸氣,飛到空氣裡了!水變成水蒸氣,這叫『蒸發』。",
+    "蒸發不用煮到很燙,平常的溫度就會慢慢發生。地上的小水窪過幾天不見了,也是蒸發喔。"] },
+  { id: "N4", name: "松鼠栗栗", where: "map", mark: "!", sprite: "squirrel", dialogue: [
+    "好冷好冷……北邊的路被一道厚厚的冰牆擋住了。",
+    "冰要變成水,要怎麼辦呢?對了,要讓它變熱!",
+    "我看到草原東南角有個寶箱,裡面好像有一盞暖呼呼的燈籠。"] },
+  { id: "N5", name: "冰茶伯", where: "map", mark: "$", sprite: "teauncle", dialogue: [
+    "來杯冰紅茶吧!你看,杯子外面冒出好多小水珠。",
+    "很多人以為是杯子漏水,其實不是喔!旁邊那杯熱茶就沒有水珠。",
+    "是空氣裡看不見的水蒸氣,碰到冰冰的杯子,變冷了,就變回小水滴。水蒸氣遇冷變成水,這叫『凝結』。"] },
+  { id: "N6", name: "壺婆婆", where: "map", mark: "%", sprite: "teapotgranny", dialogue: [
+    "我在燒開水。你看壺嘴冒出白白的『煙』,那可不是水蒸氣喔!",
+    "水蒸氣是看不見的。仔細看,緊貼著壺嘴的那一小段是透明的,那裡才是水蒸氣。",
+    "水蒸氣離開壺嘴,碰到冷空氣,凝結成小水滴,才變成白白的,我們才看得見。"] },
+
+  /* ---- 告示牌(也是只說話的 NPC) ---- */
+  { id: "B1", name: "露珠村告示牌", where: "map", mark: "&", sprite: "sign", dialogue: [
+    "冰受熱,會變成水,這叫『熔化』。", "水遇冷,會變成冰,這叫『凝固』。", "冰大約在 0°C 開始熔化;水大約在 0°C 開始結冰。"] },
+  { id: "B2", name: "晾衣小祕訣", where: "map", mark: "|", sprite: "sign", dialogue: [
+    "想讓衣服快點乾?", "1. 晒太陽(溫度高)", "2. 有風吹", "3. 把衣服攤開(和空氣接觸的面積大)", "這三種方法,都能讓水蒸發得更快!"] },
+  { id: "B3", name: "草叢提醒", where: "map", mark: "?", sprite: "sign", dialogue: [
+    "注意!高草叢裡住著 3 種害羞的水精靈。", "走進草叢,牠們會突然跳出來問你問題。",
+    "答對了就能交朋友;答錯也沒關係,牠會跑回草叢,下次換一題再問你。"] },
+  { id: "B4", name: "冷泉湖小知識", where: "map", mark: ":", sprite: "sign", dialogue: [
+    "冬天早上對著冷空氣呼氣,會看到一團白霧。白霧不是水蒸氣,是呼出的水蒸氣遇冷凝結成的『小水滴』。",
+    "洗熱水澡時,鏡子變得霧霧的,也是凝結。",
+    "注意:水蒸氣變成水叫『凝結』;水變成冰叫『凝固』,不要搞混喔!"] },
+  { id: "B5", name: "茶壺山告示牌", where: "map", mark: ";", sprite: "sign", dialogue: [
+    "把水一直加熱,到了大約 100°C,水的裡面會冒出很多大泡泡,很快變成水蒸氣,這叫『沸騰』。",
+    "蒸發:只在水面發生,慢慢的,平常的溫度就會。", "沸騰:水裡面也冒大泡泡,要加熱到大約 100°C。"] },
+
+  /* ---- 寶箱(設計書的寶箱會擋路、打開有紙條,所以做成「講完話送道具」的 NPC) ---- */
+  { id: "K1", name: "寶箱", where: "map", mark: "<", sprite: "chest", gives: "k", dialogue: [
+    "寶箱打開了!裡面有一把水滴形的藍色鑰匙,和一張紙條:",
+    "「冰、水、水蒸氣,是同一種東西的三種樣子。溫度改變,樣子就跟著改變。」"] },
+  { id: "K2", name: "寶箱", where: "map", mark: ">", sprite: "chest", gives: "l", dialogue: [
+    "寶箱打開了!裡面有一盞發出橘色暖光的小燈籠,和一張紙條:",
+    "「這盞燈籠暖呼呼的。冰遇到熱,會熔化成水。北邊那道冰牆,也許可以用它試試看。」"] }
+];
+
+const ITEMS = [
+  { mark: "k", name: "露珠鑰匙", sprite: "dropkey", note: "寶箱裡的紙條:「冰、水、水蒸氣,是同一種東西的三種樣子。溫度改變,樣子就跟著改變。」" },
+  { mark: "l", name: "暖陽燈籠", sprite: "lantern", note: "寶箱裡的紙條:「這盞燈籠暖呼呼的。冰遇到熱,會熔化成水。北邊那道冰牆,也許可以用它試試看。」" }
+];
+
+/* 門。lockedText / openedText 是這扇門自己的訊息 */
+const GATES = [
+  { mark: "D", name: "木柵門", needs: "k", floor: "=",
+    lockedText: "門鎖住了。露珠奶奶說,鑰匙在村子西邊的寶箱裡。", openedText: "喀嚓!露珠鑰匙打開了木柵門。" },
+  { mark: "E", name: "冰牆", needs: "l", sprite: "icewall", floor: "=",
+    lockedText: "好厚的冰牆,推不動。冰要怎樣才會變成水呢?", openedText: "燈籠發光,冰牆受熱,熔化成水了!(冰 → 水,這就是熔化)" },
+  // 霧之門 D3 要答對 2 題:做成連著的兩格門,答對一題散開一層霧,已答對的那層不用重答
+  { mark: "F", name: "霧之門(第一層霧)", sprite: "fogdoor", floor: "=",
+    question: "冬天早上,冷冷的窗戶玻璃上出現許多小水滴;到了中午,太陽照進來,小水滴不見了。這兩件事依序是什麼變化?",
+    choices: ["凝固,然後熔化", "凝結,然後蒸發", "蒸發,然後凝結", "熔化,然後沸騰"], answerIndex: 1,
+    explanation: "早上空氣中的水蒸氣碰到冷玻璃凝結成小水滴;中午變暖,小水滴蒸發成水蒸氣。",
+    // 迷思(最可能選凝固→熔化):「凝結」和「凝固」都有一個「凝」字,就搞混了
+    mistakes: { "凝固,然後熔化": "窗上出現的是水滴不是冰;水蒸氣變成水叫凝結,水變成冰才叫凝固。" },
+    openedText: "第一層霧散開了!後面還有一層霧。" },
+  { mark: "G", name: "霧之門(第二層霧)", sprite: "fogdoor", floor: "=",
+    question: "冰茶伯的冰紅茶杯外面出現水珠,晴晴阿姨的濕衣服晾乾了。這兩件事裡,水分別是怎麼變的?",
+    choices: ["杯子:水 → 水蒸氣;衣服:水蒸氣 → 水", "兩件都是:水 → 冰", "杯子:水蒸氣 → 水;衣服:水 → 水蒸氣", "兩件都是:冰 → 水"], answerIndex: 2,
+    explanation: "杯外水珠是凝結(水蒸氣 → 水),衣服晾乾是蒸發(水 → 水蒸氣),兩個方向剛好相反。",
+    // 迷思(最可能選第一個):知道這兩件事和水蒸氣有關,但把方向弄反了
+    mistakes: { "杯子:水 → 水蒸氣;衣服:水蒸氣 → 水": "凝結是水蒸氣『變回』水,蒸發是水『變成』水蒸氣,兩個方向剛好相反。" },
+    openedText: "霧散開了,門打開了!" },
+  { mark: "Z", name: "三態之泉", sprite: "spring", needsAllCreatures: true,
+    lockedText: "泉水輕輕晃了一下:「謝謝你來看我……還差這幾位水精靈朋友:」",
+    openedText: "9 位水精靈一一跳進泉水,三態之泉又咕嘟咕嘟冒泡了!" }
+];
+
+const GAME = {
+  title: "💧 三態之泉:水精靈回家記",
+  desc: "茶壺山頂的三態之泉不冒泡了,9 位水精靈跑散到露珠村、晾衣草原和冷泉湖畔。聽村民和告示牌說水的祕密,答對水精靈的問題、邀請牠們回家,最後到山頂和泉水說話!",
+  grassEncounterRate: 0.125,  // 設計書:高草叢大約每走 8 步遇到一次
+  grassPity: 12,
+  requireAllItems: false,
+  shuffleChoices: true,
+  moveMs: 170,
+  text: {
+    start: "先找旁邊的露珠奶奶說話,再到處走走找水精靈吧!",
+    startGrass: "先找旁邊的露珠奶奶說話,再到處走走找水精靈吧!",
+    foundMap: "遇到了水精靈「{name}」!",
+    foundGrass: "草叢沙沙作響,{name} 跳出來了!",
+    foundGate: "{name}擋住了路。霧裡傳來一個問題……",
+    caught: "答對了!{name} 成為你的朋友 💧",
+    missMap: "答錯了…{name} 搖搖頭,想好了再來跟牠說話。",
+    missGrass: "答錯了…{name} 跑回草叢裡了,下次牠會換一題問你。",
+    gateWrong: "霧還沒散開喔。去看看冷泉湖的告示牌,或問問冰茶伯吧。",
+    talkDone: "{name}:我已經沒有別的話要說了。",
+    hudCreatures: "水精靈朋友 {n}/{total}",
+    hudItems: "🎒 道具 {n}/{total}",
+    bestNote: "這台裝置的最佳紀錄:{moves} 步讓三態之泉重新冒泡",
+    endTitle: "🎉 恭喜過關!水精靈朋友 9 / 9",
+    labelCreatures: "水精靈朋友",
+    labelFirstTry: "一次就答對",
+    labelItems: "道具"
+  },
+  // 結算畫面上的結局文字(每個元素一行)
+  ending: [
+    "冰冰柱在泉邊熔化成水,水面冒出看不見的水蒸氣,飄上山頂凝結成一朵小白雲,小白雲下起小雪,雪花落回泉邊又變回冰。",
+    "【水的三態變化圖】",
+    "冰 →(受熱)→ 水:熔化",
+    "水 →(遇冷)→ 冰:凝固",
+    "水 → 水蒸氣:蒸發(平常溫度,水面慢慢變)、沸騰(約 100°C,冒大泡泡)",
+    "水蒸氣 →(遇冷)→ 小水滴:凝結",
+    "露珠奶奶:「你讓三態之泉重新冒泡了!記住喔:冰、水、水蒸氣都是同樣的水,溫度一變,樣子就跟著變。」",
+    "【9 位朋友問過的生活現象】冰冰柱:冰柱晒太陽|霜霜:玻璃瓶放冷凍庫|冰丸兔:水的三態、薄冰、做冰棒|晾晾雀:晒毛巾、水窪、濕球鞋|窪窪蛙:晾衣服、盤子裡的水|霧霧鏡:浴室鏡子起霧|冰杯杯:冰杯外的水珠|噗噗龍:壺嘴白煙|咕嘟:蒸發和沸騰"
+  ],
+  teacherNotes: [
+    "單元:國小四年級 自然「水的三態變化」(INa-II-4 物質的形態會因溫度的不同而改變)。",
+    "學習目標:說出冰、水、水蒸氣分別是固態、液態、氣態;用熔化、凝固、蒸發、沸騰、凝結描述生活中水的變化;比較蒸發快慢的三個因素;說明冰杯外的水珠、鏡子起霧是凝結;分辨看不見的水蒸氣和看得見的白霧(小水滴)。",
+    "課前:一起觀察「冰塊放在桌上變成水」「冰水杯外冒水珠」,先不講名詞。",
+    "遊玩時:請學生準備小紙條,遇到告示牌或 NPC 講到新名詞,就寫下「名詞 + 一個生活例子」。答錯沒有懲罰,鼓勵回頭找線索。",
+    "玩完討論:最多人答錯的通常是白煙(噗噗龍)、冰杯水珠(冰杯杯)和凝結/凝固(霧之門)。可以做實驗:冰水加藍色食用色素,杯外水珠仍是透明的。",
+    "整理:請學生不看螢幕畫出三態變化圖,箭頭上寫變化名稱和「受熱 / 遇冷」。"
+  ]
+};
+
+const CUSTOM_SPRITES = {
+  icicle: {
+    palette: {"k":"#282030","c":"#e0f6ff","b":"#98c8e8","w":"#ffffff","d":"#4898e8"},
+    rows: [
+      "................",
+      ".......kk.......",
+      "......kdwk......",
+      "......kddk......",
+      "..kkkkkkkkkkkk..",
+      ".kwcccccccccbbk.",
+      ".kccccccccccbbk.",
+      ".kcckwcccckwcbk.",
+      ".kcckkcccckkcbk.",
+      "..kcccccccccbk..",
+      "..kcccckkcccbk..",
+      "...kcccccccbk...",
+      "....kcccccbk....",
+      ".....kcccbk.....",
+      "......kcbk......",
+      ".......kk......."
+    ]
+  },
+  frosty: {
+    palette: {"k":"#282030","s":"#f8f8ff","S":"#c0c8e0","c":"#80d0f8","C":"#3890d0","w":"#ffffff","o":"#f08030"},
+    rows: [
+      ".......kk.......",
+      "......kcck......",
+      ".....kcwCCk.....",
+      "...kkkkkkkkkk...",
+      "...kssssssssk...",
+      "...ksksssskSk...",
+      "...ksssoosSSk...",
+      "....ksssssSk....",
+      "...kssssssssSk..",
+      "..kssscsssssSSk.",
+      "..ksssssssssSSk.",
+      "..ksssscssssSSk.",
+      "..kSssssssssSSk.",
+      "...kSSssssSSSk..",
+      "....kkkkkkkkk...",
+      "................"
+    ]
+  },
+  icebunny: {
+    palette: {"k":"#282030","s":"#f8f8ff","S":"#c8d0e0","i":"#a8e0f8","I":"#68b0e0","w":"#ffffff","p":"#f8a0b8"},
+    rows: [
+      "................",
+      ".kkkkk....kkkkk.",
+      ".kwiik....kwiik.",
+      ".kiiIk....kiiIk.",
+      ".kkkkkkkkkkkkkk.",
+      "..kssssssssssk..",
+      ".ksswksssswkssk.",
+      ".ksskksssskkssk.",
+      ".kspssskksssspSk",
+      ".kssssssssssSSk.",
+      "..kssssssssSSk..",
+      "..kSsssssssSSk..",
+      "...kSSssSSSSk...",
+      "...kkkkkkkkkk...",
+      "...kSk....kSk...",
+      "...kkk....kkk..."
+    ]
+  },
+  sparrow: {
+    palette: {"k":"#282030","b":"#b07840","B":"#805028","c":"#f0e0c0","y":"#f0a030","p":"#f05090","P":"#50a0f0","w":"#ffffff"},
+    rows: [
+      "................",
+      "................",
+      ".....kkkkkk.....",
+      "....kbbbbbbk....",
+      "...kbbbbbbbbk...",
+      "..kbwkbbbbwkbk..",
+      "..kbkkbyybkkbk..",
+      ".kbbbbccccbbbkpk",
+      ".kbbbccccccbbkPk",
+      ".kbbbccccccbBkkk",
+      ".kBbbccccccbBk..",
+      "..kBbbccccbBBk..",
+      "...kBBBBBBBBk...",
+      "....kkkkkkkk....",
+      ".....kyk.kyk....",
+      "................"
+    ]
+  },
+  frog: {
+    palette: {"k":"#282030","g":"#a8e060","G":"#6aa838","L":"#2f8a3a","l":"#60c060","y":"#f0f0b0","p":"#f8a0a8","w":"#ffffff"},
+    rows: [
+      "...kkkkkkkkkk...",
+      "..kLLLLLLLLLLk..",
+      ".kLlLLLLLLLLLLk.",
+      ".kkkkkkkkkkkkkk.",
+      "..kkkk....kkkk..",
+      ".kgwkgk..kgwkgk.",
+      ".kggggkkkkggggk.",
+      ".kggggggggggggk.",
+      ".kgpggggggggpgk.",
+      ".kggkggggggkggk.",
+      ".kgggkkkkkkgggk.",
+      "..kyyyyyyyyyGk..",
+      ".kGkyyyyyyykGk..",
+      "kGGkkkkkkkkkGGk.",
+      "kkkk.......kkkk.",
+      "................"
+    ]
+  },
+  mirror: {
+    palette: {"k":"#282030","M":"#e0a040","f":"#d8e8f0","g":"#a8b8c8","w":"#ffffff"},
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "...kkMMMMMMkk...",
+      "..kMffffffffMk..",
+      ".kMffwwfffffgMk.",
+      ".kMfwfffffffgMk.",
+      ".kMffkffffkffMk.",
+      ".kMffkffffkffMk.",
+      ".kMffffkkffffMk.",
+      ".kMgffffffffgMk.",
+      "..kMggffffggMk..",
+      "...kkMMMMMMkk...",
+      ".....kkkkkk.....",
+      ".....kk..kk.....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  icecup: {
+    palette: {"k":"#282030","g":"#b8e0f0","G":"#80b0d0","I":"#f4fcff","w":"#ffffff","d":"#3878d8"},
+    rows: [
+      "................",
+      "..kkkkkkkkkkkk..",
+      "..kwwggggggggk..",
+      "..kgIIggIIIggk..",
+      ".dkgIIggIIIggk..",
+      ".dkggggggggggkd.",
+      "..kgwkggggwkgk..",
+      "..kggkggggkggkd.",
+      ".dkggggkkggggk..",
+      "..kgggggggggGk..",
+      "...kggggggGGk...",
+      "...kGgggggGGk...",
+      "....kkkkkkkk....",
+      "....kGGGGGGk....",
+      "....kkkkkkkk....",
+      "................"
+    ]
+  },
+  teapotdragon: {
+    palette: {"k":"#282030","o":"#d88848","O":"#a05828","H":"#a05828","y":"#f8a088","w":"#ffffff"},
+    rows: [
+      "............ww..",
+      "...........wwww.",
+      "......kk....ww..",
+      ".....kOOk.......",
+      "...kkkkkkkkk....",
+      "..kooooooooook..",
+      "kkkowkooowkookkk",
+      "kHkokkoookkooOOk",
+      "kHkoooooooooOOk.",
+      "kkkooooyyoooOk..",
+      "..koooooooooOk..",
+      "..kOoooooooOOk..",
+      "...kOOOOOOOOk...",
+      "....kkkkkkkk....",
+      "....kOk..kOk....",
+      "....kkk..kkk...."
+    ]
+  },
+  bubble: {
+    palette: {"k":"#282030","b":"#a8e8f8","B":"#60b8e0","w":"#ffffff","o":"#f0fcff"},
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "...kkbbbbbbkk...",
+      "..kbwwbbbbbbbk..",
+      ".kbwwbbbbbobbbk.",
+      ".kbwbbbbbbbbbbk.",
+      ".kbbbkwbbbkwbbk.",
+      ".kbbbkkbbbkkbBk.",
+      ".kbobbbbbbbbbBk.",
+      ".kbbbbbkkbbbbBk.",
+      ".kbbbobbbbbbBBk.",
+      "..kbbbbbbbobBk..",
+      "..kBbbbbbbbBBk..",
+      "...kkBBBBBBkk...",
+      ".....kkkkkk.....",
+      "................"
+    ]
+  },
+  squirrel: {
+    palette: {"k":"#282030","b":"#a08060","c":"#e0d0b8","T":"#c0a080","t":"#806040","r":"#d84040","R":"#a02828","w":"#ffffff"},
+    rows: [
+      "................",
+      "..kk......kk....",
+      ".kbbk....kbbk.kk",
+      ".kbbbkkkkbbbkkTk",
+      ".kbbbbbbbbbbkkTk",
+      ".kbwkbbbbwkbkkTk",
+      ".kbkkbbbbkkbkkTk",
+      ".kbbbbkkbbbbkTTk",
+      "..kbbbbbbbbkTTTk",
+      "..krrrrrrrrkTTk.",
+      "..kRrrrrrrRktTk.",
+      "...kbbbbbbkTTk..",
+      "...kbccccbkTk...",
+      "...kbbbbbbkk....",
+      "...kkk..kkk.....",
+      "................"
+    ]
+  },
+  grandma: {
+    palette: {"s":"#f8c8a0","S":"#d89870","k":"#282030","w":"#ffffff","h":"#e8e8f0","c":"#8868c0","C":"#604890","a":"#4898e8"},
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....khhhhhak....",
+      "...khhhhhhhhk...",
+      "...khhhhhhhhk...",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...kssssssssk...",
+      "....kSssssSk....",
+      "...kcccccccck...",
+      "..kscccccccCsk..",
+      "..kskcccccCksk..",
+      "...kkCCCCCCkk...",
+      "....kCCkkCCk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  icecreamman: {
+    palette: {"s":"#f8c8a0","S":"#d89870","k":"#282030","w":"#ffffff","h":"#f0b890","c":"#f0f4ff","C":"#a8b8d0","a":"#58a8f0"},
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....kswssssk....",
+      "...khhhhhhhhk...",
+      "...khhhhhhhhk...",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...kssssssssk...",
+      "....kSssssSk....",
+      "...kcccccccck...",
+      "..kscccacccCsk..",
+      "..kskcccccCksk..",
+      "...kkCCCCCCkk...",
+      "....kCCkkCCk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  laundryaunt: {
+    palette: {"s":"#f8c8a0","S":"#d89870","k":"#282030","w":"#ffffff","h":"#704020","y":"#f0d070","Y":"#d04848","c":"#f08080","C":"#c05050"},
+    rows: [
+      "................",
+      "....kkkkkkkk....",
+      "...kyyyyyyyyk...",
+      "..kyyyyYYyyyyk..",
+      ".kkkkkkkkkkkkkk.",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...kssssssssk...",
+      "....kSssssSk....",
+      "...kcccccccck...",
+      "..kscccccccCsk..",
+      "..kskcccccCksk..",
+      "...kkCCCCCCkk...",
+      "....kCCkkCCk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  teauncle: {
+    palette: {"s":"#f8c8a0","S":"#d89870","k":"#282030","w":"#ffffff","h":"#48905a","g":"#c0c0c8","c":"#9a6a40","C":"#6a4628"},
+    rows: [
+      ".......kk.......",
+      ".....kkwwkk.....",
+      "....khhhhhhk....",
+      "...khhhhhhhhk...",
+      "...khhhhhhhhk...",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...ksggggggsk...",
+      "....kSssssSk....",
+      "...kcccccccck...",
+      "..kscccccccCsk..",
+      "..kskcccccCksk..",
+      "...kkCCCCCCkk...",
+      "....kCCkkCCk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  teapotgranny: {
+    palette: {"s":"#f8c8a0","S":"#d89870","k":"#282030","w":"#ffffff","h":"#e05878","a":"#f8e060","c":"#6a8a50","C":"#4a6a38"},
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....khahhahk....",
+      "...khhahhahhk...",
+      "...khhhhhhhhk...",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...kssssssssk...",
+      "....kSssssSk....",
+      "...kcccccccck...",
+      "..kscccccccCsk..",
+      "..kskcccccCksk..",
+      "...kkCCCCCCkk...",
+      "....kCCkkCCk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  lantern: {
+    palette: {"k":"#282030","O":"#d06020","y":"#f8c040","w":"#fff8d0","z":"#00000040"},
+    rows: [
+      "................",
+      ".......kk.......",
+      "......k..k......",
+      ".....kkkkkk.....",
+      "....kOOOOOOk....",
+      "...kOyyyyyyOk...",
+      "...kOywwyyyOk...",
+      "...kOyyyyyyOk...",
+      "...kOyyyyyyOk...",
+      "...kOyyyyyyOk...",
+      "....kOOOOOOk....",
+      ".....kkkkkk.....",
+      "......kOOk......",
+      "................",
+      "....zzzzzzzz....",
+      "................"
+    ]
+  },
+  icewall: {
+    palette: {"k":"#3a5a80","c":"#c8ecff","w":"#ffffff","b":"#88c0e8"},
+    rows: [
+      "kkkkkkkkkkkkkkkk",
+      "kwcccccbkwccccbk",
+      "kccccccbkcccccbk",
+      "kccccccbkcccccbk",
+      "kbbbbbbbkbbbbbbk",
+      "kkkkkkkkkkkkkkkk",
+      "kccbkwcccccbkwck",
+      "kccbkccccccbkcck",
+      "kccbkccccccbkcck",
+      "kbbbkbbbbbbbkbbk",
+      "kkkkkkkkkkkkkkkk",
+      "kwcccccbkwccccbk",
+      "kccccccbkcccccbk",
+      "kccccccbkcccccbk",
+      "kbbbbbbbkbbbbbbk",
+      "kkkkkkkkkkkkkkkk"
+    ]
+  },
+  spring: {
+    palette: {"k":"#505060","L":"#c8c8d0","b":"#4890e8","B":"#2868c0","w":"#ffffff"},
+    rows: [
+      "................",
+      "................",
+      ".....kkkkkk.....",
+      "...kkLLLLLLkk...",
+      "..kLLwwLLLLLLk..",
+      ".kLbbbbbbbbbbLk.",
+      ".kbbbwbbbbbbbbk.",
+      ".kbbwkwbbbwwbbk.",
+      ".kbbbwbbbbwkwbk.",
+      ".kBbbbbbbbbwbBk.",
+      "..kBBbbbbbbBBk..",
+      "...kkBBBBBBkk...",
+      ".....kkkkkk.....",
+      "................",
+      "................",
+      "................"
+    ]
+  },
+  dropkey: {
+    palette: {"k":"#282030","y":"#58a8f0","w":"#ffffff","z":"#00000040"},
+    rows: [
+      "................",
+      "................",
+      "....kkkk........",
+      "...kyyyyk.......",
+      "..kyywwyyk......",
+      "..kyw..wyk......",
+      "..kyy..yyk......",
+      "...kyyyyk.......",
+      "....kyyk........",
+      ".....kyk........",
+      ".....kyyk.......",
+      ".....kyk........",
+      ".....kyyk.......",
+      ".....kkkk.......",
+      "...zzzzzz.......",
+      "................"
+    ]
+  },
+  fogdoor: {
+    palette: {"k":"#506080","B":"#9098b0","l":"#dde2ee","y":"#ffffff","z":"#00000040"},
+    rows: [
+      "................",
+      "..kkkkkkkkkkkk..",
+      ".kBBBBBBBBBBBBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kkkkkkkkkkkkkk.",
+      ".zzzzzzzzzzzzzz."
+    ]
+  }
+};
+
+
+/* 過關:預設就是打開終點門(三態之泉 Z,needsAllCreatures),不用寫 isWin 以外的東西 */
+function isWin() { return state.openedGates.includes("Z"); }
+/* ===== CONTENT-PACK:END ===== */
+</script>
+
+<script>
+
+/* =========================================================
+   第二部分:像素圖 —— 角色、道具、玩家、地形
+   每張圖 16 × 16:rows 是 16 行字串,每行 16 個字元;
+   palette 把字元對應到顏色,"." 代表透明。
+   新增角色圖時照同樣格式加一個名字,再到 CREATURES 用 sprite: "名字" 指定
+   ========================================================= */
+const SPRITES = {
+  // 告示牌、寶箱:給只會說話的 NPC 用(告示牌、寶箱都做成 NPC)
+  sign: {"palette":{"k":"#503018","l":"#e0b878","d":"#8a6030","B":"#b08040","P":"#906028","z":"#00000040"},"rows":["................","................",".kkkkkkkkkkkkkk.",".kllllllllllllk.",".klddddddddlBBk.",".kllllllllllBBk.",".kldddddllllBBk.",".kllllllllllBBk.",".kBBBBBBBBBBBBk.",".kkkkkkkkkkkkkk.","......kPPk......","......kPPk......","......kPPk......","......kPPk......",".....zzzzzz.....","................"]},
+  chest: {"palette":{"k":"#402010","b":"#b06830","B":"#804818","y":"#f8d848","z":"#00000040"},"rows":["................","................","................","................","..kkkkkkkkkkkk..",".kbbbbbbbbbbbbk.",".kbBBBBBBBBBBbk.",".kkkkkkyykkkkkk.",".kbbbbkyykbbbbk.",".kbbbbbkkbbbbbk.",".kbbbbbbbbbbbbk.",".kBBBBBBBBBBBBk.",".kkkkkkkkkkkkkk.",".zzzzzzzzzzzzzz.","................","................"]},
+  // 角色:葉耳兔
+  leafbunny: {
+    palette: { "k": "#282030", "L": "#d8f070", "G": "#8cc830", "c": "#f8f0d8", "C": "#d8c8a0", "w": "#ffffff", "p": "#f8a0a8" },
+    rows: [
+      "................",
+      "..kk........kk..",
+      ".kLLk......kLLk.",
+      ".kLGGk....kGGLk.",
+      "..kLGk....kGLk..",
+      "...kkkkkkkkkk...",
+      "..kcccccccccck..",
+      ".kccwkccccwkcck.",
+      ".kcckkcccckkcck.",
+      ".kcpccckkcccpck.",
+      ".kccccccccccCCk.",
+      "..kccccccccCCk..",
+      "..kCccccccCCCk..",
+      "...kCCkkkkCCk...",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  // 角色:泡泡鰭
+  bubblefin: {
+    palette: { "k": "#282030", "b": "#58a0f0", "L": "#a8d8f8", "B": "#3070c0", "w": "#ffffff" },
+    rows: [
+      "................",
+      "......kkk.......",
+      ".....kLLbk......",
+      "......kbbk......",
+      "....kkkkkkkk....",
+      "...kLLbbbbbbk...",
+      "..kLbbbbbbbbBk..",
+      "..kLbwkbbwkbBk..",
+      ".kkbbkkbbkkbBkk.",
+      "kLkbbbbbbbbbBkBk",
+      ".kkbbbbkkbbBBkk.",
+      "..kbbbbbbbbBBk..",
+      "..kBbbbbbbBBBk..",
+      "...kBBBBBBBBk...",
+      "....kkkkkkkk....",
+      "................"
+    ]
+  },
+  // 角色:火苗雀
+  emberchick: {
+    palette: { "k": "#282030", "o": "#f89838", "O": "#d06020", "y": "#f8d848", "w": "#ffffff" },
+    rows: [
+      ".......k........",
+      "......kyk.......",
+      ".....kyok..k....",
+      ".....kook.kyk...",
+      "....kkkkkkkok...",
+      "...kooooooookk..",
+      "..kooowkoowkook.",
+      "..koookkookkoOk.",
+      "..kooooyyyooOOk.",
+      ".kkoooooyooOOkk.",
+      "kokkooooooOOkkok",
+      ".kokoooooOOOkok.",
+      "..kkOoooOOOOkk..",
+      "...kkOOOOOOkk...",
+      "....kykkkkyk....",
+      "....kk....kk...."
+    ]
+  },
+  // 角色:岩背龜
+  pebbleshell: {
+    palette: { "k": "#282030", "S": "#c8c0b0", "s": "#8c8478", "g": "#a8c070", "G": "#78904c", "w": "#ffffff" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      "......kkkkk.....",
+      ".....kSSsSSk....",
+      "....kSsSSSsSk...",
+      "...kSSSSsSSSSk..",
+      ".kkksSSSSSsSSk..",
+      "kggkkkkkkkkkkkk.",
+      "kgwkgggggggggGk.",
+      "kGggkgggggggGGk.",
+      ".kkkgGGkkkgGGk..",
+      "....kGk....kGk..",
+      "....kk.....kk...",
+      "................",
+      "................"
+    ]
+  },
+  // 角色:星光蟲
+  starbug: {
+    palette: { "k": "#282030", "Y": "#f8d030", "O": "#c89818", "y": "#f87878", "w": "#ffffff" },
+    rows: [
+      "................",
+      "...k........k...",
+      "...yk......ky...",
+      "....k......k....",
+      ".....kkkkkk.....",
+      "...kkYYYYYYkk...",
+      "..kYYYYYYYYYYk..",
+      ".kYYwkYYYYwkYYk.",
+      ".kYYkkYYYYkkYYk.",
+      ".kYYYYYkkYYYYOk.",
+      ".kOYYYYYYYYYYOk.",
+      "kkkOYYYYYYYYOkkk",
+      "..kOOYYYYYYOOk..",
+      "..kkOOOOOOOOkk..",
+      ".k..kkkkkkkk..k.",
+      "................"
+    ]
+  },
+  // 道具:藍晶石
+  gem: {
+    palette: { "k": "#282030", "c": "#58e0e8", "C": "#2898b0", "w": "#ffffff", "z": "#00000040" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      ".....kkkkkk.....",
+      "....kwcccCCk....",
+      "...kwcccccCCk...",
+      "...kkkkkkkkkk...",
+      "....kcccccCk....",
+      ".....kcccCk.....",
+      "......kcCk......",
+      ".......kk.......",
+      "................",
+      ".....zzzzzz.....",
+      "................",
+      "................",
+      "................"
+    ]
+  },
+  // 道具:紅莓果
+  berry: {
+    palette: { "k": "#282030", "r": "#e84848", "R": "#a82828", "L": "#58b040", "w": "#ffffff", "z": "#00000040" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      ".......kkk......",
+      "......kLLk......",
+      "....kkkkkkkk....",
+      "...krwrrrrrrk...",
+      "..krwrrrrrrrRk..",
+      "..krrrrrrrrrRk..",
+      "..krrrrrrrrRRk..",
+      "...krrrrrrRRk...",
+      "....kRRRRRRk....",
+      ".....kkkkkk.....",
+      "....zzzzzzzz....",
+      "................",
+      "................"
+    ]
+  },
+  // 門:木門(GATES 預設用這張)
+  door: {
+    palette: { "k": "#282030", "B": "#784820", "l": "#c88840", "y": "#f8d848", "z": "#00000040" },
+    rows: [
+      "................",
+      "..kkkkkkkkkkkk..",
+      ".kBBBBBBBBBBBBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBylBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kBlllBlllBllBk.",
+      ".kkkkkkkkkkkkkk.",
+      ".zzzzzzzzzzzzzz."
+    ]
+  },
+  // 道具:鑰匙(可以拿來當 ITEMS 的圖)
+  key: {
+    palette: { "k": "#282030", "y": "#f8d848", "w": "#ffffff", "z": "#00000040" },
+    rows: [
+      "................",
+      "................",
+      "....kkkk........",
+      "...kyyyyk.......",
+      "..kyywwyyk......",
+      "..kyw..wyk......",
+      "..kyy..yyk......",
+      "...kyyyyk.......",
+      "....kyyk........",
+      ".....kyk........",
+      ".....kyyk.......",
+      ".....kyk........",
+      ".....kyyk.......",
+      ".....kkkk.......",
+      "...zzzzzz.......",
+      "................"
+    ]
+  },
+  // 玩家(以下 6 張名稱不要改,引擎會用到;左右走路用 side 圖左右翻轉)
+  player_down: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrwrrrrk...",
+      "...kRRRRRRRRk...",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...kssssssssk...",
+      "....kSssssSk....",
+      "...kbbbbbbbbk...",
+      "..ksbbbbbbbbsk..",
+      "..kskbbbbbbksk..",
+      "...kkppppppkk...",
+      "....kppkkppk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  player_down_walk: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrwrrrrk...",
+      "...kRRRRRRRRk...",
+      "...khsssssshk...",
+      "...kskssssksk...",
+      "...kssssssssk...",
+      "....kSssssSk....",
+      "...kbbbbbbbbk...",
+      "..ksbbbbbbbbsk..",
+      "..kskbbbbbbkkk..",
+      "...kkppppppk....",
+      "....kppkkppk....",
+      "....kkk.kpk.....",
+      "........kk......"
+    ]
+  },
+  player_up: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrrrrrrk...",
+      "...kRRRRRRRRk...",
+      "...khhhhhhhhk...",
+      "...khhhhhhhhk...",
+      "...kShhhhhhSk...",
+      "....kShhhhSk....",
+      "...kbbbbbbbbk...",
+      "..ksbbbbbbbbsk..",
+      "..kskBBBBBBksk..",
+      "...kkppppppkk...",
+      "....kppkkppk....",
+      "....kkk..kkk....",
+      "................"
+    ]
+  },
+  player_up_walk: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrrrrrrk...",
+      "...kRRRRRRRRk...",
+      "...khhhhhhhhk...",
+      "...khhhhhhhhk...",
+      "...kShhhhhhSk...",
+      "....kShhhhSk....",
+      "...kbbbbbbbbk...",
+      "..ksbbbbbbbbsk..",
+      "..kskBBBBBBkkk..",
+      "...kkppppppk....",
+      "....kppkkppk....",
+      "....kkk.kpk.....",
+      "........kk......"
+    ]
+  },
+  player_side: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrrrwrrk...",
+      "...kRRRRRRRRRk..",
+      "...khhhssssk....",
+      "...khhsssksk....",
+      "...khhssssssk...",
+      "....khSsssSk....",
+      "....kbbbbbbk....",
+      "....kbbbsbbk....",
+      "....kbBBsBBk....",
+      "....kkppppkk....",
+      ".....kppppk.....",
+      ".....kkkkkk.....",
+      "................"
+    ]
+  },
+  player_side_walk: {
+    palette: { "k": "#282030", "r": "#e04848", "R": "#a02830", "h": "#583020", "s": "#f8c8a0", "S": "#d89870", "w": "#ffffff", "b": "#3868d8", "B": "#2848a0", "p": "#404058" },
+    rows: [
+      "................",
+      ".....kkkkkk.....",
+      "....krrrrrrk....",
+      "...krrrrrwrrk...",
+      "...kRRRRRRRRRk..",
+      "...khhhssssk....",
+      "...khhsssksk....",
+      "...khhssssssk...",
+      "....khSsssSk....",
+      "....kbbbbbbk....",
+      "...kbbbbbsbk....",
+      "...kbBBBBsBk....",
+      "....kkppppkk....",
+      "...kppk.kppk....",
+      "...kkk...kkk....",
+      "................"
+    ]
+  }
+};
+
+/* 地形圖塊(一般不需要改)。tree / rock / fence 會疊在草地上畫 */
+const TILES = {
+  // 房子 H:最上面一排畫屋頂,下面畫牆;木橋 +
+  roof: {"palette":{"k":"#502018","r":"#c84838","R":"#902820","l":"#e07058"},"rows":["kkkkkkkkkkkkkkkk","RrrrrrrrRrrrrrrr","RrrrrrrrRrrrrrrr","RRRRRRRRRRRRRRRR","llllRlllllllRlll","rrrrRrrrrrrrRrrr","rrrrRrrrrrrrRrrr","RRRRRRRRRRRRRRRR","RlllllllRlllllll","RrrrrrrrRrrrrrrr","RrrrrrrrRrrrrrrr","RRRRRRRRRRRRRRRR","llllRlllllllRlll","rrrrRrrrrrrrRrrr","rrrrRrrrrrrrRrrr","RRRRRRRRRRRRRRRR"]},
+  wall: {"palette":{"k":"#503018","w":"#f0e0c0","W":"#c8b090","b":"#784820","g":"#88c8f0"},"rows":["bbbbbbbbbbbbbbbb","bbbbbbbbbbbbbbbb","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwkkkkkkkkkwwww","wwwkgggkgggkwwww","wwwkgggkgggkwwww","wwwkkkkkkkkkwwww","wwwkgggkgggkwwww","wwwkgggkgggkwwww","wwwkkkkkkkkkwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","wwwwwwwwwwwwwwww","WWWWWWWWWWWWWWWW","WWWWWWWWWWWWWWWW"]},
+  bridge: {
+    palette: {"k": "#583818", "p": "#c89858", "P": "#906838"},
+    rows: [
+      "kkkkkkkkkkkkkkkk",
+      "PPPPPPPPPPPPPPPP",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "ppPkppPkppPkppPk",
+      "PPPPPPPPPPPPPPPP",
+      "kkkkkkkkkkkkkkkk"
+    ]
+  },
+  grass0: {
+    palette: { "g": "#78c850", "d": "#58a838", "l": "#a0e070" },
+    rows: [
+      "gglggggggggggggg",
+      "gggggggggggggggg",
+      "ggggggggdgdggggg",
+      "gggggggggdgggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggl",
+      "gggdgdgggggggggg",
+      "ggggdggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "ggggggggggglgggg"
+    ]
+  },
+  grass1: {
+    palette: { "g": "#78c850", "d": "#58a838", "l": "#a0e070" },
+    rows: [
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "ggggglgggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggglg",
+      "ggggggggggggdgdg",
+      "gggggggggggggdgg",
+      "gggggggggggggglg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggddddggggg",
+      "ggggggggddgggggg",
+      "ggggglgggggggggg"
+    ]
+  },
+  grass2: {
+    palette: { "g": "#78c850", "d": "#58a838", "l": "#a0e070" },
+    rows: [
+      "gggggggggggggggg",
+      "ggggggggdgdggggg",
+      "gggggggggdgggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "ggggggggggglgggg",
+      "gggggggggggggggg",
+      "gglggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggggggg"
+    ]
+  },
+  tallgrass: {
+    palette: { "g": "#78c850", "D": "#2f7a2c", "m": "#48a040", "L": "#90d868" },
+    rows: [
+      "mmmmmmmmmmmmmmmm",
+      "mLmmmLmmmLmmmLmm",
+      "LLmDLLmDLLmDLLmD",
+      "LLmDLLmDLLmDLLmD",
+      "mmmDmmmDmmmDmmmD",
+      "DDDDDDDDDDDDDDDD",
+      "mmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmm",
+      "mmmLmmmLmmmLmmmL",
+      "mDLLmDLLmDLLmDLL",
+      "mDLLmDLLmDLLmDLL",
+      "mDmmmDmmmDmmmDmm",
+      "DDDDDDDDDDDDDDDD",
+      "mmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmm"
+    ]
+  },
+  path: {
+    palette: { "p": "#e0c890", "d": "#c8a868", "l": "#f0e0b8" },
+    rows: [
+      "pppppppppppppppp",
+      "pppppppdpppppppp",
+      "ppppplpppppppppp",
+      "pppppdpppppppppp",
+      "pppppppppppppppp",
+      "pppppppppppppppp",
+      "lppppppppppppppp",
+      "pppdpppppppppppp",
+      "ppppppppppppplpp",
+      "pppppppppppppppp",
+      "pppppppppppppppp",
+      "ppppppppdppppppp",
+      "ppppplpdpppppppp",
+      "pppppppppppppppp",
+      "dppplppppppppppp",
+      "pppppppppppdpppp"
+    ]
+  },
+  water0: {
+    palette: { "w": "#4890e8", "l": "#90c0f8", "d": "#3478d0" },
+    rows: [
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwllllwwwwwwwwww",
+      "wdwwwwdwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwllllwww",
+      "wwwwwwwwdwwwwdww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwllllwwwwwwww",
+      "wwwdwwwwdwwwwwww",
+      "wwwwwwwwwwwwllll",
+      "dwwwwwwwwwwdwwww",
+      "wwwwwwwwwwwwwwww"
+    ]
+  },
+  water1: {
+    palette: { "w": "#4890e8", "l": "#90c0f8", "d": "#3478d0" },
+    rows: [
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwllllwwwwwwww",
+      "wwwdwwwwdwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwllllw",
+      "wwwwwwwwwwdwwwwd",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwwwwwwwwwww",
+      "wwwwwwllllwwwwww",
+      "wwwwwdwwwwdwwwww",
+      "llwwwwwwwwwwwwll",
+      "wwdwwwwwwwwwwdww",
+      "wwwwwwwwwwwwwwww"
+    ]
+  },
+  flowers: {
+    palette: { "g": "#78c850", "d": "#58a838", "r": "#f05858", "y": "#f8d838", "w": "#ffffff" },
+    rows: [
+      "gggggggggggggggg",
+      "gggggggggggggggg",
+      "gggggdgdgggggggg",
+      "ggggrgdggggggggg",
+      "gggryrgggggggggg",
+      "ggggrggggggggggg",
+      "ggggdggggggggggg",
+      "gggggggggggggggg",
+      "gggggggggggwgggg",
+      "ggggggggggwywggg",
+      "gggggggggggwgggg",
+      "ggggrggggggdgggg",
+      "gggryrgggggggggg",
+      "ggggrggggggggggg",
+      "ggggdggggggggggg",
+      "gggggggggggggggg"
+    ]
+  },
+  tree: {
+    palette: { "k": "#1c4a20", "D": "#2f7a34", "G": "#4aa044", "L": "#78c860", "T": "#8a6030", "t": "#5c3c1c", "s": "#00000033" },
+    rows: [
+      ".....kkkkkk.....",
+      "...kkDGGGGDkk...",
+      "..kDGGLLGGGGDk..",
+      ".kDGLLLGGGGGDDk.",
+      ".kDGLLGGGGGGDDk.",
+      "kDGGGGGGGGGGGDDk",
+      "kDGGGGGGGGGGDDDk",
+      "kDDGGGGGGGGDDDDk",
+      ".kDDGGGGGGDDDDk.",
+      ".kDDDDDDDDDDDDk.",
+      "..kkDDDDDDDDkk..",
+      "....kkkttkkk....",
+      "......tTTt......",
+      ".....stTTts.....",
+      "....ssttttsss...",
+      "................"
+    ]
+  },
+  rock: {
+    palette: { "k": "#404048", "G": "#a0a0a8", "L": "#d0d0d8", "D": "#707078", "s": "#00000033" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      "................",
+      "....kkkkkkk.....",
+      "...kLLGGGGGk....",
+      "..kLLGGGGGGDk...",
+      ".kLGGGGGGGDDDk..",
+      ".kGGGGGGGGDDDk..",
+      ".kGGGGGGGDDDDk..",
+      ".kDGGGGGDDDDDk..",
+      "..kDDDDDDDDDk...",
+      "...kkkkkkkkk....",
+      "..sssssssssss...",
+      "................",
+      "................"
+    ]
+  },
+  fence: {
+    palette: { "k": "#503018", "W": "#c89050", "w": "#a06c34", "L": "#e0b070" },
+    rows: [
+      "................",
+      ".kk.........kk..",
+      "kLWk.......kLWk.",
+      "kWwk.......kWwk.",
+      "kWwkkkkkkkkkWwkk",
+      "kWwLLLLLLLLLWwLL",
+      "kWwWWWWWWWWWWwWW",
+      "kWwkkkkkkkkkWwkk",
+      "kWwk.......kWwk.",
+      "kWwkkkkkkkkkWwkk",
+      "kWwLLLLLLLLLWwLL",
+      "kWwWWWWWWWWWWwWW",
+      "kWwkkkkkkkkkWwkk",
+      "kWwk.......kWwk.",
+      ".kk.........kk..",
+      "................"
+    ]
+  }
+};
+
+
+/* =========================================================
+   第三部分:遊戲引擎 —— 通常不需要修改
+   ========================================================= */
+
+const TILE = 16;
+// 視野大小:電腦和橫式螢幕是 15 × 10 格(240 × 160 像素,和 GBA 一樣);
+// 直式手機自動改成 11 × 12 格,每格才放得夠大。由 fitView() 決定,不要直接改這兩個值
+let VIEW_W = 15, VIEW_H = 10;
+const WALK = { ".": 1, ",": 1, "*": 1, "=": 1, "+": 1 };
+const BLOCK = { "T": "tree", "~": "water", "O": "rock", "#": "fence", "H": "house" };
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+const el = (id) => document.getElementById(id);
+const CREATURE_MARKS = "123456789!?$%&<>[]^:;|";      // 站在地圖上的角色(包含 NPC、告示牌、寶箱)可以用的字元
+const isCreatureMark = (ch) => typeof ch === "string" && ch.length === 1 && CREATURE_MARKS.includes(ch);
+const isLower = (ch) => ch >= "a" && ch <= "z";
+const isGateChar = (ch) => /^[A-Z]$/.test(ch) && !BLOCK[ch];     // 大寫字母,但 T(樹)、O(石頭)、H(房子)已經是地形
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+/* ---------- 畫面上的文字 ----------
+   預設文字在這裡,GAME.text 可以覆蓋其中任何一句。{name} 等會自動換成對應的內容 */
+const DEFAULT_TEXT = {
+  start: "四處走走,找出躲起來的角色吧!",
+  startGrass: "四處走走找找看!走進高草叢也可能遇到角色喔",
+  foundMap: "找到了 {name}!",
+  foundGrass: "草叢裡跳出了 {name}!",
+  foundGate: "要打開「{name}」,先回答問題!",
+  caught: "答對了!{name} 加入了隊伍 🎉",
+  missMap: "答錯了…{name} 還待在這裡,想好了再來挑戰!",
+  missGrass: "答錯了…{name} 跑回草叢裡了,再去找找看吧!",
+  gateOpened: "打開了「{name}」!",
+  gateWrong: "答錯了…「{name}」還是鎖著的,想好了再來!",
+  gateLocked: "「{name}」鎖住了,需要:{need}",
+  itemGot: "撿到了 {name}!",
+  talkDone: "{name}:我已經沒有別的話要說了。",
+  hudCreatures: "收服 {n}/{total}",
+  hudItems: "道具 {n}/{total}",
+  bestNote: "這台裝置的最佳紀錄:{moves} 步收服全部角色",
+  endTitle: "🎉 全部收服完成!",
+  labelCreatures: "收服角色",
+  labelFirstTry: "一次就答對",
+  labelItems: "撿到道具",
+  more: "按 Enter / A 鈕,或點這裡繼續 ▼",
+  gateNeedAll: "「{name}」還不能用:還差 {n} 位。",
+  bagTitle: "🎒 背包",
+  bagEmpty: "背包裡還沒有東西。",
+  usedTag: "(已經用掉了)"
+};
+const fmt = (str, vars) => String(str).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] !== undefined ? vars[k] : m));
+const say = (key, vars) => fmt(Object.assign({}, DEFAULT_TEXT, GAME.text || {})[key], vars);
+const hasQuiz = (o) => !!(o.question !== undefined || o.questions);
+const quizList = (o) => o.questions || (o.question !== undefined ? [o] : []);   // 一隻角色(或一扇門)的所有題目
+const QUIZ = () => CREATURES.filter(hasQuiz);          // 帶問題、要收服的角色(不含純對話的 NPC)
+/* 現在要出的題目:第一次出第 1 題,每答錯一次換下一題 */
+function currentQ(o) { const list = quizList(o); return list[(state.qTurn[o.id] || 0) % list.length]; }
+
+/* 遊戲狀態。需要新欄位時在這裡加,並在 resetState() 裡重置;不要改既有欄位名稱 */
+let state = {
+  grid: [], px: 0, py: 0, facing: "down", move: null, stepParity: 0, held: null,
+  caughtCreatures: [], collectedItems: [], openedGates: [], usedItems: [], talked: [], attempts: {}, qTurn: {}, wrongCount: 0, grassSteps: 0,
+  moveCount: 0, startTime: null, playerName: "", busy: false, running: false
+};
+
+/* ---------- 像素圖編譯 ---------- */
+const GFX = {};  // 名稱 → canvas
+function compileSprite(def, flip) {
+  const c = document.createElement("canvas");
+  c.width = TILE; c.height = TILE;
+  const ctx = c.getContext("2d");
+  def.rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch === "." || !def.palette[ch]) continue;
+      ctx.fillStyle = def.palette[ch];
+      ctx.fillRect(flip ? TILE - 1 - x : x, y, 1, 1);
+    }
+  });
+  return c;
+}
+function loadGraphics() {
+  if (typeof CUSTOM_SPRITES === "object") Object.assign(SPRITES, CUSTOM_SPRITES);   // 內容包新畫的圖
+  Object.entries(SPRITES).forEach(([name, def]) => {
+    GFX[name] = compileSprite(def, false);
+    GFX[name + ":flip"] = compileSprite(def, true);
+  });
+  Object.entries(TILES).forEach(([name, def]) => { GFX["tile:" + name] = compileSprite(def, false); });
+  // 使用者上傳的圖(data URI)
+  const jobs = CREATURES.concat(ITEMS).concat(GATES.map(g => ({ ...g, id: "gate:" + g.mark }))).filter(o => o.image).map(o => new Promise(res => {
+    const img = new Image();
+    img.onload = () => { GFX["img:" + (o.id || o.mark)] = img; res(); };
+    img.onerror = res;
+    img.src = o.image;
+  }));
+  return Promise.all(jobs);
+}
+/* 角色或道具要畫的圖(canvas 或 Image) */
+function gfxOf(obj) {
+  if (obj.image) return GFX["img:" + (obj.id || obj.mark)] || null;
+  return GFX[obj.sprite] || null;
+}
+function drawObj(ctx, obj, x, y, size) {
+  const g = gfxOf(obj);
+  if (!g) return;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(g, x, y, size, size);
+}
+
+/* ---------- 地圖資料檢查 ----------
+   開始畫面會自動執行;有錯誤時列在紅框裡並停用開始按鈕。
+   改了地圖、角色、道具或圖片之後,一定要確認沒有紅框 */
+function validateSprite(name, def, errors) {
+  if (!def || !Array.isArray(def.rows) || !def.palette) { errors.push(`圖片「${name}」格式不對,要有 palette 和 rows`); return; }
+  if (def.rows.length !== 16) errors.push(`圖片「${name}」有 ${def.rows.length} 行,要剛好 16 行`);
+  def.rows.forEach((row, i) => {
+    if (row.length !== 16) errors.push(`圖片「${name}」第 ${i + 1} 行有 ${row.length} 個字元,要剛好 16 個`);
+    const bad = [...new Set(row.split("").filter(ch => ch !== "." && !def.palette[ch]))];
+    if (bad.length) errors.push(`圖片「${name}」第 ${i + 1} 行用了 palette 沒定義的字元:${bad.join(" ")}`);
+  });
+}
+function validateMap() {
+  const errors = [];
+  if (!MAP.length) return ["MAP 是空的"];
+  const H = MAP.length, W = MAP[0].length;
+  const pos = (x, y) => `第 ${y + 1} 列第 ${x + 1} 格`;
+  MAP.forEach((row, y) => { if (row.length !== W) errors.push(`MAP 第 ${y + 1} 列有 ${row.length} 個字元,第 1 列有 ${W} 個,每一列要一樣長`); });
+
+  let start = null, starts = 0;
+  const marks = {};
+  MAP.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (ch === "@") { starts++; start = [x, y]; return; }
+    if (WALK[ch] || BLOCK[ch]) return;
+    if (isCreatureMark(ch) || isLower(ch) || isGateChar(ch)) { (marks[ch] = marks[ch] || []).push([x, y]); return; }
+    errors.push(`${pos(x, y)}的字元「${ch}」不是地圖代碼`);
+  }));
+  if (starts !== 1) errors.push(`地圖上要剛好有一個起點 @,目前有 ${starts} 個`);
+
+  const checkQuestion = (who, owner) => {
+    if (owner.questions !== undefined && (!Array.isArray(owner.questions) || !owner.questions.length)) { errors.push(`${who}的 questions 要是至少有一題的陣列`); return; }
+    quizList(owner).forEach((o, i) => {
+      const w = owner.questions ? `${who}第 ${i + 1} 題` : who;
+      if (typeof o.question !== "string" || !o.question.trim()) errors.push(`${w}的 question 要是文字`);
+      if (!Array.isArray(o.choices) || o.choices.length < 2) { errors.push(`${w}至少要有 2 個選項`); return; }
+      if (!(Number.isInteger(o.answerIndex) && o.answerIndex >= 0 && o.answerIndex < o.choices.length)) { errors.push(`${w}的 answerIndex (${o.answerIndex}) 不是有效的選項位置`); return; }
+      Object.keys(o.mistakes || {}).forEach(k => {
+        if (!o.choices.includes(k)) errors.push(`${w}的 mistakes「${k}」不是任何一個選項的文字(要和 choices 裡的字一模一樣)`);
+        else if (k === o.choices[o.answerIndex]) errors.push(`${w}的 mistakes 把正確答案「${k}」寫成了錯誤`);
+      });
+    });
+  };
+  const floorOk = (who, o) => { if (o.floor !== undefined && !WALK[o.floor]) errors.push(`${who}的 floor「${o.floor}」要是走得過去的地形(. , * = +)`); };
+  const hasText = (v) => (typeof v === "string" && v.trim() !== "") || (Array.isArray(v) && v.length > 0 && v.every(x => typeof x === "string"));
+  const itemMarks = new Set(ITEMS.map(i => i.mark));
+  const givenItems = new Set(CREATURES.filter(c => c.gives).map(c => c.gives));
+
+  const ids = new Set();
+  CREATURES.forEach(cr => {
+    const who = `角色「${cr.name}」`;
+    if (ids.has(cr.id)) errors.push(`角色 id「${cr.id}」重複了`);
+    ids.add(cr.id);
+    if (cr.where !== "map" && cr.where !== "grass") errors.push(`${who}的 where 要填 "map" 或 "grass"`);
+    if (cr.where === "map") {
+      if (!isCreatureMark(String(cr.mark))) errors.push(`地圖角色「${cr.name}」的 mark「${cr.mark}」不能用,要填 1~9 或 ${CREATURE_MARKS.slice(9).split("").join(" ")} 其中一個(小寫字母是道具)`);
+      const n = (marks[cr.mark] || []).length;
+      if (n === 0) errors.push(`地圖角色「${cr.name}」(mark ${cr.mark})沒有放在 MAP 上,這樣永遠無法過關`);
+      if (n > 1) errors.push(`mark ${cr.mark} 在 MAP 上出現了 ${n} 次,每隻角色只能放一格`);
+    }
+    floorOk(who, cr);
+    if (hasQuiz(cr)) checkQuestion(who, cr);
+    else {
+      if (cr.where === "grass") errors.push(`草叢角色「${cr.name}」一定要有問題(question、choices、answerIndex)`);
+      if (!hasText(cr.dialogue)) errors.push(`${who}沒有問題的話,要有 dialogue(對話文字,或文字陣列)`);
+    }
+    if (cr.stays && cr.where !== "map") errors.push(`${who}:stays 只能用在 where: "map" 的角色`);
+    if (cr.gives !== undefined && !itemMarks.has(cr.gives)) errors.push(`${who}的 gives「${cr.gives}」不在 ITEMS 裡`);
+  });
+
+  ITEMS.forEach(it => {
+    if (!isLower(String(it.mark))) errors.push(`道具「${it.name}」的 mark 要填小寫英文字母`);
+    const n = (marks[it.mark] || []).length;
+    if (n === 0 && !givenItems.has(it.mark)) errors.push(`道具「${it.name}」(mark ${it.mark})沒有放在 MAP 上,也沒有任何角色把它當作 gives 送出${GAME.requireAllItems ? ",這樣永遠無法過關" : ""}`);
+    if (n > 1) errors.push(`mark ${it.mark} 在 MAP 上出現了 ${n} 次,每個道具只能放一格`);
+  });
+
+  const gateMarks = new Set();
+  GATES.forEach(g => {
+    const who = `門「${g.name || g.mark}」`;
+    if (!isGateChar(String(g.mark))) errors.push(`${who}的 mark 要填大寫英文字母(T、O 不能用)`);
+    if (gateMarks.has(g.mark)) errors.push(`門的 mark「${g.mark}」重複了`);
+    gateMarks.add(g.mark);
+    if (typeof g.name !== "string" || !g.name.trim()) errors.push(`mark 是 ${g.mark} 的門要有 name`);
+    if ((marks[g.mark] || []).length === 0) errors.push(`${who}(mark ${g.mark})沒有放在 MAP 上`);
+    [].concat(g.needs || []).forEach(m => { if (!itemMarks.has(m)) errors.push(`${who}的 needs「${m}」不在 ITEMS 裡`); });
+    if (hasQuiz(g)) checkQuestion(who, g);
+    floorOk(who, g);
+    if (g.needsAllCreatures && !QUIZ().length) errors.push(`${who}設了 needsAllCreatures,但沒有任何帶題目的角色`);
+  });
+  const consumed = {};
+  GATES.filter(g => g.consume).forEach(g => [].concat(g.needs || []).forEach(m => { consumed[m] = (consumed[m] || 0) + 1; }));
+  Object.entries(consumed).forEach(([m, n]) => { if (n > 1) errors.push(`道具「${itemName(m)}」會被 ${n} 扇設了 consume 的門用掉,但它只有一個`); });
+  // 會被用掉的道具如果還有別扇門需要:玩家先開了會用掉它的那扇,另一扇就永遠打不開(卡死)
+  Object.keys(consumed).forEach(m => {
+    const others = GATES.filter(g => !g.consume && [].concat(g.needs || []).includes(m));
+    if (others.length) errors.push(`道具「${itemName(m)}」開門時會被用掉,但「${others.map(g => g.name).join("、")}」也需要它:玩家先開了會用掉它的門,這扇就永遠打不開。拿掉 consume,或給這扇門另一個道具`);
+  });
+
+  Object.keys(marks).forEach(m => {
+    const known = isCreatureMark(m) ? CREATURES.some(c => c.where === "map" && String(c.mark) === m) : isGateChar(m) ? gateMarks.has(m) : ITEMS.some(i => i.mark === m);
+    if (!known) errors.push(`MAP 上的「${m}」(${pos(...marks[m][0])})在 ${isCreatureMark(m) ? "CREATURES" : isGateChar(m) ? "GATES" : "ITEMS"} 裡找不到` +
+      (isLower(m) && CREATURES.some(c => c.mark === m) ? "。小寫字母只能放道具,角色、NPC、告示牌、寶箱的 mark 請改用 1~9 或符號" : ""));
+  });
+
+  // 圖片
+  CREATURES.concat(ITEMS).concat(GATES).forEach(o => {
+    if (o.image) {
+      if (!String(o.image).startsWith("data:image/")) errors.push(`「${o.name}」的 image 要用 data URI(data:image/...),不能填網址`);
+    } else {
+      const sp = o.sprite || (GATES.includes(o) ? "door" : undefined);
+      if (!SPRITES[sp]) errors.push(`「${o.name}」的 sprite「${sp}」在 SPRITES 裡找不到`);
+    }
+  });
+  Object.entries(SPRITES).forEach(([n, d]) => validateSprite(n, d, errors));
+
+  // 過關條件一開始就成立 = 玩家一動就過關(常見原因:沒有任何帶問題的角色,也沒有道具)
+  try {
+    const keep = { c: state.caughtCreatures, i: state.collectedItems, g: state.openedGates, u: state.usedItems, t: state.talked };
+    state.caughtCreatures = []; state.collectedItems = []; state.openedGates = []; state.usedItems = []; state.talked = [];
+    const instantWin = isWin();
+    Object.assign(state, { caughtCreatures: keep.c, collectedItems: keep.i, openedGates: keep.g, usedItems: keep.u, talked: keep.t });
+    if (instantWin) errors.push("過關條件在遊戲一開始就成立了(是不是沒有任何帶問題的角色、也沒有道具?)。至少放一隻帶問題的角色或一個道具,或自己改寫 isWin()");
+  } catch (e) { errors.push("isWin() 執行出錯:" + e.message); }
+
+  // 從起點走得到每一隻地圖角色、每一個道具、每一扇門;有草叢角色時要走得到高草叢。
+  // 門要一輪一輪模擬:拿得到需要的道具(包含角色送的),門才算能打開,打開後後面的區域才算走得到
+  if (!errors.length) {
+    // cleared:答對之後會消失的地圖角色(有題目、沒設 stays)。碰得到牠,牠那一格之後就能通過,
+    // 所以「角色擋在路上,答對才讓路」的地圖是可以過關的;NPC 和 stays 的角色永遠擋路
+    const open = new Set(), got = new Set(), cleared = new Set(), catchable = new Set();
+    const allCaught = () => QUIZ().every(c => catchable.has(c.id));
+    let seen = null;
+    const walkable = (ch) => WALK[ch] || ch === "@" || isLower(ch) || (isGateChar(ch) && open.has(ch)) || (isCreatureMark(ch) && cleared.has(ch));
+    const flood = () => {
+      const sn = MAP.map(r => [...r].map(() => false));
+      const q = [start]; sn[start[1]][start[0]] = true;
+      while (q.length) {
+        const [x, y] = q.shift();
+        Object.values(DIRS).forEach(([dx, dy]) => {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H || sn[ny][nx] || !walkable(MAP[ny][nx])) return;
+          sn[ny][nx] = true; q.push([nx, ny]);
+        });
+      }
+      return sn;
+    };
+    const touch = (x, y) => Object.values(DIRS).some(([dx, dy]) => seen[y + dy] && seen[y + dy][x + dx]);
+    const grassReach = () => MAP.some((row, y) => [...row].some((ch, x) => ch === "," && seen[y][x]));
+    const creatureReach = (cr) => cr.where === "grass" ? grassReach() : (marks[cr.mark] || []).some(([x, y]) => touch(x, y));
+    for (let round = 0; round < 60; round++) {
+      seen = flood();
+      let changed = false;
+      ITEMS.forEach(it => {
+        const at = marks[it.mark];
+        if (!got.has(it.mark) && at && seen[at[0][1]][at[0][0]]) { got.add(it.mark); changed = true; }
+      });
+      CREATURES.forEach(cr => { if (cr.gives && !got.has(cr.gives) && creatureReach(cr)) { got.add(cr.gives); changed = true; } });
+      CREATURES.forEach(cr => {
+        const m = String(cr.mark);
+        if (cr.where === "map" && hasQuiz(cr) && !cr.stays && !cleared.has(m) && creatureReach(cr)) { cleared.add(m); changed = true; }
+        if (hasQuiz(cr) && !catchable.has(cr.id) && creatureReach(cr)) { catchable.add(cr.id); changed = true; }
+      });
+      GATES.forEach(g => {
+        if (open.has(g.mark)) return;
+        if ((marks[g.mark] || []).some(([x, y]) => touch(x, y)) && [].concat(g.needs || []).every(m => got.has(m)) && (!g.needsAllCreatures || allCaught())) { open.add(g.mark); changed = true; }
+      });
+      if (!changed) break;
+    }
+    GATES.forEach(g => {
+      if (open.has(g.mark)) return;
+      const [x, y] = marks[g.mark][0];
+      const missing = [].concat(g.needs || []).filter(m => !got.has(m)).map(itemName);
+      if (!touch(x, y)) errors.push(`門「${g.name}」在 ${pos(x, y)},旁邊沒有走得到的格子(可能被別的門擋住),永遠打不開`);
+      else if (missing.length) errors.push(`門「${g.name}」永遠打不開:需要的道具「${missing.join("、")}」拿不到(可能放在這扇門後面)`);
+      else if (g.needsAllCreatures) errors.push(`門「${g.name}」要收服全部角色才打得開,但有角色走不到(可能在這扇門後面)`);
+    });
+    CREATURES.filter(c => c.where === "map").forEach(cr => {
+      const [x, y] = marks[cr.mark][0];
+      if (!touch(x, y)) errors.push(`地圖角色「${cr.name}」在 ${pos(x, y)},旁邊沒有走得到的格子,這樣永遠無法過關`);
+    });
+    ITEMS.forEach(it => {
+      const at = marks[it.mark];
+      if (at && !seen[at[0][1]][at[0][0]]) errors.push(`道具「${it.name}」在 ${pos(at[0][0], at[0][1])},被擋住走不到${GAME.requireAllItems ? ",這樣永遠無法過關" : ""}`);
+      if (!at && !got.has(it.mark)) errors.push(`道具「${it.name}」只由角色送出,但送它的角色走不到(或不會被收服)`);
+    });
+    if (CREATURES.some(c => c.where === "grass") && !grassReach()) errors.push(`有草叢角色,但地圖上沒有走得到的高草叢「,」,這樣永遠無法過關`);
+  }
+  return errors;
+}
+function showMapErrors() {
+  const errors = validateMap();
+  const box = el("map-errors");
+  box.innerHTML = errors.length ? `<li class="title">遊戲資料有問題,修正後才能開始:</li>` + errors.map(e => `<li>${escapeHtml(e)}</li>`).join("") : "";
+  box.classList.toggle("hidden", !errors.length);
+  el("btn-start").disabled = errors.length > 0;
+  return errors;
+}
+
+/* ---------- 地圖查詢 ---------- */
+const mapW = () => state.grid[0].length;
+const mapH = () => state.grid.length;
+const cell = (x, y) => (y >= 0 && y < mapH() && x >= 0 && x < mapW()) ? state.grid[y][x] : "T";
+/* 角色、門那一格底下要畫的地形(floor,預設草地) */
+function floorOf(ch) {
+  if (WALK[ch] || BLOCK[ch]) return ch;
+  const o = isCreatureMark(ch) ? CREATURES.find(c => c.where === "map" && String(c.mark) === ch) : isGateChar(ch) ? GATES.find(g => g.mark === ch) : null;
+  return (o && o.floor) || ".";
+}
+function creatureAt(x, y) {
+  const ch = cell(x, y);
+  if (!isCreatureMark(ch)) return null;
+  return CREATURES.find(c => c.where === "map" && String(c.mark) === ch && (!state.caughtCreatures.includes(c.id) || c.stays)) || null;
+}
+
+/* ---------- 門與道具 ---------- */
+const itemName = (mark) => (ITEMS.find(i => i.mark === mark) || { name: mark }).name;
+const hasItem = (mark) => state.collectedItems.includes(mark) && !state.usedItems.includes(mark);
+function gateAt(x, y) {
+  const ch = cell(x, y);
+  return isGateChar(ch) ? (GATES.find(g => g.mark === ch) || null) : null;
+}
+/* 門在畫面和問答裡用的物件(有自己的 id、圖) */
+const gateObj = (g) => ({ ...g, id: "gate:" + g.mark, kind: "gate", gate: g, sprite: g.sprite || "door" });
+function giveItem(mark) {
+  if (!state.collectedItems.includes(mark)) state.collectedItems.push(mark);
+  toast(say("itemGot", { name: itemName(mark) }));
+  renderHud();
+}
+function openGate(g, quiet) {
+  state.grid.forEach((row, y) => row.forEach((ch, x) => { if (ch === g.mark) state.grid[y][x] = g.floor || "."; }));
+  if (!state.openedGates.includes(g.mark)) state.openedGates.push(g.mark);
+  if (g.consume) [].concat(g.needs || []).forEach(m => { if (!state.usedItems.includes(m)) state.usedItems.push(m); });
+  if (!quiet) { toast(g.openedText || say("gateOpened", { name: g.name })); checkWinCondition(); }
+}
+/* 這扇門還缺什麼:{ items: [道具 mark], creatures: [還沒收服的角色] } */
+function gateMissing(g) {
+  return { items: [].concat(g.needs || []).filter(m => !hasItem(m)),
+           creatures: g.needsAllCreatures ? QUIZ().filter(c => !state.caughtCreatures.includes(c.id)) : [] };
+}
+function touchGate(g) {
+  if (state.busy) return;
+  const miss = gateMissing(g);
+  if (miss.items.length) { toast(g.lockedText || say("gateLocked", { name: g.name, need: miss.items.map(itemName).join("、") })); return; }
+  if (miss.creatures.length) {     // 終點:列出還差誰、在哪裡
+    openPanel(`<p class="q">${escapeHtml(g.lockedText || say("gateNeedAll", { name: g.name, n: miss.creatures.length }))}</p><ul class="bag-list">` +
+      miss.creatures.map(c => `<li>${escapeHtml(c.name + (c.area ? "——" + c.area : ""))}</li>`).join("") + `</ul>`);
+    return;
+  }
+  if (hasQuiz(g)) { startEncounter(gateObj(g), "gate"); return; }
+  openGate(g);
+}
+function canWalk(x, y) {
+  const ch = cell(x, y);
+  return !!(WALK[ch] || isLower(ch));
+}
+const remainingGrass = () => CREATURES.filter(c => c.where === "grass" && !state.caughtCreatures.includes(c.id));
+
+/* ---------- 繪圖 ---------- */
+const view = el("view"), vctx = view.getContext("2d");
+let clock = 0;
+function grassVariant(x, y) { return "grass" + ((x * 7 + y * 13 + ((x * y) % 5)) % 3); }
+function drawTile(ctx, x, y, sx, sy) {
+  const ch = floorOf(cell(x, y));
+  if (ch === "H") { ctx.drawImage(GFX["tile:" + (cell(x, y - 1) === "H" ? "wall" : "roof")], sx, sy); return; }
+  if (ch === "~") {
+    ctx.drawImage(GFX["tile:water" + (Math.floor(clock / 600) % 2)], sx, sy);
+    // 岸邊:旁邊不是水的那一側畫淺色水花
+    ctx.fillStyle = "#c8e4ff";
+    if (cell(x, y - 1) !== "~") ctx.fillRect(sx, sy, TILE, 2);
+    if (cell(x, y + 1) !== "~") ctx.fillRect(sx, sy + TILE - 2, TILE, 2);
+    if (cell(x - 1, y) !== "~") ctx.fillRect(sx, sy, 2, TILE);
+    if (cell(x + 1, y) !== "~") ctx.fillRect(sx + TILE - 2, sy, 2, TILE);
+    return;
+  }
+  const base = ch === "," ? "tallgrass" : ch === "=" ? "path" : ch === "*" ? "flowers" : ch === "+" ? "bridge" : grassVariant(x, y);
+  ctx.drawImage(GFX["tile:" + base], sx, sy);
+  if (BLOCK[ch] && BLOCK[ch] !== "water") ctx.drawImage(GFX["tile:" + BLOCK[ch]], sx, sy);
+}
+function playerFrame() {
+  const walking = state.move && state.move.t < 0.6;
+  const flip = state.stepParity === 1;
+  switch (state.facing) {
+    case "up": return walking ? GFX["player_up_walk" + (flip ? ":flip" : "")] : GFX["player_up"];
+    case "left": return walking ? GFX["player_side_walk:flip"] : GFX["player_side:flip"];
+    case "right": return walking ? GFX["player_side_walk"] : GFX["player_side"];
+    default: return walking ? GFX["player_down_walk" + (flip ? ":flip" : "")] : GFX["player_down"];
+  }
+}
+function playerPixel() {
+  if (!state.move) return [state.px * TILE, state.py * TILE];
+  const m = state.move, t = Math.min(1, m.t);
+  return [(m.fx + (m.tx - m.fx) * t) * TILE, (m.fy + (m.ty - m.fy) * t) * TILE];
+}
+function draw() {
+  const [ppx, ppy] = playerPixel();
+  const W = mapW() * TILE, H = mapH() * TILE;
+  const vw = VIEW_W * TILE, vh = VIEW_H * TILE;
+  let camX = Math.round(ppx + TILE / 2 - vw / 2), camY = Math.round(ppy + TILE / 2 - vh / 2);
+  camX = W <= vw ? Math.round((W - vw) / 2) : Math.max(0, Math.min(W - vw, camX));
+  camY = H <= vh ? Math.round((H - vh) / 2) : Math.max(0, Math.min(H - vh, camY));
+
+  vctx.fillStyle = "#000"; vctx.fillRect(0, 0, vw, vh);
+  const x0 = Math.floor(camX / TILE), y0 = Math.floor(camY / TILE);
+  for (let y = y0; y <= y0 + VIEW_H; y++) {
+    for (let x = x0; x <= x0 + VIEW_W; x++) {
+      if (x < 0 || y < 0 || x >= mapW() || y >= mapH()) continue;
+      const sx = x * TILE - camX, sy = y * TILE - camY;
+      drawTile(vctx, x, y, sx, sy);
+      const ch = cell(x, y);
+      if (isLower(ch)) { const it = ITEMS.find(i => i.mark === ch); if (it) drawObj(vctx, it, sx, sy, TILE); }
+      const gt = gateAt(x, y);
+      if (gt) drawObj(vctx, gateObj(gt), sx, sy, TILE);
+      const cr = creatureAt(x, y);
+      if (cr) drawObj(vctx, cr, sx, sy - (Math.floor(clock / 450 + x) % 2), TILE);
+    }
+  }
+  const px = Math.round(ppx - camX), py = Math.round(ppy - camY);
+  vctx.drawImage(playerFrame(), px, py - 2);
+  // 站在高草叢裡時,草蓋住下半身
+  const tx = Math.round(ppx / TILE), ty = Math.round(ppy / TILE);
+  if (cell(tx, ty) === ",") vctx.drawImage(GFX["tile:tallgrass"], 0, 10, TILE, 6, tx * TILE - camX, ty * TILE - camY + 10, TILE, 6);
+}
+function renderHud() {
+  const total = QUIZ().length;
+  el("hud-creatures").textContent = say("hudCreatures", { n: state.caughtCreatures.length, total });
+  el("hud-creatures").classList.toggle("hidden", total === 0);
+  el("hud-items").textContent = say("hudItems", { n: state.collectedItems.length, total: ITEMS.length });
+  el("hud-items").classList.toggle("hidden", ITEMS.length === 0);
+}
+let toastTimer = null;
+function toast(text) {
+  const t = el("toast");
+  t.textContent = text; t.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add("hidden"), Math.max(1600, String(text).length * 110));   // 長的句子停久一點
+}
+
+/* ---------- 移動 ---------- */
+function tryStep(dir) {
+  state.facing = dir;
+  const [dx, dy] = DIRS[dir];
+  const nx = state.px + dx, ny = state.py + dy;
+  const cr = creatureAt(nx, ny);
+  if (cr) { state.held = null; startEncounter(cr, "map"); return; }
+  const gt = gateAt(nx, ny);
+  if (gt) { state.held = null; touchGate(gt); return; }
+  if (!canWalk(nx, ny)) return;          // 撞到牆只轉方向
+  state.move = { fx: state.px, fy: state.py, tx: nx, ty: ny, t: 0 };
+  state.stepParity ^= 1;
+  state.moveCount++;
+}
+function onArrive() {
+  const ch = cell(state.px, state.py);
+  if (isLower(ch)) {
+    const it = ITEMS.find(i => i.mark === ch);
+    if (it && !state.collectedItems.includes(it.mark)) {
+      state.grid[state.py][state.px] = ".";
+      giveItem(it.mark);
+      if (checkWinCondition()) return;
+    }
+  }
+  if (ch === "," && remainingGrass().length) {
+    state.grassSteps++;
+    if (Math.random() < GAME.grassEncounterRate || state.grassSteps >= GAME.grassPity) {
+      state.grassSteps = 0;
+      const pool = remainingGrass();
+      state.held = null;
+      startEncounter(pool[Math.floor(Math.random() * pool.length)], "grass");
+    }
+  }
+}
+function interact() {
+  const [dx, dy] = DIRS[state.facing];
+  const cr = creatureAt(state.px + dx, state.py + dy);
+  if (cr) { startEncounter(cr, "map"); return; }
+  const gt = gateAt(state.px + dx, state.py + dy);
+  if (gt) touchGate(gt);
+}
+let last = 0;
+function loop(ts) {
+  if (!state.running) return;
+  const dt = last ? Math.min(50, ts - last) : 16;
+  last = ts; clock += dt;
+  if (state.move) {
+    state.move.t += dt / GAME.moveMs;
+    if (state.move.t >= 1) {
+      state.px = state.move.tx; state.py = state.move.ty; state.move = null;
+      onArrive();
+    }
+  }
+  // 過關的那一刻 state.running 已經是 false;不擋的話,按著方向鍵會再多走一格,步數多算一步
+  if (state.running && !state.move && !state.busy && state.held) tryStep(state.held);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 遇到角色 ----------
+   state.busy 為 true 時,移動整個鎖住;不要拿掉這個鎖定 */
+const enc = { creature: null, source: null, phase: null, sel: 0, order: [], anim: 0, pending: null };
+function drawEncounterScene() {
+  const c = el("enc-scene"), ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  const grass = enc.source === "grass";
+  // 畫布大小跟著視野(電腦 240 × 160、直式手機 176 × 192),位置都用比例算
+  const W = c.width, H = c.height;
+  // 背景:天空與地面色帶
+  const bands = grass ? ["#b8e8f8", "#a0d8f0", "#88c8e8"] : ["#d8f0c8", "#c0e4b0", "#a8d898"];
+  const bandH = Math.round(H * 0.34 / 3);
+  bands.forEach((col, i) => { ctx.fillStyle = col; ctx.fillRect(0, i * bandH, W, bandH); });
+  const groundY = bandH * 3;
+  ctx.fillStyle = grass ? "#70c050" : "#88c860"; ctx.fillRect(0, groundY, W, H - groundY);
+  ctx.fillStyle = grass ? "#58a840" : "#70b050";
+  for (let x = 0; x < W; x += 8) ctx.fillRect(x + ((x / 8) % 2) * 3, groundY + 6 + ((x * 7) % 9), 3, 2);
+  // 角色站的平台
+  const slide = Math.max(0, 1 - enc.anim);
+  const cx = Math.round(W * 0.7) + slide * W * 0.4;
+  const py = Math.round(H * 0.49);
+  ctx.fillStyle = grass ? "#4c9838" : "#5ea848";
+  ctx.beginPath(); ctx.ellipse(cx, py, 40, 11, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = grass ? "#62b04a" : "#78c060";
+  ctx.beginPath(); ctx.ellipse(cx, py - 2, 36, 8, 0, 0, Math.PI * 2); ctx.fill();
+  drawObj(ctx, enc.creature, Math.round(cx - 32), py - 64, 64);
+}
+function animateEncounter() {
+  enc.anim = 0;
+  const t0 = performance.now();
+  const step = () => {
+    // 用 performance.now() 而不是 requestAnimationFrame 給的時間:headless 截圖時兩個時鐘對不上,角色會一直停在畫面外
+    if (enc.anim >= 1) return;
+    enc.anim = Math.min(1, (performance.now() - t0) / 380);
+    drawEncounterScene();
+    if (enc.anim < 1 && enc.phase) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  // 背景分頁或 headless 截圖時 requestAnimationFrame 可能不跑,角色會停在畫面外;時間到了直接畫最後一格
+  setTimeout(() => { if (enc.phase && enc.creature && enc.anim < 1) { enc.anim = 1; drawEncounterScene(); } }, 500);
+}
+/* 只會說話:沒有問題的 NPC,或是答對後仍站在地圖上(stays)的角色 */
+function talkLines(cr, done) {
+  const raw = done && !cr.dialogue ? say("talkDone", { name: cr.name }) : cr.dialogue;
+  const lines = [].concat(raw);
+  lines[0] = (done && !cr.dialogue ? "" : cr.name + ":") + lines[0];
+  return lines.map(l => `<p class="q" style="margin:0 0 6px">${escapeHtml(l)}</p>`).join("");
+}
+function startEncounter(creature, source) {
+  if (state.busy) return;
+  state.busy = true; state.held = null; clearPadHighlight();
+  const done = state.caughtCreatures.includes(creature.id);
+  const talk = source !== "gate" && (!hasQuiz(creature) || (creature.stays && done));
+  Object.assign(enc, { creature, source, phase: talk ? "talk" : "intro", sel: 0, pending: null });
+  el("encounter").classList.remove("hidden");
+  el("enc-box").classList.remove("hidden");
+  document.querySelector(".hud").classList.add("hidden");
+  animateEncounter();
+  if (talk) {
+    el("enc-box").innerHTML = talkLines(creature, done) + `<div class="enc-more">${escapeHtml(say("more"))}</div>`;
+    // 純對話的 NPC:第一次講完話才送道具(有問題的角色在答對時就已經送了)
+    if (!hasQuiz(creature) && !state.talked.includes(creature.id)) {
+      state.talked.push(creature.id);
+      if (creature.gives && !state.collectedItems.includes(creature.gives)) enc.pending = creature.gives;
+    }
+    return;
+  }
+  const line = say(source === "grass" ? "foundGrass" : source === "gate" ? "foundGate" : "foundMap", { name: creature.name });
+  const greet = creature.greet ? `<p class="q">${escapeHtml(creature.name + ":" + creature.greet)}</p>` : "";
+  el("enc-box").innerHTML = `<p class="q">${escapeHtml(line)}</p>${greet}<div class="enc-more">${escapeHtml(say("more"))}</div>`;
+}
+/* 不是遇到角色的對話框(背包、還差誰的清單):沿用問答框,按確定關掉 */
+function openPanel(html) {
+  if (state.busy || !state.running) return;
+  state.busy = true; state.held = null; clearPadHighlight();
+  Object.assign(enc, { creature: null, source: "panel", phase: "talk", sel: 0, pending: null });
+  el("enc-box").innerHTML = html + `<div class="enc-more">${escapeHtml(say("more"))}</div>`;
+  el("enc-box").classList.remove("hidden");
+  el("enc-box").scrollTop = 0;
+}
+function openBag() {
+  const list = ITEMS.filter(i => state.collectedItems.includes(i.mark));
+  const used = (i) => state.usedItems.includes(i.mark);
+  openPanel(`<p class="q">${escapeHtml(say("bagTitle"))}</p>` + (list.length
+    ? `<ul class="bag-list">` + list.map(i => `<li class="${used(i) ? "used" : ""}">${escapeHtml(i.name)}${used(i) ? escapeHtml(say("usedTag")) : ""}${i.note ? `<span class="note">${escapeHtml(i.note)}</span>` : ""}</li>`).join("") + `</ul>`
+    : `<p class="q">${escapeHtml(say("bagEmpty"))}</p>`));
+}
+function showQuestion() {
+  enc.phase = "question";
+  const q = enc.q = currentQ(enc.creature);
+  const order = q.choices.map((_, i) => i);
+  enc.order = GAME.shuffleChoices ? shuffle(order) : order;   // 存原本的索引,answerIndex 不用改
+  enc.sel = 0;
+  el("enc-box").innerHTML = `<p class="q">${escapeHtml(q.question)}</p><ul class="choices">` +
+    enc.order.map((ci, k) => `<li><button type="button" data-k="${k}">${escapeHtml(q.choices[ci])}</button></li>`).join("") + `</ul>`;
+  el("enc-box").querySelectorAll("[data-k]").forEach(b => b.addEventListener("click", (e) => { e.stopPropagation(); answer(+b.dataset.k); }));
+  highlightChoice();
+}
+function highlightChoice() {
+  el("enc-box").querySelectorAll("[data-k]").forEach((b, k) => b.classList.toggle("sel", k === enc.sel));
+}
+function answer(k) {
+  if (enc.phase !== "question") return;
+  enc.phase = "result";
+  const cr = enc.creature, q = enc.q;
+  const isGate = enc.source === "gate";
+  const chosen = enc.order[k];
+  state.attempts[cr.id] = (state.attempts[cr.id] || 0) + 1;
+  const box = el("enc-box");
+  const buttons = box.querySelectorAll("[data-k]");
+  // 只留下選的那個:回饋才不會被擠出框外,答錯時也不會洩漏正確答案
+  buttons.forEach((b, i) => { b.disabled = true; if (i !== k) b.parentElement.classList.add("hidden"); });
+  let msg, fb = "";
+  if (chosen === q.answerIndex) {
+    buttons[k].classList.add("correct");
+    if (isGate) {
+      openGate(cr.gate, true);
+      msg = cr.gate.openedText || say("gateOpened", { name: cr.name });
+    } else {
+      state.caughtCreatures.push(cr.id);
+      if (cr.where === "map" && !cr.stays) {
+        state.grid.forEach((row, y) => row.forEach((ch, x) => { if (ch === String(cr.mark)) state.grid[y][x] = cr.floor || "."; }));
+      }
+      if (cr.gives && !state.collectedItems.includes(cr.gives)) enc.pending = cr.gives;
+      msg = cr.success || say("caught", { name: cr.name });
+    }
+    if (q.explanation) fb = `<p class="fb good">📖 ${escapeHtml(q.explanation)}</p>`;
+  } else {
+    buttons[k].classList.add("wrong");
+    state.wrongCount++;
+    state.qTurn[cr.id] = (state.qTurn[cr.id] || 0) + 1;      // 有好幾題時,下次換下一題
+    msg = isGate ? say("gateWrong", { name: cr.name }) : say(cr.where === "map" ? "missMap" : "missGrass", { name: cr.name });
+    const tip = (q.mistakes && q.mistakes[q.choices[chosen]]) || q.hint;   // 常見錯誤:指出選這個選項背後的迷思
+    if (tip) fb = `<p class="fb">💡 ${escapeHtml(tip)}</p>`;
+  }
+  box.insertAdjacentHTML("beforeend", `<p class="q" style="margin:8px 0 0">${escapeHtml(msg)}</p>${fb}<div class="enc-more">${escapeHtml(say("more"))}</div>`);
+  box.scrollTop = box.scrollHeight;
+  renderHud();
+}
+function closeEncounter() {
+  enc.phase = null;
+  el("encounter").classList.add("hidden");
+  el("enc-box").classList.add("hidden");
+  document.querySelector(".hud").classList.remove("hidden");
+  state.busy = false;
+  if (enc.pending) { const p = enc.pending; enc.pending = null; giveItem(p); }
+  checkWinCondition();
+}
+function encounterConfirm() {
+  if (enc.phase === "intro") showQuestion();
+  else if (enc.phase === "question") answer(enc.sel);
+  else if (enc.phase === "result" || enc.phase === "talk") closeEncounter();
+}
+
+/* ---------- 過關與結算 ---------- */
+function checkWinCondition() {
+  if (state.running && isWin()) {
+    state.running = false;
+    setTimeout(finishGame, 300);
+    return true;
+  }
+  return false;
+}
+
+function drawLineup(canvasId, silhouette) {
+  const c = el(canvasId), ctx = c.getContext("2d");
+  const list = QUIZ();
+  c.classList.toggle("hidden", list.length === 0);
+  if (!list.length) return;
+  const n = list.length, gap = 4, size = 24;
+  c.width = Math.max(240, n * (size + gap)); c.height = size + 4;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, c.width, c.height);
+  const x0 = Math.round((c.width - n * (size + gap) + gap) / 2);
+  list.forEach((cr, i) => {
+    const x = x0 + i * (size + gap);
+    if (!silhouette) { drawObj(ctx, cr, x, 2, size); return; }
+    const tmp = document.createElement("canvas"); tmp.width = size; tmp.height = size;
+    const t = tmp.getContext("2d"); t.imageSmoothingEnabled = false;
+    drawObj(t, cr, 0, 0, size);
+    t.globalCompositeOperation = "source-in"; t.fillStyle = "#0c0e1c"; t.fillRect(0, 0, size, size);
+    ctx.drawImage(tmp, x, 2);
+  });
+}
+function finishGame() {
+  const durationSec = Math.round((Date.now() - state.startTime) / 1000);
+  el("screen-game").classList.add("hidden");
+  el("screen-end").classList.remove("hidden");
+  drawLineup("end-lineup", false);
+  const quiz = QUIZ();
+  const firstTry = quiz.filter(c => state.attempts[c.id] === 1).length;
+  el("end-title").textContent = say("endTitle");
+  const ending = [].concat(GAME.ending || []).join("\n\n");
+  el("end-story").textContent = ending;
+  el("end-story").classList.toggle("hidden", !ending);
+  el("lbl-creatures").textContent = say("labelCreatures");
+  el("lbl-firsttry").textContent = say("labelFirstTry");
+  el("lbl-items").textContent = say("labelItems");
+  ["row-creatures", "row-firsttry"].forEach(id => el(id).classList.toggle("hidden", quiz.length === 0));
+  el("row-items").classList.toggle("hidden", ITEMS.length === 0);
+  el("sum-name").textContent = state.playerName;
+  el("sum-creatures").textContent = `${state.caughtCreatures.length} / ${quiz.length}`;
+  el("sum-firsttry").textContent = `${firstTry} / ${quiz.length}`;
+  el("sum-wrong").textContent = state.wrongCount;
+  el("sum-items").textContent = `${state.collectedItems.length} / ${ITEMS.length}`;
+  el("sum-moves").textContent = state.moveCount;
+  el("sum-time").textContent = durationSec + " 秒";
+  saveBestIfNeeded(state.moveCount);
+
+  /* 上傳的欄位由使用者決定;加欄位時 gas-backend.gs 的 HEADERS 和 rowFor() 也要對應 */
+  const payload = {
+    playerName: state.playerName,
+    creaturesCaught: state.caughtCreatures.length,
+    firstTryCount: firstTry,
+    wrongCount: state.wrongCount,
+    itemsCollected: state.collectedItems.length,
+    moveCount: state.moveCount,
+    durationSec: durationSec
+  };
+  sendResultsToSheet(payload);
+}
+function sendResultsToSheet(payload) {
+  const statusEl = el("submit-status");
+  if (!GAS_URL || GAS_URL.indexOf("PASTE_YOUR") === 0) {
+    statusEl.textContent = "(尚未設定 Google 試算表網址,成績只顯示在畫面上)";
+    return;
+  }
+  statusEl.textContent = "成績上傳中...";
+  // no-cors 模式下瀏覽器只允許 text/plain 這類簡單的 Content-Type;後端一樣用 JSON.parse 讀內容。
+  // keepalive:玩家一看到結算就關分頁,這筆成績也還是會送出去
+  fetch(GAS_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, keepalive: true, body: JSON.stringify(payload) })
+    .then(() => { statusEl.textContent = "成績已送出 ✅"; })
+    .catch(() => { statusEl.textContent = "送出失敗,請檢查網路連線"; });
+}
+/* 地圖簽章:最佳紀錄是「這張地圖、這組角色」下的步數。
+   學員改了地圖或角色之後簽章會變,舊紀錄就不算數,避免開始畫面掛著打不到(或太容易打到)的舊步數 */
+function bestSignature() {
+  const raw = MAP.join("/") + "|" + CREATURES.map(c => `${c.id}:${c.where}:${c.mark === undefined ? "" : c.mark}:${hasQuiz(c) ? "q" : "n"}${c.stays ? "s" : ""}${c.gives || ""}`).join(",") +
+    "|" + GATES.map(g => `${g.mark}:${[].concat(g.needs || []).join("+")}${hasQuiz(g) ? "q" : ""}${g.consume ? "c" : ""}${g.needsAllCreatures ? "a" : ""}`).join(",");
+  let h = 5381;
+  for (let i = 0; i < raw.length; i++) h = ((h * 33) ^ raw.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+function loadBest() {
+  // 格式不對、或簽章和目前的地圖不同,都當作沒有紀錄
+  // (不檢查的話,STORAGE_KEY 撞名時會顯示 undefined,而且之後的最佳紀錄永遠不會被更新)
+  try {
+    const best = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (best && Number.isFinite(best.moves) && best.sig === bestSignature()) return best;
+  } catch (e) { /* 讀不到或壞掉,當作沒有紀錄 */ }
+  return null;
+}
+function saveBestIfNeeded(moves) {
+  const best = loadBest();
+  if (!best || moves < best.moves) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ moves, sig: bestSignature() })); } catch (e) {}
+  }
+}
+function showBestNote() {
+  const best = loadBest();
+  el("best-note").textContent = best ? say("bestNote", { moves: best.moves }) : "";
+}
+
+/* ---------- 開始遊戲 ---------- */
+function resetState() {
+  state.grid = MAP.map(row => row.split(""));
+  state.grid.forEach((row, y) => row.forEach((ch, x) => { if (ch === "@") { state.px = x; state.py = y; row[x] = "."; } }));
+  Object.assign(state, { facing: "down", move: null, stepParity: 0, held: null, caughtCreatures: [], collectedItems: [], openedGates: [], usedItems: [], talked: [],
+    attempts: {}, qTurn: {}, wrongCount: 0, grassSteps: 0, moveCount: 0, busy: false });
+}
+function startGame() {
+  if (showMapErrors().length) return;
+  state.playerName = el("player-name").value.trim() || "玩家";
+  resetState();
+  state.startTime = Date.now();
+  el("screen-start").classList.add("hidden");
+  el("screen-game").classList.remove("hidden");
+  fitView();
+  renderHud();
+  state.running = true; last = 0;
+  requestAnimationFrame(loop);
+  const hasGrass = CREATURES.some(c => c.where === "grass");
+  toast(say(hasGrass ? "startGrass" : "start"));
+}
+
+/* 畫面縮放:盡量用整數倍放大,像素才會整齊 */
+function fitView() {
+  const frame = el("stage");
+  const portrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
+  const w = portrait ? 11 : 15, h = portrait ? 12 : 10;
+  if (w !== VIEW_W || h !== VIEW_H) {
+    VIEW_W = w; VIEW_H = h;
+    view.width = VIEW_W * TILE; view.height = VIEW_H * TILE;
+    el("enc-scene").width = view.width; el("enc-scene").height = view.height;
+    vctx.imageSmoothingEnabled = false;
+    el("stage").classList.toggle("portrait", portrait);
+  }
+  const pw = VIEW_W * TILE, ph = VIEW_H * TILE;
+  const avail = el("screen-game").parentElement.clientWidth;
+  const maxH = window.innerHeight - 250;
+  const scale = Math.floor(Math.min(avail / pw, maxH / ph));
+  if (scale >= 2) frame.style.width = (pw * Math.min(scale, 3) + 8) + "px";
+  else frame.style.width = "100%";
+  if (state.running) draw();
+}
+
+/* ---------- 操作 ---------- */
+const KEY_DIR = { arrowup: "up", w: "up", arrowdown: "down", s: "down", arrowleft: "left", a: "left", arrowright: "right", d: "right" };
+function gameVisible() { return !el("screen-game").classList.contains("hidden"); }
+document.addEventListener("keydown", (e) => {
+  if (!gameVisible()) return;
+  const key = e.key.toLowerCase();
+  const dir = KEY_DIR[key];
+  const confirm = key === "enter" || key === " " || key === "z";
+  if (dir || confirm) e.preventDefault();
+  if (enc.phase) {
+    if (dir && enc.phase === "question") {
+      const n = enc.order.length;
+      if (dir === "up" || dir === "left") enc.sel = (enc.sel + n - 1) % n;
+      if (dir === "down" || dir === "right") enc.sel = (enc.sel + 1) % n;
+      highlightChoice();
+    }
+    if (confirm && !e.repeat) encounterConfirm();
+    return;
+  }
+  if (dir) state.held = dir;
+  if (confirm && !e.repeat && !state.busy) interact();
+  if (key === "b" && !e.repeat) openBag();
+});
+document.addEventListener("keyup", (e) => {
+  const dir = KEY_DIR[e.key.toLowerCase()];
+  if (dir && state.held === dir) state.held = null;
+});
+window.addEventListener("blur", () => { state.held = null; clearPadHighlight(); });
+function clearPadHighlight() { document.querySelectorAll("#dpad button").forEach(b => b.classList.remove("on")); }
+document.querySelectorAll("#dpad button").forEach(b => {
+  const on = (e) => { e.preventDefault(); if (enc.phase) { if (enc.phase === "question") { const n = enc.order.length; enc.sel = (enc.sel + (b.dataset.dir === "up" || b.dataset.dir === "left" ? n - 1 : 1)) % n; highlightChoice(); } return; } state.held = b.dataset.dir; b.classList.add("on"); };
+  const off = () => { if (state.held === b.dataset.dir) state.held = null; b.classList.remove("on"); };
+  b.addEventListener("pointerdown", on);
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, off));
+});
+el("btn-b").addEventListener("click", () => { if (enc.phase) encounterConfirm(); else openBag(); });
+el("btn-a").addEventListener("click", () => { if (enc.phase) encounterConfirm(); else if (!state.busy) interact(); });
+el("enc-box").addEventListener("click", () => { if (enc.phase === "intro" || enc.phase === "result" || enc.phase === "talk") encounterConfirm(); });
+/* 遊戲進行中重新整理、關分頁或按上一頁,進度會消失(沒有存檔),所以先讓瀏覽器跳出確認視窗。
+   視窗的文字由瀏覽器決定,改不了;開始畫面和結算畫面不會跳 */
+window.addEventListener("beforeunload", (e) => {
+  if (!gameVisible() || !state.running) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
+el("btn-start").addEventListener("click", startGame);
+el("player-name").addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
+el("btn-restart").addEventListener("click", () => {
+  el("screen-end").classList.add("hidden");
+  el("screen-start").classList.remove("hidden");
+  el("submit-status").textContent = "";
+  showBestNote();
+});
+window.addEventListener("resize", () => { if (gameVisible()) fitView(); });
+
+/* ---------- 圖片預覽頁(網址加上 #sprites) ---------- */
+function showGallery() {
+  ["screen-start", "screen-game", "screen-end"].forEach(id => el(id).classList.add("hidden"));
+  el("screen-gallery").classList.remove("hidden");
+  const items = [];
+  CREATURES.forEach(c => items.push([`角色:${c.name}`, gfxOf(c)]));
+  ITEMS.forEach(i => items.push([`道具:${i.name}`, gfxOf(i)]));
+  GATES.forEach(g => items.push([`門:${g.name}`, gfxOf(gateObj(g))]));
+  Object.keys(SPRITES).forEach(n => items.push([n, GFX[n]]));
+  Object.keys(TILES).forEach(n => items.push([`地形:${n}`, GFX["tile:" + n]]));
+  el("gallery").innerHTML = items.map((_, i) => `<figure><canvas width="16" height="16" data-g="${i}"></canvas><figcaption>${escapeHtml(items[i][0])}</figcaption></figure>`).join("");
+  el("gallery").querySelectorAll("canvas").forEach(cv => {
+    const g = items[+cv.dataset.g][1];
+    const ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false;
+    if (g) ctx.drawImage(g, 0, 0, 16, 16);
+  });
+}
+
+/* ---------- 初始化 ---------- */
+if (GAME.title) {
+  el("game-title").textContent = GAME.title;
+  document.title = GAME.title;     // 瀏覽器分頁的標題也跟著 GAME.title,不用另外改 <title>
+}
+if (GAME.desc) el("game-desc").textContent = GAME.desc;
+if (GAME.teacherNotes) {
+  el("teacher-notes-body").textContent = [].concat(GAME.teacherNotes).join("\n\n");
+  el("teacher-notes").classList.remove("hidden");
+}
+window.__engineReady = true;   // 之後的錯誤不再由最上面的錯誤顯示處理
+loadGraphics().then(() => {
+  if (location.hash === "#sprites") { showGallery(); return; }
+  drawLineup("lineup", true);
+  showBestNote();
+  showMapErrors();
+});
+</script>
+</body>
+</html>
