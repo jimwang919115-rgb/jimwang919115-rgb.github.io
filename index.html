@@ -74,9 +74,17 @@
 
 <script>
 const SKILLS = [
+  '教育遊戲',
   ['card-battle-edu-game', '卡牌對戰'],
   ['level-based-edu-game', '闖關 / 密室逃脫'],
   ['pixel-explore-edu-game', '像素地圖探索'],
+  '讀論文',
+  ['read-paper', '論文深度解析'],
+  'PPT 風格',
+  ['ppt-template-creator', 'PPT 範本轉 Skill'],
+  ['frontend-slides', '網頁簡報（frontend-slides，MIT）'],
+  '寫作',
+  ['anti-ai-writing', '去除 AI 腔'],
 ];
 const DESIGNS = {
   '闖關': ['01-國小二年級-數學-時間與時鐘','02-國小三年級-自然-植物的身體','03-國小四年級-國語-成語','04-國小五年級-社會-台灣的地形','05-國小六年級-英語-規則動詞過去式','06-國中七年級-數學-正負數的四則運算','07-國中七年級-國文-修辭法','08-國中八年級-理化-密度','09-國中八年級-歷史-台灣的日治時期','10-國中九年級-地球科學-板塊運動'],
@@ -96,12 +104,14 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
 
 // skills: frontmatter -> summary line, body -> markdown
 const skillsEl = document.getElementById('skills');
-SKILLS.forEach(async ([id, label]) => {
+SKILLS.forEach(async item => {
+  if (typeof item === 'string') { const h = document.createElement('h2'); h.className = 'cat'; h.textContent = item; return skillsEl.append(h); }
+  const [id, label] = item;
   const d = document.createElement('details');
   skillsEl.append(d);
   try {
     const raw = await load(`skills/${id}.md`);
-    const m = raw.match(/^---\n([\s\S]*?)\n---\n?/);
+    const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
     const desc = m ? (m[1].match(/description:\s*(.*)/) || [,''])[1] : '';
     d.innerHTML = `<summary>${esc(label)}（${id}）<small>${esc(desc)}</small></summary>
       <p class="dl"><a href="skills/${id}.skill" download>下載 .skill（完整套件）</a><a href="skills/${id}.md" download="SKILL.md">下載 SKILL.md</a></p>
